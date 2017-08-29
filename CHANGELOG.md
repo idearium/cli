@@ -6,9 +6,9 @@ This file is a history of the changes made to @idearium/cli.
 
 Bug fix release.
 
-## Bugs
+### Bugs
 
-Fixed an issue with `package.json`.
+- Fixed an issue with `package.json`.
 
 ## 1.0.0-alpha.2
 
