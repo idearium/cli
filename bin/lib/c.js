@@ -1,8 +1,34 @@
 'use strict';
 
-const { readFile } = require('fs');
+const { readFile, writeFile } = require('fs');
 const { homedir } = require('os');
 const { join } = require('path');
+const { compile } = require('handlebars');
+const { promisify } = require('util');
+
+/**
+ * Given a template file, and a locals object, compile the template and generate the result.
+ * @param  {String} file        A path to a template file.
+ * @param  {Object} [locals={}] The locals to the pass to the template.
+ * @return {Promise}            A promise.
+ */
+const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => {
+
+    readFile(join(process.cwd(), 'devops', 'templates', file), 'utf-8', (err, data) => {
+
+        /* eslint-disable padded-blocks */
+        if (err) {
+            return reject(err);
+        }
+        /* eslint-enable padded-blocks */
+
+        const template = compile(data);
+
+        return resolve(template(locals));
+
+    });
+
+});
 
 /**
  * Read `~/.npmrc` and retrieve the `authToken`.
@@ -38,4 +64,9 @@ const throwErr = (err) => {
 
 };
 
-module.exports = { npmAuthToken, throwErr };
+module.exports = {
+    executeTemplate,
+    npmAuthToken,
+    throwErr,
+    writeFile: promisify(writeFile),
+};
