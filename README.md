@@ -19,3 +19,9 @@ We actually recommend installing `@idearium/cli` locally in your project. This a
 ## Usage
 
 Once installed, simply run `c`, and you'll get the help output for all commands. Running a sub-command and then `--help` will give you the help output for that command (i.e. `c dc --help`).
+
+## Commands
+
+The following is a summary of the top level commands.
+
+- `c dc` is for everything Docker Compose.
