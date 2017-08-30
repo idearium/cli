@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## 1.0.0-alpha.5
+## 1.0.0-alpha.6
 
 New commands.
 
