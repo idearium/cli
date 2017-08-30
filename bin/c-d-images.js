@@ -3,9 +3,10 @@
 'use strict';
 
 const program = require('commander');
+const { exec } = require('shelljs');
 
 // The basic program, which uses sub-commands.
 program
-    .command('dc <command>', 'Shortcuts to control Docker Compose.')
-    .command('d <command>', 'Shortcuts to control Docker.')
     .parse(process.argv);
+
+exec('docker images');

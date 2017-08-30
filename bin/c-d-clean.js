@@ -6,6 +6,6 @@ const program = require('commander');
 
 // The basic program, which uses sub-commands.
 program
-    .command('dc <command>', 'Shortcuts to control Docker Compose.')
-    .command('d <command>', 'Shortcuts to control Docker.')
+    .command('images', 'Removes unused images.')
+    .command('containers', 'Removes unused containers.')
     .parse(process.argv);

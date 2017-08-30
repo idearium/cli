@@ -4,6 +4,17 @@ This file is a history of the changes made to @idearium/cli.
 
 ## 1.0.0-alpha.5
 
+New commands.
+
+### Improvements
+
+- Added `c d ps` to run `docker ps`.
+- Added `c d images` to run `docker images`.
+- Added `c d clean images` to remove unused Docker images.
+- Added `c d clean containers` to remove unused Docker containers.
+
+## 1.0.0-alpha.5
+
 Minor improvements.
 
 ### Improvements
