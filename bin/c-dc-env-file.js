@@ -24,8 +24,8 @@ const projectRoot = path.resolve(process.cwd());
 // Load the defaults first.
 const defaults = dotenv.config({ path: path.join(projectRoot, 'devops', 'templates', '.env.defaults') }).parsed;
 
-// Update the defaults with the current configuration.
-const locals = Object.assign({}, defaults, dotenv.config().parsed);
+// Update the current value with the defaults.
+const locals = Object.assign(dotenv.config().parsed, defaults);
 
 // Reset the COMPOSE_FILE value.
 locals.COMPOSE_FILE = defaults.COMPOSE_FILE;

@@ -2,6 +2,14 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+Bug fix.
+
+### Fixes
+
+- Updated the logic for `c dc env file` so that it produces more consistent results.
+
 ## 1.0.0-alpha.7
 
 Improvements.
