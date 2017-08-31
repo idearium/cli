@@ -20,11 +20,15 @@ const [value] = program.args;
 // Let's get to the root of the project.
 const projectRoot = path.resolve(process.cwd());
 
-// Load the current configuration, so we don't loose any previous values.
-const locals = dotenv.config();
+// Setup the locals.
+// Load the defaults first.
+const defaults = dotenv.config({ path: path.join(projectRoot, 'devops', 'templates', '.env.defaults') }).parsed;
 
-// Set the default value for `COMPOSE_FILE`.
-locals.COMPOSE_FILE = 'docker-compose.yml';
+// Update the defaults with the current configuration.
+const locals = Object.assign({}, defaults, dotenv.config().parsed);
+
+// Reset the COMPOSE_FILE value.
+locals.COMPOSE_FILE = defaults.COMPOSE_FILE;
 
 // Let's determine if the file exists first.
 if (value !== 'reset') {
