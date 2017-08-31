@@ -2,6 +2,26 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## 1.0.0-alpha.7
+
+Improvements.
+
+### Improvements
+
+- `c dc env file` now requires you provide, in addition to `./devops/templates/.env.tmpl` a `./devops/templates/.env.defaults` file, for a list of default values to provide to the template. Example files below.
+
+**`.env.tmpl`**
+```
+COMPOSE_PROJECT_NAME={{COMPOSE_PROJECT_NAME}}
+COMPOSE_FILE={{COMPOSE_FILE}}
+```
+
+**`.env.defaults`**
+```
+COMPOSE_PROJECT_NAME=cp
+COMPOSE_FILE=docker-compose.yml
+```
+
 ## 1.0.0-alpha.6
 
 New commands.
