@@ -84,6 +84,11 @@ const reportError = (err, program) => {
 
 };
 
+/**
+ * Given a service, return a `docker-compose` command string to bring it up.
+ * @param  {string} service The name of the service.
+ * @return {string}         The `docker-compose` command string.
+ */
 const composeUp = (service) => {
 
     // We're bringing up just one container.
