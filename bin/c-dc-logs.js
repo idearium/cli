@@ -14,10 +14,22 @@ npmAuthToken()
     .then((token) => {
 
         const env = { NPM_AUTH_TOKEN: token };
+        const command = 'docker-compose logs -f';
+
+        // Are we logging all containers?
+        if (!program.args.length) {
+
+            exec(command, { env });
+
+            return;
+
+        }
+
+        // We're just logging one container.
+        const [service] = program.args;
 
         // Using shelljs here.
-        // Quicker than `child_process.execFile` because it doesn't require a full path to the binary.
-        exec('docker-compose logs -f', { env });
+        exec(`${command} ${service}`, { env });
 
 
     });

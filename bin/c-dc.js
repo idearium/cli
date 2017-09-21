@@ -10,7 +10,7 @@ program
     .command('env <setting> <value>', 'Set Docker Compose .env file settings.')
     .command('down', 'Stop and remove containers, networks, images and volumes')
     .command('images', 'List images')
-    .command('logs', 'View output from containers')
+    .command('logs <service>', 'View output from containers')
     .command('ps', 'List containers')
     .command('pull', 'Pull service images')
     .command('rebuild [service]', 'Rebuild and restart a service')
