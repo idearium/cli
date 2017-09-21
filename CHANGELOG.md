@@ -2,6 +2,14 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+New commands.
+
+### Improvements
+
+- Added `c dc rebuild [service]` to run `docker-compose build [service] && docker-compose up -d [service]`.
+
 ## 1.0.0-alpha.9
 
 Bug fix.
