@@ -14,25 +14,22 @@ program
 npmAuthToken()
     .then((token) => {
 
+        // ENV variables for shelljs
         const env = { NPM_AUTH_TOKEN: token };
 
-        // Are we bringing up all, or just one contaner?
+        /* eslint-disable padded-blocks */
         if (!program.args.length) {
-
-            exec('docker-compose stop', { env });
-            exec('docker-compose rm --force', { env });
-            exec('docker-compose build', { env });
-            exec('docker-compose up -d --scale consul=3 --scale app=2', { env });
-
-            return;
-
+            throw new Error('You must identify the service you\'d like to rebuild');
         }
+        /* eslint-enable padded-blocks */
 
-        // We're bringing up just one container.
         const [service] = program.args;
 
+        // Using shelljs here.
+        // Quicker than `child_process.execFile` because it doesn't require a full path to the binary.
         exec(`docker-compose build ${service}`, { env });
         exec(composeUp(service), { env });
 
+
     })
-    .catch(err => reportError(err));
+    .catch(err => reportError(err, program));
