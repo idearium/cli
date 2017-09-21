@@ -2,7 +2,15 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased
+## 1.0.0-alpha.9
+
+Bug fix.
+
+### Fixes
+
+- Fixes `c dc env file` errors when a `.env` file doesn't exist.
+
+## 1.0.0-alpha.8
 
 Bug fix.
 
