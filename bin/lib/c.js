@@ -5,6 +5,7 @@ const { homedir } = require('os');
 const { join } = require('path');
 const { compile } = require('handlebars');
 const { promisify } = require('util');
+const { red } = require('chalk');
 
 /**
  * Given a template file, and a locals object, compile the template and generate the result.
@@ -64,9 +65,53 @@ const throwErr = (err) => {
 
 };
 
+/**
+ * Given an error, report it.
+ * @param  {Error}  err          The Error object.
+ * @param  {Object} program      The commander.js program.
+ * @return {void}
+ */
+const reportError = (err, program) => {
+
+    // eslint-disable-next-line no-console
+    console.error(`\n${red('Error:')} ${err.message}\n`);
+
+    /* eslint-disable padded-blocks */
+    if (program) {
+        program.help();
+    }
+    /* eslint-enable padded-blocks */
+
+};
+
+/**
+ * Given a service, return a `docker-compose` command string to bring it up.
+ * @param  {string} service The name of the service.
+ * @return {string}         The `docker-compose` command string.
+ */
+const composeUp = (service) => {
+
+    // We're bringing up just one container.
+    let upCommand = 'docker-compose up -d';
+
+    // We need to scale some containers.
+    /* eslint-disable padded-blocks */
+    if (['app', 'consul'].includes(service)) {
+        upCommand += ` --scale ${service}=2`;
+    }
+    /* eslint-enable padded-blocks */
+
+    upCommand += ` ${service}`;
+
+    return upCommand;
+
+};
+
 module.exports = {
+    composeUp,
     executeTemplate,
     npmAuthToken,
+    reportError,
     throwErr,
     writeFile: promisify(writeFile),
 };

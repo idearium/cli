@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/idearium/cli#readme",
   "dependencies": {
+    "chalk": "2.1.0",
     "commander": "2.11.0",
     "dotenv": "4.0.0",
     "execa": "0.8.0",
