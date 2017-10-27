@@ -9,6 +9,7 @@ This file is a history of the changes made to @idearium/cli.
 ### Improvements
 
 - Updated all commands to output an error and show the command help, if you try and run a command that doesn't exist.
+- `c dc rebuild <service>` will now always recreate containers.
 
 ## 1.0.0-alpha.10
 

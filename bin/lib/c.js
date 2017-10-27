@@ -16,7 +16,7 @@ const { red } = require('chalk');
 const composeUp = (service) => {
 
     // We're bringing up just one container.
-    let upCommand = 'docker-compose up -d';
+    let upCommand = 'docker-compose up -d --force-recreate';
 
     // We need to scale some containers.
     /* eslint-disable padded-blocks */
