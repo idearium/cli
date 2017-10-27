@@ -3,6 +3,7 @@
 'use strict';
 
 const program = require('commander');
+const { missingCommand } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
@@ -16,3 +17,5 @@ program
     .command('rebuild [service]', 'Rebuild and restart a service')
     .command('up', 'Create and start containers')
     .parse(process.argv);
+
+missingCommand(program);

@@ -2,10 +2,18 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+- Minor improvements.
+
+### Improvements
+
+- Updated all commands to output an error and show the command help, if you try and run a command that doesn't exist.
+
 ## 1.0.0-alpha.10
 
-New commands.
-Updated commands.
+- New commands.
+- Updated commands.
 
 ### Improvements
 
@@ -14,7 +22,7 @@ Updated commands.
 
 ## 1.0.0-alpha.9
 
-Bug fix.
+- Bug fix.
 
 ### Fixes
 
@@ -22,7 +30,7 @@ Bug fix.
 
 ## 1.0.0-alpha.8
 
-Bug fix.
+- Bug fix.
 
 ### Fixes
 
@@ -30,7 +38,7 @@ Bug fix.
 
 ## 1.0.0-alpha.7
 
-Improvements.
+- Improvements.
 
 ### Improvements
 
@@ -50,7 +58,7 @@ COMPOSE_FILE=docker-compose.yml
 
 ## 1.0.0-alpha.6
 
-New commands.
+- New commands.
 
 ### Improvements
 
@@ -61,7 +69,7 @@ New commands.
 
 ## 1.0.0-alpha.5
 
-Minor improvements.
+- Minor improvements.
 
 ### Improvements
 
@@ -69,7 +77,7 @@ Minor improvements.
 
 ## 1.0.0-alpha.4
 
-Bug fix release.
+- Bug fix release.
 
 ### Bugs
 
@@ -77,4 +85,4 @@ Bug fix release.
 
 ## 1.0.0-alpha.3
 
-First published version of the cli.
+- First published version of the cli.
