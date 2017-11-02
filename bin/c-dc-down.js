@@ -17,7 +17,7 @@ npmAuthToken()
 
         // Using shelljs here.
         // Quicker than `child_process.execFile` because it doesn't require a full path to the binary.
-        exec('docker-compose down', { env });
+        exec('docker-compose down --remove-orphans', { env });
 
 
     });
