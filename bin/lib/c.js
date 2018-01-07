@@ -68,7 +68,7 @@ const missingCommand = (program) => {
 
     const [missing] = program.args;
 
-    console.error(chalk.red(`\nThis is no '${missing}' command`));
+    console.error(chalk.red(`\nThere is no '${missing}' command`));
 
     program.help();
 
