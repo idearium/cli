@@ -1,11 +1,35 @@
 'use strict';
 
+const chalk = require('chalk');
 const { readFile, writeFile } = require('fs');
 const { homedir } = require('os');
 const { join } = require('path');
 const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
+
+/**
+ * Given a service, return a `docker-compose` command string to bring it up.
+ * @param  {string} service The name of the service.
+ * @return {string}         The `docker-compose` command string.
+ */
+const composeUp = (service) => {
+
+    // We're bringing up just one container.
+    let upCommand = 'docker-compose up -d --force-recreate';
+
+    // We need to scale some containers.
+    /* eslint-disable padded-blocks */
+    if (['app', 'consul'].includes(service)) {
+        upCommand += ` --scale ${service}=2`;
+    }
+    /* eslint-enable padded-blocks */
+
+    upCommand += ` ${service}`;
+
+    return upCommand;
+
+};
 
 /**
  * Given a template file, and a locals object, compile the template and generate the result.
@@ -32,6 +56,25 @@ const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => 
 });
 
 /**
+ * Given a program object, make sure there is an actual command running. If not, log a console error.
+ * @param  {Object} program A commander.js program.
+ * @return {void}
+ */
+const missingCommand = (program) => {
+
+    if (program.runningCommand) {
+        return;
+    }
+
+    const [missing] = program.args;
+
+    console.error(chalk.red(`\nThere is no '${missing}' command`));
+
+    program.help();
+
+};
+
+/**
  * Read `~/.npmrc` and retrieve the `authToken`.
  * @return {Promise} A promise that will resolve with the token (string).
  */
@@ -55,17 +98,6 @@ const npmAuthToken = () => new Promise((resolve, reject) => {
 });
 
 /**
- * Given an error, throw it.
- * @param  {error} err The error to through.
- * @return {void}
- */
-const throwErr = (err) => {
-
-    throw err;
-
-};
-
-/**
  * Given an error, report it.
  * @param  {Error}  err          The Error object.
  * @param  {Object} program      The commander.js program.
@@ -85,31 +117,20 @@ const reportError = (err, program) => {
 };
 
 /**
- * Given a service, return a `docker-compose` command string to bring it up.
- * @param  {string} service The name of the service.
- * @return {string}         The `docker-compose` command string.
+ * Given an error, throw it.
+ * @param  {error} err The error to through.
+ * @return {void}
  */
-const composeUp = (service) => {
+const throwErr = (err) => {
 
-    // We're bringing up just one container.
-    let upCommand = 'docker-compose up -d';
-
-    // We need to scale some containers.
-    /* eslint-disable padded-blocks */
-    if (['app', 'consul'].includes(service)) {
-        upCommand += ` --scale ${service}=2`;
-    }
-    /* eslint-enable padded-blocks */
-
-    upCommand += ` ${service}`;
-
-    return upCommand;
+    throw err;
 
 };
 
 module.exports = {
     composeUp,
     executeTemplate,
+    missingCommand,
     npmAuthToken,
     reportError,
     throwErr,
