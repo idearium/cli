@@ -5,12 +5,14 @@ This file is a history of the changes made to @idearium/cli.
 ## Unreleased
 
 - Minor improvements.
+- New commands.
 
 ### Improvements
 
 - Updated all commands to output an error and show the command help, if you try and run a command that doesn't exist.
 - `c dc rebuild <service>` will now always recreate containers.
 - Added the `--remove-orphans` to all `c dc down` command, as standard.
+- Added `c npm auth` to retrieve an NPM auth token from `~/.npmrc`.
 
 ## 1.0.0-alpha.10
 
