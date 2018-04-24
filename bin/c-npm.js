@@ -7,9 +7,7 @@ const { missingCommand } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
-    .command('d <command>', 'Shortcuts to control Docker.')
-    .command('dc <command>', 'Shortcuts to control Docker Compose.')
-    .command('npm <command>', 'Shortcuts to control NPM.')
+    .command('auth', 'Retrieves your NPM auth key from ~/.npmrc')
     .parse(process.argv);
 
 missingCommand(program);

@@ -24,5 +24,6 @@ Once installed, simply run `c`, and you'll get the help output for all commands.
 
 The following is a summary of the top level commands.
 
-- `c dc` is for everything Docker Compose.
 - `c d` is for everything Docker.
+- `c dc` is for everything Docker Compose.
+- `c npm` is for everything NPM.
