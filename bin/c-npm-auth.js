@@ -8,8 +8,11 @@ const { npmAuthToken } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
-    .arguments('[service]')
+    .option('-n', 'Do not print the trailing newline character.')
     .parse(process.argv);
 
+// Should we use a newline?
+const newline = (exclude) => exclude ? '' : '\n';
+
 npmAuthToken()
-    .then((token) => process.stdout.write(token));
+    .then((token) => process.stdout.write(`${token}${newline(program.N)}`));
