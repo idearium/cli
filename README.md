@@ -27,3 +27,27 @@ The following is a summary of the top level commands.
 - `c d` is for everything Docker.
 - `c dc` is for everything Docker Compose.
 - `c npm` is for everything NPM.
+
+## Configuration
+
+The Idearium cli can be customised through configurations. Configurations are JSON files loaded from a projects `devops` folder.
+
+### NPM configuration
+
+The Idearium cli supports an NPM configuration. The configuration can be used to provide the cli without information about where NPM commands can be run. To provide this information, create a JSON file at `devops/npm.json` with the following:
+
+```
+{
+    "locations": {
+        "name": "./app/root/app/",
+        "project": "./"
+    }
+}
+```
+
+You should customise it, but you need to provide a `locations` key, containing an object with a name and folder for each NPM location in your project. You'll use the name to reference the location.
+
+For example, the `c npm proxy` command can be used to run a NPM command, at a specific location or all locations:
+
+- Execute `c npm proxy all install -SE logentries` to install the `logentries` module at all NPM locations in your project.
+- Execute `c npm proxy project install -DE jest` to install the `jest` module at the `project` location in your project.
