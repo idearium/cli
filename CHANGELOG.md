@@ -2,6 +2,14 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unrelease
+
+- New commands.
+
+## Improvements.
+
+- Added `c mk start`, `c mk stop` and `c mk restart` to control Minikube.
+
 ## Unreleased
 
 - New command.
