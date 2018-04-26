@@ -9,6 +9,7 @@ This file is a history of the changes made to @idearium/cli.
 ## Improvements.
 
 - Added `c mk start`, `c mk stop` and `c mk restart` to control Minikube.
+- Added `c hosts add` to help with easy hosts management.
 
 ## Unreleased
 
