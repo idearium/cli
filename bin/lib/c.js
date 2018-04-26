@@ -118,6 +118,21 @@ const loadConfig = (type = 'npm') => new Promise((resolve, reject) => {
 });
 
 /**
+ * Given a boolean, determine if a newline character should be used.
+ * @param {Boolean} exclude Should the newline character be used?
+ * @returns {String}
+ */
+const newline = (exclude) => {
+
+    if (exclude) {
+        return '';
+    }
+
+    return '\n';
+
+};
+
+/**
  * Run a command, at a particular path.
  * @param {String} location An absolute path.
  * @param {String} command A command to run at that path.
@@ -176,6 +191,7 @@ module.exports = {
     executeTemplate,
     loadConfig,
     missingCommand,
+    newline,
     npmAuthToken,
     proxyCommand,
     proxyCommands,
