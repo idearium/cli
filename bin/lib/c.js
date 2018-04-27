@@ -8,6 +8,7 @@ const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
 const { exec } = require('shelljs');
+const objPath = require('get-value');
 
 /**
  * Given a service, return a `docker-compose` command string to bring it up.
@@ -134,34 +135,19 @@ const loadConfig = (keys, type = 'c') => new Promise((resolve, reject) => {
 
         const json = JSON.parse(data);
 
+        // If there are no keys, return the entire config.
         if (!keys) {
             return resolve(json);
         }
 
-        const nestedKeys = keys.split('.');
-        let obj = json;
-        let key;
+        // Find the config using property paths.
+        const config = objPath(json, keys);
 
-        for (let i = 0; i < nestedKeys.length; i++) {
-
-            key = nestedKeys[i];
-
-            // If we're on the last loop, and the key exists, return it.
-            if (i === nestedKeys.length - 1 && obj[key]) {
-                return resolve(obj[key]);
-            }
-
-            if (i === nestedKeys.length - 1 && !obj[key]) {
-                return reject(new Error(`The '${keys}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
-            }
-
-            if (!obj[key]) {
-                return reject(new Error(`The '${keys}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
-            }
-
-            obj = obj[key];
-
+        if (!config) {
+            return reject(new Error(`The '${keys}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
         }
+
+        return resolve(config);
 
     });
 
