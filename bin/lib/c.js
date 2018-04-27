@@ -120,11 +120,11 @@ const npmAuthToken = () => new Promise((resolve, reject) => {
 
 /**
  * Load and parse a JSON configuration fiile.
- * @param {String} key The name of a top-level key to return.
+ * @param {String} keys The name of a top-level key to return.
  * @param {String} type The name of a config file to load.
  * @return {Promise} A promise that will resolve with some JSON data.
  */
-const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
+const loadConfig = (keys, type = 'c') => new Promise((resolve, reject) => {
 
     readFile(join(process.cwd(), `${type}.json`), 'utf-8', (err, data) => {
 
@@ -134,15 +134,34 @@ const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
 
         const json = JSON.parse(data);
 
-        if (key && !json[key]) {
-            return reject(new Error(`The '${key}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
+        if (!keys) {
+            return resolve(json);
         }
 
-        if (key && json[key]) {
-            return resolve(json[key]);
-        }
+        const nestedKeys = keys.split('.');
+        let obj = json;
+        let key;
 
-        return resolve(json);
+        for (let i = 0; i < nestedKeys.length; i++) {
+
+            key = nestedKeys[i];
+
+            // If we're on the last loop, and the key exists, return it.
+            if (i === nestedKeys.length - 1 && obj[key]) {
+                return resolve(obj[key]);
+            }
+
+            if (i === nestedKeys.length - 1 && !obj[key]) {
+                return reject(new Error(`The '${keys}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
+            }
+
+            if (!obj[key]) {
+                return reject(new Error(`The '${keys}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
+            }
+
+            obj = obj[key];
+
+        }
 
     });
 
