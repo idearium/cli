@@ -149,6 +149,36 @@ const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
 });
 
 /**
+ * Load and parse a JSON state fiile.
+ * @param {String} key The name of a top-level key to return.
+ * @return {Promise} A promise that will resolve with some JSON data.
+ */
+const loadState = key => new Promise((resolve, reject) => {
+
+    // eslint-disable-next-line no-use-before-define
+    readFile(stateFilePath(), 'utf-8', (err, data) => {
+
+        if (err) {
+            return reject(err);
+        }
+
+        const json = JSON.parse(data);
+
+        if (key && !json[key]) {
+            return reject(new Error(`The '${key}' state was not found in state.json.`));
+        }
+
+        if (key && json[key]) {
+            return resolve(json[key]);
+        }
+
+        return resolve(json);
+
+    });
+
+});
+
+/**
  * Given a boolean, determine if a newline character should be used.
  * @param {Boolean} exclude Should the newline character be used?
  * @returns {String} Either an empty string, or a newline.
@@ -261,6 +291,7 @@ module.exports = {
     executeTemplate,
     hostilePath,
     loadConfig,
+    loadState,
     missingCommand,
     newline,
     npmAuthToken,
