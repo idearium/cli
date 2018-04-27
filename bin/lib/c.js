@@ -33,6 +33,16 @@ const composeUp = (service) => {
 };
 
 /**
+ * Resolve an asbsolute path to the devops folder for the project.
+ * @return {String} The path to the devops folder.
+ */
+const devopsPath = () => {
+
+    return pathResolve(process.cwd(), 'devops');
+
+};
+
+/**
  * Given a template file, and a locals object, compile the template and generate the result.
  * @param  {String} file        A path to a template file.
  * @param  {Object} [locals={}] The locals to the pass to the template.
@@ -40,7 +50,7 @@ const composeUp = (service) => {
  */
 const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => {
 
-    readFile(join(process.cwd(), 'devops', 'templates', file), 'utf-8', (err, data) => {
+    readFile(join(devopsPath(), 'templates', file), 'utf-8', (err, data) => {
 
         /* eslint-disable padded-blocks */
         if (err) {
@@ -58,7 +68,7 @@ const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => 
 
 /**
  * Work out the path to the hostile binary (within node_modules).
- * @return {String}
+ * @return {String} The path to the hostile binary.
  */
 const hostilePath = () => {
 
@@ -141,7 +151,7 @@ const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
 /**
  * Given a boolean, determine if a newline character should be used.
  * @param {Boolean} exclude Should the newline character be used?
- * @returns {String}
+ * @returns {String} Either an empty string, or a newline.
  */
 const newline = (exclude) => {
 
@@ -198,6 +208,44 @@ const reportError = (err, program, exit = false) => {
 };
 
 /**
+ * The path to the state file.
+ * @returns {String} An absolute path to the state file.
+ */
+const stateFilePath = () => {
+
+    return pathResolve(devopsPath(), 'state.json');
+
+};
+
+/**
+ * Given a key and a value, store it in the state file.
+ * @param {String} key A key to store the state in.
+ * @param {any} value The value to store.
+ * @return {Promise} A promise.
+ */
+const storeState = (key, value) => new Promise((resolve, reject) => {
+
+    // Ignore any errors as it probably just means that the file hasn't been created yet.
+    readFile(pathResolve(stateFilePath()), 'utf-8', (_, data) => {
+
+        const json = data ? JSON.parse(data) : {};
+        const state = Object.assign({}, json, { [`${key}`]: value });
+
+        writeFile(stateFilePath(), JSON.stringify(state, null, 2), { flag: 'w' }, (writeErr) => {
+
+            if (writeErr) {
+                return reject(writeErr);
+            }
+
+            return resolve();
+
+        });
+
+    });
+
+});
+
+/**
  * Given an error, throw it.
  * @param  {error} err The error to through.
  * @return {void}
@@ -219,6 +267,7 @@ module.exports = {
     proxyCommand,
     proxyCommands,
     reportError,
+    storeState,
     throwErr,
     writeFile: promisify(writeFile),
 };
