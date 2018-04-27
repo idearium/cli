@@ -23,12 +23,12 @@ if (program.args.length === 1) {
 // Construct the NPM command
 const npmCommand = `npm ${program.rawArgs.slice(3).join(' ')}`;
 
-return loadConfig()
+return loadConfig('npm')
     .then((data) => {
 
         // Make sure we have the locations data.
         if (!data.locations) {
-            return reportError(new Error('Could not find any NPM locations.'), false, true);
+            return reportError(new Error('Could not find any NPM locations. See https://github.com/idearium/cli#configuration'), false, true);
         }
 
         const { locations } = data;

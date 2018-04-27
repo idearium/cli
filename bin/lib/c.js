@@ -100,18 +100,29 @@ const npmAuthToken = () => new Promise((resolve, reject) => {
 
 /**
  * Load and parse a JSON configuration fiile.
+ * @param {String} key The name of a top-level key to return.
  * @param {String} type The name of a config file to load.
  * @return {Promise} A promise that will resolve with some JSON data.
  */
-const loadConfig = (type = 'npm') => new Promise((resolve, reject) => {
+const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
 
-    readFile(join(process.cwd(), 'devops', `${type}.json`), 'utf-8', (err, data) => {
+    readFile(join(process.cwd(), `${type}.json`), 'utf-8', (err, data) => {
 
         if (err) {
             return reject(err);
         }
 
-        return resolve(JSON.parse(data));
+        const json = JSON.parse(data);
+
+        if (key && !json[key]) {
+            return reject(new Error(`The '${key}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
+        }
+
+        if (key && json[key]) {
+            return resolve(json[key]);
+        }
+
+        return resolve(json);
 
     });
 
@@ -155,6 +166,7 @@ const reportError = (err, program, exit = false) => {
     /* eslint-enable padded-blocks */
 
     if (exit) {
+        // eslint-disable-next-line no-process-exit
         process.exit(1);
     }
 
