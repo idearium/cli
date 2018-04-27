@@ -3,29 +3,22 @@
 'use strict';
 
 const program = require('commander');
-const hostile = require('hostile');
-const { reportError } = require('./lib/c');
+const { spawnSync } = require('child_process');
+const { hostilePath, reportError } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
-    .arguments('<ip> <domain>')
+    .arguments('<domain>')
     .parse(process.argv);
 
-const [ip, domain] = program.args;
-
-if (!ip) {
-    return reportError(new Error('You must pass the ip argument.'), program);
-}
+const [domain] = program.args;
 
 if (!domain) {
     return reportError(new Error('You must pass the domain argument.'), program);
 }
 
-// Create the record
-hostile.remove(ip, domain, (err) => {
+const { status, stderr } = spawnSync('sudo', [hostilePath(), 'remove', domain]);
 
-    if (err) {
-        return reportError(err);
-    }
-
-});
+if (status) {
+    reportError(new Error(stderr.toString()), false, true);
+}
