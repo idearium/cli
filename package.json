@@ -1,6 +1,6 @@
 {
   "name": "@idearium/cli",
-  "version": "1.0.0-alpha.10",
+  "version": "1.0.0-alpha.12",
   "description": "The Idearium cli, which makes working with our projects much easier.",
   "main": "index.js",
   "bin": {
@@ -34,7 +34,6 @@
     "sudo-prompt": "8.2.0"
   },
   "devDependencies": {
-    "@idearium/eslint-config": "latest",
-    "eslint": "4.19.1"
+    "@idearium/eslint-config": "2.1.2"
   }
 }

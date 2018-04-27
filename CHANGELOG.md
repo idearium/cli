@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unrelease
+## Unreleased
 
 - New commands.
 
@@ -11,7 +11,7 @@ This file is a history of the changes made to @idearium/cli.
 - Added `c mk delete`, `c mk hosts`, `c mk ip`, `c mk start`, `c mk stop` and `c mk restart` to control Minikube.
 - Added `c hosts add`, `c hosts get` and `c hosts remove` to help with easy hosts management.
 
-## Unreleased
+## 1.0.0-alpha.12
 
 - New command.
 - New concept.
@@ -19,7 +19,8 @@ This file is a history of the changes made to @idearium/cli.
 ## Improvements
 
 - Added a `c npm proxy <location> [cmd...]` command to proxy NPM commands to certain configured NPM locations within your project. Also supports `all` inplace of `<location>` to proxy against multiple locations in sequence.
-- Added the concept of a configuration, allowing project specific configuration for certain aspects of the Idearium cli. At present, only the `npm.json` configuration is located.
+- Added a `c yarn proxy <location> [cmd...]` command which works exactly like `c npm proxy` but uses Yarn instead.
+- Added the concept of a configuration, allowing project specific configuration for certain aspects of the Idearium cli.
 
 ## 1.0.0-alpha.11
 

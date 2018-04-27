@@ -9,7 +9,7 @@ const { resolve } = require('path');
 // The basic program, which uses sub-commands.
 program
     .arguments('<location> [cmd...]')
-    .description('Provide an NPM location, and a NPM command to run against that location. For example `c npm proxy app install -SE @idearium/cli`.')
+    .description('Provide an NPM location, and a Yarn command to run against that location. For example `c yarn proxy app add -E @idearium/cli`.')
     .parse(process.argv);
 
 if (!program.args.length) {
@@ -17,7 +17,7 @@ if (!program.args.length) {
 }
 
 if (program.args.length === 1) {
-    return reportError(new Error('You need to provide an NPM command'), program);
+    return reportError(new Error('You need to provide a Yarn command'), program);
 }
 
 // Construct the NPM command

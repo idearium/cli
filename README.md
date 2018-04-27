@@ -30,17 +30,19 @@ The following is a summary of the top level commands.
 
 ## Configuration
 
-The Idearium cli can be customised through configurations. Configurations are JSON files loaded from a projects `devops` folder.
+The Idearium cli can be customised through configurations. Configurations are provided through a `c.json` file located in projects root folder.
 
 ### NPM configuration
 
-The Idearium cli supports an NPM configuration. The configuration can be used to provide the cli without information about where NPM commands can be run. To provide this information, create a JSON file at `devops/npm.json` with the following:
+The Idearium cli supports an NPM configuration. The configuration can be used to provide the cli without information about where NPM commands can be run. To provide this information, add an `npm` property in `c.json` like so:
 
 ```
 {
-    "locations": {
-        "name": "./app/root/app/",
-        "project": "./"
+    "npm": {
+        "locations": {
+            "name": "./app/root/app/",
+            "project": "./"
+        }
     }
 }
 ```
