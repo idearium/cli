@@ -36,6 +36,19 @@ The following is a summary of the top level commands.
 
 The Idearium cli can be customised through configurations. Configurations are provided through a `c.json` file located in projects root folder.
 
+### Environments configuration
+
+The Idearium cli supports multiple environments. The environments can be whatever you need them to be as long as you define them in `c.json`. Here is an example environments configuration:
+
+```
+    "environments": {
+        "local": {},
+        "production": {},
+    },
+```
+
+At present, they simply define the environments your project supports.
+
 ### NPM configuration
 
 The Idearium cli supports an NPM configuration. The configuration can be used to provide the cli without information about where NPM commands can be run. To provide this information, add an `npm` property in `c.json` like so:
@@ -45,9 +58,9 @@ The Idearium cli supports an NPM configuration. The configuration can be used to
     "npm": {
         "locations": {
             "name": "./app/root/app/",
-            "project": "./"
-        }
-    }
+            "project": "./",
+        },
+    },
 }
 ```
 
