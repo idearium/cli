@@ -41,13 +41,40 @@ The Idearium cli can be customised through configurations. Configurations are pr
 The Idearium cli supports multiple environments. The environments can be whatever you need them to be as long as you define them in `c.json`. Here is an example environments configuration:
 
 ```
+{
     "environments": {
         "local": {},
-        "production": {},
-    },
+        "production": {}
+    }
+}
 ```
 
 At present, they simply define the environments your project supports.
+
+### Kubernetes configuration
+
+You can supply a Kubernetes configuration. The configuration allows you to define contexts and namespaces for each environment your project supports. Along with a prefix for your images to make them unique on cluster. Here is an example kubernetes configuration:
+
+```
+{
+    "kubernetes": {
+        "environments": {
+            "local": {
+                "context": "minikube",
+                "namespace": "fb-www-local"
+            },
+            "production": {
+                "context": "gke_focus-booster_us-east1-b_focus-booster",
+                "namespace": "fb-www-production",
+                "region": "us-east1"
+            }
+        },
+        "prefix": "fb-www"
+    }
+}
+```
+
+The `context` will be used to set the `kubectrl` context. `namespace` will be used to configure a namespace for the project on clusters which share multiple projects/environments. The `namespace` should be formulated with `{company}-{project}-{environment}`. Some environments also need to provide a `region`.
 
 ### NPM configuration
 
@@ -58,9 +85,9 @@ The Idearium cli supports an NPM configuration. The configuration can be used to
     "npm": {
         "locations": {
             "name": "./app/root/app/",
-            "project": "./",
-        },
-    },
+            "project": "./"
+        }
+    }
 }
 ```
 
