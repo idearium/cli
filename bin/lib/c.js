@@ -7,6 +7,7 @@ const { join } = require('path');
 const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
+const { exec } = require('shelljs');
 
 /**
  * Given a service, return a `docker-compose` command string to bring it up.
@@ -98,12 +99,62 @@ const npmAuthToken = () => new Promise((resolve, reject) => {
 });
 
 /**
+ * Load and parse a JSON configuration fiile.
+ * @param {String} key The name of a top-level key to return.
+ * @param {String} type The name of a config file to load.
+ * @return {Promise} A promise that will resolve with some JSON data.
+ */
+const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
+
+    readFile(join(process.cwd(), `${type}.json`), 'utf-8', (err, data) => {
+
+        if (err) {
+            return reject(err);
+        }
+
+        const json = JSON.parse(data);
+
+        if (key && !json[key]) {
+            return reject(new Error(`The '${key}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
+        }
+
+        if (key && json[key]) {
+            return resolve(json[key]);
+        }
+
+        return resolve(json);
+
+    });
+
+});
+
+/**
+ * Run a command, at a particular path.
+ * @param {String} location An absolute path.
+ * @param {String} command A command to run at that path.
+ * @returns {void}
+ */
+const proxyCommand = (location, command) => {
+
+    exec(command, { cwd: location });
+
+};
+
+/**
+ * Run multiple commands, in multiple locations.
+ * @param {Array} commands An array of [location, command] arrays.
+ * @returns {void}
+ */
+const proxyCommands = (commands = []) => commands.forEach(command => proxyCommand(...command));
+
+/**
  * Given an error, report it.
  * @param  {Error}  err          The Error object.
  * @param  {Object} program      The commander.js program.
+ * @param  {Boolean} exit        If true, exit the Node.js process.
  * @return {void}
  */
-const reportError = (err, program) => {
+const reportError = (err, program, exit = false) => {
 
     // eslint-disable-next-line no-console
     console.error(`\n${red('Error:')} ${err.message}\n`);
@@ -113,6 +164,11 @@ const reportError = (err, program) => {
         program.help();
     }
     /* eslint-enable padded-blocks */
+
+    if (exit) {
+        // eslint-disable-next-line no-process-exit
+        process.exit(1);
+    }
 
 };
 
@@ -130,8 +186,11 @@ const throwErr = (err) => {
 module.exports = {
     composeUp,
     executeTemplate,
+    loadConfig,
     missingCommand,
     npmAuthToken,
+    proxyCommand,
+    proxyCommands,
     reportError,
     throwErr,
     writeFile: promisify(writeFile),

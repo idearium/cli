@@ -32,6 +32,6 @@
     "shelljs": "0.7.8"
   },
   "devDependencies": {
-    "@idearium/eslint-config": "latest"
+    "@idearium/eslint-config": "2.1.2"
   }
 }

@@ -2,6 +2,17 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+- New command.
+- New concept.
+
+## Improvements
+
+- Added a `c npm proxy <location> [cmd...]` command to proxy NPM commands to certain configured NPM locations within your project. Also supports `all` inplace of `<location>` to proxy against multiple locations in sequence.
+- Added a `c yarn proxy <location> [cmd...]` command which works exactly like `c npm proxy` but uses Yarn instead.
+- Added the concept of a configuration, allowing project specific configuration for certain aspects of the Idearium cli.
+
 ## 1.0.0-alpha.11
 
 - Minor improvements.

@@ -3,7 +3,6 @@
 'use strict';
 
 const program = require('commander');
-const { exec } = require('shelljs');
 const { npmAuthToken } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
@@ -12,7 +11,15 @@ program
     .parse(process.argv);
 
 // Should we use a newline?
-const newline = (exclude) => exclude ? '' : '\n';
+const newline = (exclude) => {
+
+    if (exclude) {
+        return '';
+    }
+
+    return '\n';
+
+};
 
 npmAuthToken()
-    .then((token) => process.stdout.write(`${token}${newline(program.N)}`));
+    .then(token => process.stdout.write(`${token}${newline(program.N)}`));
