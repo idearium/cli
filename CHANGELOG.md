@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased
+## 1.0.0-alpha.12
 
 - New command.
 - New concept.
