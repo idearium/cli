@@ -10,15 +10,8 @@ const { loadConfig, reportError } = require('./lib/c');
 program
     .parse(process.argv);
 
-return loadConfig('project')
-    .then((data) => {
-
-        // Make sure we have the environments data.
-        if (!data.environments) {
-            return reportError(new Error('Could not find any environments.'), false, true);
-        }
-
-        const { local } = data.environments;
+return loadConfig('environments')
+    .then(({ local }) => {
 
         // Make sure we have the environments.local data.
         if (!local) {
@@ -39,5 +32,14 @@ return loadConfig('project')
             exec(`c hosts add ${ip} ${local.url.domain}`);
 
         });
+
+    })
+    .catch((err) => {
+
+        if (err.code === 'ENOENT') {
+            return reportError(new Error('Please create a c.json file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
+        }
+
+        return reportError(err, false, true);
 
     });
