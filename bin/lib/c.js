@@ -8,7 +8,8 @@ const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
 const { exec } = require('shelljs');
-const objPath = require('get-value');
+const getPropertyPath = require('get-value');
+const setPropertyPath = require('set-value');
 
 /**
  * Given a service, return a `docker-compose` command string to bring it up.
@@ -127,29 +128,22 @@ const npmAuthToken = () => new Promise((resolve, reject) => {
  */
 const loadConfig = (keys, type = 'c') => new Promise((resolve, reject) => {
 
-    readFile(join(process.cwd(), `${type}.json`), 'utf-8', (err, data) => {
+    // eslint-disable-next-line global-require
+    const data = require(join(process.cwd(), type));
 
-        if (err) {
-            return reject(err);
-        }
+    // If there are no keys, return the entire config.
+    if (!keys) {
+        return resolve(data);
+    }
 
-        const json = JSON.parse(data);
+    // Find the config using property paths.
+    const config = getPropertyPath(data, keys);
 
-        // If there are no keys, return the entire config.
-        if (!keys) {
-            return resolve(json);
-        }
+    if (!config) {
+        return reject(new Error(`The '${keys}' configuration was not found in ${type}.js. See https://github.com/idearium/cli#configuration`));
+    }
 
-        // Find the config using property paths.
-        const config = objPath(json, keys);
-
-        if (!config) {
-            return reject(new Error(`The '${keys}' configuration was not found in ${type}.json. See https://github.com/idearium/cli#configuration`));
-        }
-
-        return resolve(config);
-
-    });
+    return resolve(config);
 
 });
 
@@ -254,17 +248,18 @@ const stateFilePath = () => {
 
 /**
  * Given a key and a value, store it in the state file.
- * @param {String} key A key to store the state in.
+ * @param {String} keys A property path to store the state in.
  * @param {any} value The value to store.
  * @return {Promise} A promise.
  */
-const storeState = (key, value) => new Promise((resolve, reject) => {
+const storeState = (keys, value) => new Promise((resolve, reject) => {
 
     // Ignore any errors as it probably just means that the file hasn't been created yet.
     readFile(pathResolve(stateFilePath()), 'utf-8', (_, data) => {
 
         const json = data ? JSON.parse(data) : {};
-        const state = Object.assign({}, json, { [`${key}`]: value });
+        const nestedData = setPropertyPath({}, keys, value);
+        const state = Object.assign({}, json, nestedData);
 
         writeFile(stateFilePath(), JSON.stringify(state, null, 2), { flag: 'w' }, (writeErr) => {
 

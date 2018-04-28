@@ -10,13 +10,9 @@ const { loadConfig, newline, reportError } = require('./lib/c');
 // The basic program, which uses sub-commands.
 program
     .arguments('<location>')
-    .option('-t [tag]', 'Supply a specific tag, otherwise a timestamp will be used')
-    .option('-i [name]', 'Supply a name for the image, otherwise the location name will be used')
-    .option('-n', 'Do not print the trailing newline character')
-    .option('-r', 'Suppress all output, other than the tag used')
-    .option('--build-arg [list]', 'Build arguments to pass to Docker')
-    .option('--npm-auth-token', 'Retrieve the NPM auth token and pass it to docker build')
-    .description('Provide a Docker location and the Dockerfile will be used to build a Docker image.')
+    .option('-t [tag]', 'Supply a specific tag, otherwise `latest` will be used')
+    .option('-n [name]', 'Supply a name for the image, otherwise the location name will be used')
+    .description('Provide a Docker location and the Dockerfile will be used to build a Docker image. See https://github.com/idearium/cli#docker-configuration for configuration options.')
     .parse(process.argv);
 
 /**
@@ -39,15 +35,16 @@ const leftSpace = (str) => {
  * @param {String} args A string of comma seperated env variables.
  * @return {String} --build-arg arguments for `docker build`.
  */
-const formatBuildArgs = (args = []) => {
+const formatBuildArgs = (args = {}) => {
 
-    if (!args.length) {
+    const keys = Object.keys(args);
+
+    if (!keys.length) {
         return '';
     }
 
-    const buildArguments = args
-        .filter(arg => arg && arg.length)
-        .map(arg => `--build-arg ${arg}`)
+    const buildArguments = keys
+        .map(key => `--build-arg ${key}=${typeof args[key] === 'function' ? args[key]() : args[key] }`)
         .join(' ');
 
     return `${leftSpace(buildArguments)}`;
@@ -72,17 +69,13 @@ return loadConfig('docker.locations')
             return reportError(new Error(`Could not find the ${location} location.`), false, true);
         }
 
-        const locationPath = resolve(process.cwd(), locations[location]);
-        const tag = program.T ? program.T : Math.floor(Date.now() / 1000);
-        const name = program.I ? program.I : location;
-        const npmAuthToken = program.npmAuthToken ? `${exec('c npm auth -n', { silent: true })}` : '';
-        const buildArgs = (program.buildArg || '').split(',');
+        const dockerLocation = locations[location];
+        const locationPath = resolve(process.cwd(), dockerLocation.path);
 
-        if (npmAuthToken.length) {
-            buildArgs.unshift(`NPM_AUTH_TOKEN=${npmAuthToken}`);
-        }
+        const tag = program.T ? program.T : 'latest';
+        const name = program.N ? program.N : location;
 
-        const cmd = `docker build -t ${name}:${tag}${formatBuildArgs(buildArgs)} ${locationPath}`;
+        const cmd = `docker build -t ${name}:${tag}${formatBuildArgs(dockerLocation.buildArgs)} ${locationPath}`;
 
         exec(cmd, { silent: program.R }, (err, stdout, stderr) => {
 

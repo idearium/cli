@@ -34,19 +34,82 @@ The following is a summary of the top level commands.
 
 ## Configuration
 
-The Idearium cli can be customised through configurations. Configurations are provided through a `c.json` file located in projects root folder.
+The Idearium cli can be customised through configurations. Configurations are provided through a `c.js` file located in projects root folder.
+
+The `c.js` should be a standard Node.js file. It will be loaded through `require`. The `c.js` should export an object, with the following keys representing configuration:
+
+```javascript
+module.exports = {
+    "docker": {
+        // ...
+    },
+    "environments": {
+        // ...
+    },
+    "kubernetes": {
+        // ...
+    },
+    "npm": {
+        // ...
+    },
+};
+```
+
+### Docker configuration
+
+The Idearium cli supports a Docker configuration. The Docker configuration can be used to define locations of multiple Dockerfiles within your project.
+
+An example Docker configuration:
+
+```JavaScript
+'use strict';
+
+const { exec } = require('shelljs');
+
+module.exports = {
+    docker: {
+        locations: {
+            'app': {
+                buildArgs: {
+                    NPM_AUTH_TOKEN: () => exec('c npm auth -n', { silent: true }).stdout,
+                },
+                path: './app',
+            },
+            'static': {
+                path: './static',
+            },
+        },
+    },
+};
+```
+
+The Docker configuration supports the following keys.
+
+#### locations
+
+The locations key should be an object, describing all Dockerfile locations in your project. Each key should be the name of a Dockerfile location. You can use the name to reference the location when using the cli. Each location supports the following structure.
+
+##### path
+
+A path to the Dockerfile location.
+
+##### buildArgs
+
+An object represent key=value `--build-arg` flags to pass to `docker build`. Each property should present a build argument name, and the value for the build argument. The value can be either a static value (i.e. string, number) or a function.
 
 ### Environments configuration
 
-The Idearium cli supports multiple environments. The environments can be whatever you need them to be as long as you define them in `c.json`. Here is an example environments configuration:
+The Idearium cli supports multiple environments. The environments can be whatever you need them to be as long as you define them in `c.js`. Here is an example environments configuration:
 
-```
-{
-    "environments": {
-        "local": {},
-        "production": {}
-    }
-}
+```JavaScript
+'use strict';
+
+module.exports = {
+    environments: {
+        local: {},
+        production: {},
+    },
+};
 ```
 
 At present, they simply define the environments your project supports.
@@ -55,40 +118,44 @@ At present, they simply define the environments your project supports.
 
 You can supply a Kubernetes configuration. The configuration allows you to define contexts and namespaces for each environment your project supports. Along with a prefix for your images to make them unique on cluster. Here is an example kubernetes configuration:
 
-```
-{
-    "kubernetes": {
-        "environments": {
-            "local": {
-                "context": "minikube",
-                "namespace": "fb-www-local"
+```JavaScript
+'use strict';
+
+module.exports = {
+    kubernetes: {
+        environments: {
+            local: {
+                context: 'minikube',
+                namespace: 'fb-www-local',
             },
-            "production": {
-                "context": "gke_focus-booster_us-east1-b_focus-booster",
-                "namespace": "fb-www-production",
-                "region": "us-east1"
-            }
+            production: {
+                context: 'gke_focus-booster_us-east1-b_focus-booster',
+                namespace: 'fb-www-production',
+                region: 'us-east1',
+            },
         },
-        "prefix": "fb-www"
-    }
-}
+        prefix: 'fb-www',
+    },
+};
 ```
 
 The `context` will be used to set the `kubectrl` context. `namespace` will be used to configure a namespace for the project on clusters which share multiple projects/environments. The `namespace` should be formulated with `{company}-{project}-{environment}`. Some environments also need to provide a `region`.
 
 ### NPM configuration
 
-The Idearium cli supports an NPM configuration. The configuration can be used to provide the cli without information about where NPM commands can be run. To provide this information, add an `npm` property in `c.json` like so:
+The Idearium cli supports an NPM configuration. The configuration can be used to provide the cli without information about where NPM commands can be run. To provide this information, add an `npm` property in `c.js` like so:
 
-```
-{
-    "npm": {
-        "locations": {
-            "name": "./app/root/app/",
-            "project": "./"
-        }
-    }
-}
+```JavaScript
+'use strict';
+
+module.exports = {
+    npm: {
+        locations: {
+            name: './app/root/app/',
+            project: './',
+        },
+    },
+};
 ```
 
 You should customise it, but you need to provide a `locations` key, containing an object with a name and folder for each NPM location in your project. You'll use the name to reference the location.
