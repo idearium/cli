@@ -40,16 +40,19 @@ The `c.js` should be a standard Node.js file. It will be loaded through `require
 
 ```javascript
 module.exports = {
-    "docker": {
+    docker: {
         // ...
     },
-    "environments": {
+    environments: {
         // ...
     },
-    "kubernetes": {
+    kubernetes: {
         // ...
     },
-    "npm": {
+    npm: {
+        // ...
+    },
+    project: {
         // ...
     },
 };
@@ -164,6 +167,21 @@ For example, the `c npm proxy` command can be used to run a NPM command, at a sp
 
 - Execute `c npm proxy all install -SE logentries` to install the `logentries` module at all NPM locations in your project.
 - Execute `c npm proxy project install -DE jest` to install the `jest` module at the `project` location in your project.
+
+### Project configuration
+
+The Idearium cli supports a project configuration. This configuration is used to provide some general information about the project. This information is also used to automatically generate some strings such as the project prefix, and Kubernetes namespaces. Here is an example project configuration:
+
+```JavaScript
+'use strict';
+
+module.exports = {
+    project: {
+        name: 'www',
+        organisation: 'fb'
+    },
+};
+```
 
 ## State
 
