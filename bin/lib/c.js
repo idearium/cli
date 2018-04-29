@@ -10,6 +10,7 @@ const { red } = require('chalk');
 const { exec } = require('shelljs');
 const getPropertyPath = require('get-value');
 const setPropertyPath = require('set-value');
+const merge = require('lodash.merge');
 
 /**
  * Given a service, return a `docker-compose` command string to bring it up.
@@ -259,7 +260,7 @@ const storeState = (keys, value) => new Promise((resolve, reject) => {
 
         const json = data ? JSON.parse(data) : {};
         const nestedData = setPropertyPath({}, keys, value);
-        const state = Object.assign({}, json, nestedData);
+        const state = merge({}, json, nestedData);
 
         writeFile(stateFilePath(), JSON.stringify(state, null, 2), { flag: 'w' }, (writeErr) => {
 
