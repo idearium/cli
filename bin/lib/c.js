@@ -92,6 +92,28 @@ const hostilePath = () => {
 };
 
 /**
+ * Given some Kubernetes locations, flatten them to a list of Kubernetes objects.
+ * @param {Object} kubernetesLocations An object containing some Kubernetes locations.
+ * @return {Array} An array of Kubernetes objects.
+ */
+const kubernetesLocationsToObjects = (kubernetesLocations) => {
+
+    // Prepare the locals for each `.yaml.tmpl`
+    const services = [];
+
+    Object.keys(kubernetesLocations).forEach((location) => {
+
+        kubernetesLocations[location].forEach((service) => {
+            services.push(Object.assign({}, service, { location }));
+        });
+
+    });
+
+    return services;
+
+};
+
+/**
  * Given a program object, make sure there is an actual command running. If not, log a console error.
  * @param  {Object} program A commander.js program.
  * @return {void}
@@ -304,6 +326,7 @@ module.exports = {
     documentation,
     executeTemplate,
     hostilePath,
+    kubernetesLocationsToObjects,
     loadConfig,
     loadState,
     missingCommand,

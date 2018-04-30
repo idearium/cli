@@ -6,7 +6,7 @@ const mustache = require('mustache');
 const { resolve: resolvePath } = require('path');
 const { accessSync, constants: fsConstants, readFileSync, writeFileSync } = require('fs');
 const { exec } = require('shelljs');
-const { loadConfig, loadState, reportError } = require('./lib/c');
+const { kubernetesLocationsToObjects, loadConfig, loadState, reportError } = require('./lib/c');
 
 program
     .parse(process.argv);
@@ -36,58 +36,49 @@ return loadState()
     })
     .then(([kubernetesLocations, prefix, namespace, path, state]) => new Promise((resolve, reject) => {
 
-        // Prepare the locals for each `.yaml.tmpl`
-        const services = [];
+        const services = kubernetesLocationsToObjects(kubernetesLocations);
 
-        Object.keys(kubernetesLocations).forEach((locationLabel) => {
+        services.forEach((service) => {
 
-            const location = kubernetesLocations[locationLabel];
+            const templateLocals = service.templateLocals || [];
+            const constantLocals = {
+                environment: state.env,
+                namespace,
+                prefix,
+            };
 
-            location.forEach((service) => {
+            // Locals values will live in here.
+            service.locals = {};
 
-                const templateLocals = service.templateLocals || [];
-                const constantLocals = {
-                    environment: state.env,
-                    namespace,
-                    prefix,
-                };
+            templateLocals.forEach((local) => {
 
-                // Locals values will live in here.
-                service.locals = {};
+                if (typeof local === 'string' && Object.keys(constantLocals).includes(local)) {
 
-                templateLocals.forEach((local) => {
+                    service.locals[local] = constantLocals[local];
 
-                    if (typeof local === 'string' && Object.keys(constantLocals).includes(local)) {
+                    return;
 
-                        service.locals[local] = constantLocals[local];
+                }
 
-                        return;
+                if (typeof local === 'string' && local === 'tag') {
 
-                    }
+                    service.locals[local] = state.kubernetes.build.tags[`${prefix}/${service.location}`];
 
-                    if (typeof local === 'string' && local === 'tag') {
+                    return;
 
-                        service.locals[local] = state.kubernetes.build.tags[`${prefix}/${locationLabel}`];
+                }
 
-                        return;
+                if (typeof local === 'function') {
 
-                    }
+                    const { label, value } = local();
 
-                    if (typeof local === 'function') {
+                    service.locals[label] = value;
 
-                        const { label, value } = local();
+                    return;
 
-                        service.locals[label] = value;
+                }
 
-                        return;
-
-                    }
-
-                    return reject(new Error(`Could not resolve '${local}' local`));
-
-                });
-
-                services.push(service);
+                return reject(new Error(`Could not resolve '${local}' local`));
 
             });
 
