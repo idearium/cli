@@ -45,6 +45,18 @@ const devopsPath = () => {
 
 };
 
+const documentation = (anchor = '') => {
+
+    const url = 'https://github.com/idearium/cli';
+
+    if (['configuration'].includes(anchor)) {
+        return `${url}#${anchor}`;
+    }
+
+    return url;
+
+}
+
 /**
  * Given a template file, and a locals object, compile the template and generate the result.
  * @param  {String} file        A path to a template file.
@@ -289,6 +301,7 @@ const throwErr = (err) => {
 
 module.exports = {
     composeUp,
+    documentation,
     executeTemplate,
     hostilePath,
     loadConfig,

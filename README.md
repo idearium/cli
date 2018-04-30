@@ -119,7 +119,7 @@ At present, they simply define the environments your project supports.
 
 ### Kubernetes configuration
 
-You can supply a Kubernetes configuration. The configuration allows you to define contexts and namespaces for each environment your project supports. Here is an example kubernetes configuration:
+You can supply a Kubernetes configuration. The configuration allows you to define contexts and namespaces for each environment your project supports, along with Kubernetes locations which describe the Kubernetes objects to deploy. Here is an example kubernetes configuration:
 
 ```JavaScript
 'use strict';
@@ -129,6 +129,42 @@ module.exports = {
         environments: {
             local: {
                 context: 'minikube',
+                locations: {
+                    /* eslint-disable sort-keys */
+                    'namespace': [
+                        {
+                            path: 'namespace',
+                            templateLocals: ['environment', 'namespace'],
+                            type: 'namespace',
+                        },
+                    ],
+                    'app': [
+                        {
+                            path: 'app.deployment',
+                            templateLocals: ['namespace', 'prefix', 'tag'],
+                            type: 'deployment',
+                        },
+                        {
+                            path: 'app.service',
+                            templateLocals: ['namespace'],
+                            type: 'service',
+                        },
+                    ],
+                    'static': [
+                        {
+                            path: 'static.deployment',
+                            templateLocals: ['namespace', 'prefix', 'tag'],
+                            type: 'deployment',
+                        },
+                        {
+                            path: 'static.service',
+                            templateLocals: ['environment', 'namespace'],
+                            type: 'service',
+                        },
+                    ],
+                    /* eslint-enable sort-keys */
+                },
+                path: './manifests/local'
             },
             production: {
                 context: 'gke_focus-booster_us-east1-b_focus-booster',
@@ -139,7 +175,58 @@ module.exports = {
 };
 ```
 
-The `context` will be used to set the `kubectrl` context. Some environments also need to provide a `region`.
+The `kubernetes.environments` path holds a descrete environment. Each Kubernetes environment supports the following keys:
+
+- context, the kubectl context that should be used.
+- locations, the Kubernetes objects to work with.
+- path, the path to the folder containing Kuberentes manifest YAML files.
+- region, an optional region, mostly required for production.
+
+#### Kubernetes locations
+
+The Kuberentes locations object describes all Kubernetes objects for that Kuberentes environment. Each location should contain the following (`{}` used to represent meaning):
+
+```
+locations: {
+    {location-name}: [
+        {
+            path: '',
+            templateLocals: [],
+            type: '',
+        }
+    ]
+}
+```
+
+The `location-name` should be unique, and can be used within the cli commands to target a specific Kubernetes location.
+
+Each location should be an array of services. One Kubernetes location can contain multiple services.
+
+Each service object should provide:
+
+- path, the filename within the Kubernetes environment path. The filename should not include the extension; but only `yaml` and `yaml.tmpl` are supported.
+- templateLocals, an array to provide a list of locals that should be passed to a `tmpl` file to create a `yaml` file.
+- type, the type of Kubernetes object this service describes (i.e. `pod`, `deployment`, `namespace`).
+
+##### YAML templates
+
+The `c kc apply` command supports templates, which will generate `yaml` files which will be used to deploy Kuberntes objects.
+
+It supports templates, because you'll often want to substitute specific information for Kubernetes during development. A good example is the `tag` that should be used with a particular image.
+
+If you'd like to use a template create Kubernetes manifest file ending in `.yaml.tmpl` rather than `tmpl`. The `path` in the Kubernetes location service object, should not contain the extension. In the template file use `{{tag}}` to substitute with an actual value before being applied to Kubernetes.
+
+You'll then need to supply all of the values that the template file requires. You provide this via the `templateLocals` array in the Kubernetes location service object. Here is an example:
+
+```
+{
+    path: 'app.deployment',
+    templateLocals: ['namespace', 'prefix', 'tag', () => { label: 'a', value: 'b' }],
+    type: 'deployment'
+}
+```
+
+The `c kc apply` will automatically provide the values for `namespace`, `prefix` and `tag`. If you'd like to provide something else, simply write a function that returns an object with `label` and `value`. Then use the value of `label` within a template placeholder (i.e. `{{a}}`) and it will be updated with the `value` (i.e. `{{b}}`).
 
 ### NPM configuration
 
