@@ -4,7 +4,7 @@
 
 const program = require('commander');
 const { exec } = require('shelljs');
-const { loadConfig, loadState, reportError } = require('./lib/c');
+const { dockerToKubernetesLocation, loadConfig, loadState, reportError } = require('./lib/c');
 
 program
     .arguments('<location>')
@@ -23,25 +23,7 @@ return loadState()
         return Promise.all([
             state,
             loadConfig(`kubernetes.environments.${state.env}.locations`)
-                .then(locations => new Promise((resolve, reject) => {
-
-                    const keys = Object.keys(locations);
-
-                    for (let keysIndex = 0; keysIndex < keys.length; keysIndex++) {
-
-                        locations[keys[keysIndex]].forEach((service) => {
-
-                            if (service.dockerLocation && service.dockerLocation === location) {
-                                return resolve(service);
-                            }
-
-                        });
-
-                    }
-
-                    return reject(new Error(`Could not find a Kubernetes location that uses the ${location} Docker location.`));
-
-                })),
+                .then(locations => dockerToKubernetesLocation(location, locations)),
         ]);
 
     })

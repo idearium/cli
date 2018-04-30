@@ -4,11 +4,12 @@
 
 const program = require('commander');
 const { exec } = require('shelljs');
-const { loadConfig, reportError, storeState } = require('./lib/c');
+const { dockerToKubernetesLocation, loadConfig, loadState, reportError, storeState } = require('./lib/c');
 const getPropertyPath = require('get-value');
 
 program
     .arguments('<location>')
+    .option('-d', 'Also deploy the location(s).')
     .description('Provide a Docker location and the Dockerfile will be used to build a Docker image. Pass `all` as the location to build all locations.')
     .parse(process.argv);
 
@@ -35,30 +36,57 @@ return loadConfig()
     })
     .then(([prefix, config, locations]) => {
 
-        locations.forEach((loc) => {
+        return Promise.all([
+            loadState(),
+            config,
+            Promise.all(locations.map(loc => new Promise((resolve, reject) => {
 
-            const dockerfilePath = getPropertyPath(config, `docker.locations.${loc}`);
+                const dockerfilePath = getPropertyPath(config, `docker.locations.${loc}`);
 
-            if (!dockerfilePath) {
-                return reportError(new Error(`Could not find the ${loc} Docker location.`), false, true);
-            }
-
-            const tag = String(Math.floor(Date.now() / 1000));
-            const cmd = `c d build -n ${prefix}/${loc} -t ${tag} ${loc}`;
-
-            exec(cmd, (err, stdout, stderr) => {
-
-                if ((err || stderr) && stderr) {
-                    return reportError(stderr, false, true);
+                if (!dockerfilePath) {
+                    return reportError(new Error(`Could not find the ${loc} Docker location.`), false, true);
                 }
 
-                if ((err || stderr) && err) {
-                    return reportError(err, false, true);
-                }
+                const tag = String(Math.floor(Date.now() / 1000));
+                const cmd = `c d build -n ${prefix}/${loc} -t ${tag} ${loc}`;
 
-                storeState(`kubernetes.build.tags.${prefix}/${loc}`, tag);
+                exec(cmd, (err, stdout, stderr) => {
 
-            });
+                    if ((err || stderr) && stderr) {
+                        return reject(new Error(stderr));
+                    }
+
+                    if ((err || stderr) && err) {
+                        return reject(err);
+                    }
+
+                    storeState(`kubernetes.build.tags.${prefix}/${loc}`, tag)
+                        .then(() => resolve(loc))
+                        .catch(reject);
+
+                });
+
+            }))),
+        ]);
+
+    })
+    .then(([state, config, locations]) => {
+
+        // Do we need to build too?
+        if (!program.D) {
+            return;
+        }
+
+        const kubernetesLocations = getPropertyPath(config, `kubernetes.environments.${state.env}.locations`);
+
+        locations.forEach((dockerLocation) => {
+
+            dockerToKubernetesLocation(dockerLocation, kubernetesLocations)
+                .then((kLocation) => {
+
+                    exec(`c kc deploy ${kLocation.dockerLocation}`);
+
+                });
 
         });
 

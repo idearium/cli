@@ -45,6 +45,37 @@ const devopsPath = () => {
 
 };
 
+/**
+ * Find a Docker location within some Kubernetes locations.
+ * @param {String} location The Docker location to search for.
+ * @param {Object} locations An object containing Kubernetes locations.
+ * @returns {Promise} Resolves with a Promise containing a Kubernetes location.
+ */
+const dockerToKubernetesLocation = (location, locations) => new Promise((resolve, reject) => {
+
+    const keys = Object.keys(locations);
+
+    // Use for loops so we can exit the function with `return` as soon as possible.
+    for (let keysIndex = 0; keysIndex < keys.length; keysIndex++) {
+
+        const locationServices = locations[keys[keysIndex]];
+
+        for (let locationServicesIndex = 0; locationServicesIndex < locationServices.length; locationServicesIndex++) {
+
+            const locationService = locationServices[locationServicesIndex];
+
+            if (locationService.dockerLocation === location) {
+                return resolve(locationService);
+            }
+
+        }
+
+    }
+
+    return reject(new Error(`Could not find a Kubernetes location that uses the ${location} Docker location.`));
+
+});
+
 const documentation = (anchor = '') => {
 
     const url = 'https://github.com/idearium/cli';
@@ -323,6 +354,7 @@ const throwErr = (err) => {
 
 module.exports = {
     composeUp,
+    dockerToKubernetesLocation,
     documentation,
     executeTemplate,
     hostilePath,
