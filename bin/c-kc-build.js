@@ -21,12 +21,7 @@ if (!location) {
 return loadConfig()
     .then((config) => {
 
-        // Kubernetes prefix
-        const prefix = getPropertyPath(config, 'kubernetes.prefix');
-
-        if (!prefix) {
-            return reportError(new Error('You need to provide a Kubernetes prefix configuration'), false, true);
-        }
+        const prefix = exec('c project prefix -n', { silent: true }).stdout;
 
         return Promise.all([prefix, config]);
 

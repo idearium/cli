@@ -119,7 +119,7 @@ At present, they simply define the environments your project supports.
 
 ### Kubernetes configuration
 
-You can supply a Kubernetes configuration. The configuration allows you to define contexts and namespaces for each environment your project supports. Along with a prefix for your images to make them unique on cluster. Here is an example kubernetes configuration:
+You can supply a Kubernetes configuration. The configuration allows you to define contexts and namespaces for each environment your project supports. Here is an example kubernetes configuration:
 
 ```JavaScript
 'use strict';
@@ -136,8 +136,7 @@ module.exports = {
                 namespace: 'fb-www-production',
                 region: 'us-east1',
             },
-        },
-        prefix: 'fb-www',
+        }
     },
 };
 ```
