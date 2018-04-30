@@ -190,6 +190,7 @@ The Kuberentes locations object describes all Kubernetes objects for that Kubere
 locations: {
     {location-name}: [
         {
+            dockerLocation: '',
             path: '',
             templateLocals: [],
             type: '',
@@ -204,9 +205,10 @@ Each location should be an array of services. One Kubernetes location can contai
 
 Each service object should provide:
 
-- path, the filename within the Kubernetes environment path. The filename should not include the extension; but only `yaml` and `yaml.tmpl` are supported.
-- templateLocals, an array to provide a list of locals that should be passed to a `tmpl` file to create a `yaml` file.
-- type, the type of Kubernetes object this service describes (i.e. `pod`, `deployment`, `namespace`).
+- `dockerLocation` (optional): The Docker location that a particular Kubernetes service object is associated with. This is usually provided with a `deployment` or `pod` object.
+- `path`: The filename within the Kubernetes environment path. The filename should not include the extension; but only `yaml` and `yaml.tmpl` are supported.
+- `templateLocals`: An array to provide a list of locals that should be passed to a `tmpl` file to create a `yaml` file.
+- `type`: The type of Kubernetes object this service describes (i.e. `pod`, `deployment`, `namespace`).
 
 ##### YAML templates
 
