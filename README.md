@@ -129,11 +129,9 @@ module.exports = {
         environments: {
             local: {
                 context: 'minikube',
-                namespace: 'fb-www-local',
             },
             production: {
                 context: 'gke_focus-booster_us-east1-b_focus-booster',
-                namespace: 'fb-www-production',
                 region: 'us-east1',
             },
         }
@@ -141,7 +139,7 @@ module.exports = {
 };
 ```
 
-The `context` will be used to set the `kubectrl` context. `namespace` will be used to configure a namespace for the project on clusters which share multiple projects/environments. The `namespace` should be formulated with `{company}-{project}-{environment}`. Some environments also need to provide a `region`.
+The `context` will be used to set the `kubectrl` context. Some environments also need to provide a `region`.
 
 ### NPM configuration
 

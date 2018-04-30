@@ -18,7 +18,15 @@ return loadState()
     })
     .then((environment) => {
 
-        const { context, namespace } = environment;
+        return Promise.all([
+            environment,
+            exec('c project prefix -e -n', { silent: true }).stdout,
+        ]);
+
+    })
+    .then(([environment, namespace]) => {
+
+        const { context } = environment;
 
         exec(`kubectl config set-context ${context} --namespace=${namespace}`, { silent: program.S }, (err, stdout, stderr) => {
 
