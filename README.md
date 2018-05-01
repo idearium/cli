@@ -58,6 +58,8 @@ module.exports = {
 };
 ```
 
+The command `c project init` can be used to initialise a project. It will generate a `c.js` file as a starting point, although, it will need to be completed.
+
 ### Docker configuration
 
 The Idearium cli supports a Docker configuration. The Docker configuration can be used to define locations of multiple Dockerfiles within your project.

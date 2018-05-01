@@ -7,6 +7,7 @@ const { missingCommand } = require('./lib/c');
 
 program
     .command('env', 'Configure the projects environment.')
+    .command('init', 'Initialize a new project and create a c.js file.')
     .command('name', 'Get the projects name.')
     .command('organisation', 'Get the projects organisation.')
     .command('prefix', 'Get the projects prefix.')
