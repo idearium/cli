@@ -3,6 +3,7 @@
 'use strict';
 
 const program = require('commander');
+const { URL: Url } = require('url');
 const { exec } = require('shelljs');
 const { loadConfig, reportError } = require('./lib/c');
 
@@ -19,8 +20,8 @@ return loadConfig('environments')
         }
 
         // Make sure we have the environments.local.url data.
-        if (!(local.url && local.url.domain)) {
-            return reportError(new Error('Could not find the domain in the local environment.'), false, true);
+        if (!local.url) {
+            return reportError(new Error('Could not find the url in the local environment.'), false, true);
         }
 
         exec('c mk ip -n', { silent: true }, (err, ip) => {
@@ -29,7 +30,7 @@ return loadConfig('environments')
                 return reportError(err, false, true);
             }
 
-            exec(`c hosts add ${ip} ${local.url.domain}`);
+            exec(`c hosts add ${ip} ${new Url(local.url).host}`);
 
         });
 

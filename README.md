@@ -111,13 +111,13 @@ The Idearium cli supports multiple environments. The environments can be whateve
 
 module.exports = {
     environments: {
-        local: {},
-        production: {},
+        local: { url: 'http://domain.name.local' },
+        production: { url: 'https://domain.name.com' },
     },
 };
 ```
 
-At present, they simply define the environments your project supports.
+For each environment, you should provide a URL for the environment.
 
 ### Kubernetes configuration
 

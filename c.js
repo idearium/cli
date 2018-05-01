@@ -8,15 +8,17 @@ module.exports = {
         },
     },{{/hasDockerLocations}}
     environments: {
-{{#environments}}        {{.}}: {},
+{{#environments}}        {{label}}: {
+            url: '{{{url}}}',
+        },
 {{/environments}}
     },{{#usesKubernetes}}
     kubernetes: {
         environments: {
-{{#environments}}            {{.}}: {
+{{#environments}}            {{label}}: {
                 context: '',
                 locations: {},
-                path: '',
+                path: './manifests/{{label}}',
             },
 {{/environments}}
         },
