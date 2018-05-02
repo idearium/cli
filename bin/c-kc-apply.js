@@ -2,149 +2,103 @@
 'use strict';
 
 const program = require('commander');
-const mustache = require('mustache');
-const { resolve: resolvePath } = require('path');
-const { accessSync, constants: fsConstants, readFileSync, writeFileSync } = require('fs');
+const getPropertyPath = require('get-value');
 const { exec } = require('shelljs');
+const { resolve: resolvePath } = require('path');
 const { kubernetesLocationsToObjects, loadConfig, loadState, reportError } = require('./lib/c');
+const { formatProjectPrefix } = require('./lib/c-project');
+const { ensureServiceFilesExist, renderServicesTemplates, setLocalsForServices } = require('./lib/c-kc');
 
 program
+    .arguments('<location>')
+    .option('-t [type]', 'Specify a particular service type to apply, otherwise all will be.')
+    .description('Apply a Kubernetes location (specific to service type if desired) to Kubernetes')
     .parse(process.argv);
 
-return loadState()
-    .then((state) => {
+const [location] = program.args;
+
+if (!location) {
+    return reportError(new Error('You need to provide a Kubernetes location'), program, true);
+}
+
+return Promise.all([
+    loadConfig(),
+    loadState(),
+])
+    .then(([config, state]) => {
 
         return Promise.all([
-            loadConfig(`kubernetes.environments.${state.env}`),
+            config,
+            getPropertyPath(config, `kubernetes.environments.${state.env}`),
             state,
         ]);
 
     })
-    .then(([environment, state]) => {
+    .then(([config, environment, state]) => {
 
         // Retrieve the loactions, namespace and path.
         const { locations, path } = environment;
 
+        // Filter the location to one specific one.
+        const [matchingLocation] = Object
+            .keys(locations)
+            .filter(loc => (loc === location))
+            .map(loc => locations[loc]);
+
         return Promise.all([
-            locations,
-            exec('c project prefix -n', { silent: true }).stdout,
-            exec('c project prefix -e -n', { silent: true }).stdout,
+            config,
+            matchingLocation,
             path,
             state,
         ]);
 
     })
-    .then(([kubernetesLocations, prefix, namespace, path, state]) => new Promise((resolve, reject) => {
+    .then(([config, matchingLocation, path, state]) => new Promise((resolve, reject) => {
 
-        const services = kubernetesLocationsToObjects(kubernetesLocations);
+        const { project } = config;
+        const { organisation, name } = project;
 
-        services.forEach((service) => {
+        const prefix = formatProjectPrefix(organisation, name, state.env, false, true);
+        const namespace = formatProjectPrefix(organisation, name, state.env, true, true);
 
-            const templateLocals = service.templateLocals || [];
-            const constantLocals = {
-                environment: state.env,
-                namespace,
-                prefix,
-            };
+        let services = kubernetesLocationsToObjects({ [location]: matchingLocation });
 
-            // Locals values will live in here.
-            service.locals = {};
+        if (program.T) {
+            services = services.filter(service => service.type === program.T);
+        }
 
-            templateLocals.forEach((local) => {
-
-                if (typeof local === 'string' && Object.keys(constantLocals).includes(local)) {
-
-                    service.locals[local] = constantLocals[local];
-
-                    return;
-
-                }
-
-                if (typeof local === 'string' && local === 'tag') {
-
-                    service.locals[local] = state.kubernetes.build.tags[`${prefix}/${service.location}`];
-
-                    return;
-
-                }
-
-                if (typeof local === 'function') {
-
-                    const { label, value } = local();
-
-                    service.locals[label] = value;
-
-                    return;
-
-                }
-
-                return reject(new Error(`Could not resolve '${local}' local`));
-
-            });
-
-        });
+        try {
+            setLocalsForServices(state, namespace, prefix, services);
+        } catch (e) {
+            return reject(e);
+        }
 
         return resolve([services, path]);
 
     }))
     .then(([services, path]) => new Promise((resolve, reject) => {
 
-        services.forEach((service) => {
-
-            const servicePath = resolvePath(process.cwd(), path, service.path);
-
-            try {
-                accessSync(`${servicePath}.yaml.tmpl`, fsConstants.R_OK);
-            } catch (e) {
-                try {
-                    accessSync(`${servicePath}.yaml`, fsConstants.R_OK);
-                } catch (err) {
-                    return reject(new Error(`Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`));
-                }
-            }
-
-        });
+        try {
+            ensureServiceFilesExist(path, services);
+        } catch (e) {
+            reject(e);
+        }
 
         return resolve([services, path]);
 
     }))
     .then(([services, path]) => {
 
-        services.forEach((service) => {
-
-            const servicePath = resolvePath(process.cwd(), path, service.path);
-
-            try {
-
-                const content = readFileSync(`${servicePath}.yaml.tmpl`, 'utf-8');
-
-                writeFileSync(`${servicePath}.yaml`, mustache.render(content, service.locals), 'utf8');
-
-            } catch (e) {
-                // Do nothing.
-                // It just means we don't have a templ file to render.
-            }
-
-        });
+        renderServicesTemplates(path, services);
 
         return [services, path];
 
     })
-    .then(([services, path]) => new Promise((resolve, reject) => {
+    .then(([services, path]) => new Promise((resolve) => {
 
-        const [namespace] = services
-            .filter(service => (service.type === 'namespace'))
-            .map(service => `${service.path}.yaml`);
-
-        if (!namespace) {
-            return reject(new Error('Could not find a namespace service.'));
-        }
-
-        // Deploy the namespace first.
-        exec(`kubectl apply -f ${resolvePath(process.cwd(), path, namespace)}`);
-
-        // Everything else next.
-        exec(`kubectl apply -f ${resolvePath(process.cwd(), path)}`);
+        services.forEach((service) => {
+            exec(`kubectl apply -f ${resolvePath(process.cwd(), path, `${service.path}.yaml`)}`);
+        });
 
         return resolve();
 
@@ -154,8 +108,6 @@ return loadState()
         if (err.code === 'ENOENT') {
             return reportError(new Error('Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
         }
-
-        console.log(err);
 
         return reportError(err, false, true);
 
