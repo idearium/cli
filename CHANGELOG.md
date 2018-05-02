@@ -12,7 +12,7 @@ This file is a history of the changes made to @idearium/cli.
 - Added `c hosts add`, `c hosts get` and `c hosts remove` to help with easy hosts management.
 - Added `c project env ls`, `c project env get` and `c project env set`, `c project init`, `c project name`, `c project organisation`, `c project prefix` to help with project environment management.
 - Added a `c d build` command.
-- Added `c kc apply`, `c kc build`, `c kc clean`, `c kc context`, `c kc context get`, `c kc context set`, `c kc deploy`, `c kc start` and `c kc stop` commands to help with kubectrl.
+- Added `c kc apply`, `c kc build`, `c kc clean`, `c kc context`, `c kc context get`, `c kc context set`, `c kc deploy`, `c kc logs`, `c kc start` and `c kc stop` commands to help with kubectrl.
 
 ## 1.0.0-alpha.12
 
