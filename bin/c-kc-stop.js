@@ -6,7 +6,7 @@ const { exec } = require('shelljs');
 const { kubernetesLocationsToObjects, loadConfig, loadState, reportError } = require('./lib/c');
 
 program
-    .description('Stop and remove certain Kubernetes objects described in Kubernetes locations. Only deployment, pod and service objects are removed, all other types will remain.')
+    .description('Stop all Kubernetes locations. Only deployment, ingress, pod, secret and service objects are removed, all other types will remain.')
     .parse(process.argv);
 
 return loadState()
@@ -18,7 +18,7 @@ return loadState()
     .then((locations) => {
 
         kubernetesLocationsToObjects(locations)
-            .filter(service => ['deployment', 'pod', 'service'].includes(service.type))
+            .filter(service => ['deployment', 'ingress', 'pod', 'secret', 'service'].includes(service.type))
             .forEach(service => exec(`kubectl delete ${service.type} ${service.location}`));
 
     })
