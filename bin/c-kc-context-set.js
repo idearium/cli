@@ -7,8 +7,37 @@ const { exec } = require('shelljs');
 const { loadConfig, loadState, reportError } = require('./lib/c');
 
 program
+    .option('-c [context]', 'The context you\'d like to use. Used to override values in c.js.')
+    .option('-n [namespace]', 'The namespace you\'d like to use. Used to override values in c.js.')
     .option('-s', 'Do not print any output.')
     .parse(process.argv);
+
+/**
+ * Give a context and namespace, setup kubectl.
+ * @param {String} context The context to use.
+ * @param {String} namespace The namespace to use.
+ * @returns {void}
+ */
+const runCommand = (context, namespace) => {
+
+    exec(`kubectl config set-context ${context} --namespace=${namespace}`, { silent: program.S }, (err, stdout, stderr) => {
+
+        if (stderr) {
+            reportError(new Error(stderr), false, true);
+        }
+
+        if (err) {
+            reportError(err, false, true);
+        }
+
+    });
+
+};
+
+// If they were provided directly, we don't need to load any configuration.
+if (program.C && program.N) {
+    return runCommand(program.C, program.N);
+}
 
 return loadState()
     .then((state) => {
@@ -28,17 +57,7 @@ return loadState()
 
         const { context } = environment;
 
-        exec(`kubectl config set-context ${context} --namespace=${namespace}`, { silent: program.S }, (err, stdout, stderr) => {
-
-            if (stderr) {
-                reportError(new Error(stderr), false, true);
-            }
-
-            if (err) {
-                reportError(err, false, true);
-            }
-
-        });
+        runCommand(context, namespace);
 
     })
     .catch((err) => {
