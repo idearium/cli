@@ -41,6 +41,8 @@ hostile.get(false, (err, lines) => {
         return reportError(err);
     }
 
+    const regexp = new RegExp(value);
+
     lines.forEach((line) => {
 
         const [ip, hosts] = line;
@@ -49,7 +51,7 @@ hostile.get(false, (err, lines) => {
             return reportFound(hosts);
         }
 
-        if (hosts === value) {
+        if (regexp.test(hosts)) {
             return reportFound(ip);
         }
 
