@@ -3,8 +3,8 @@
 'use strict';
 
 const program = require('commander');
-const { exec } = require('shelljs');
-const { loadState, newline, reportError } = require('./lib/c');
+const { loadConfig, loadState, reportError } = require('./lib/c');
+const { formatProjectPrefix } = require('./lib/c-project');
 
 // The basic program, which uses sub-commands.
 program
@@ -13,14 +13,13 @@ program
     .description('Dynamically generate the projects prefix based on `name` and `organisation` values. The prefix can be used within Kubernetes configuration.')
     .parse(process.argv);
 
-return loadState('env')
-    .then((state) => {
+return loadConfig('project')
+    .then(config => Promise.all([config, loadState('env')]))
+    .then(([config, state]) => {
 
-        const name = exec('c project name -n', { silent: true }).stdout;
-        const organisation = exec('c project organisation -n', { silent: true }).stdout;
-        const environment = program.E ? `-${state}` : '';
+        const { name, organisation } = config;
 
-        return process.stdout.write(`${organisation}-${name}${environment}${newline(program.N)}`);
+        return process.stdout.write(formatProjectPrefix(organisation, name, state, program.E, program.N));
 
     })
     .catch((err) => {
