@@ -10,14 +10,10 @@ const getPropertyPath = require('get-value');
 program
     .arguments('<location>')
     .option('-d', 'Also deploy the location(s).')
-    .description('Provide a Docker location and the Dockerfile will be used to build a Docker image. Pass `all` as the location to build all locations.')
+    .description('Provide a Docker location and the Dockerfile will be used to build a Docker image. If you don\'t pass a location, all locations will be built.')
     .parse(process.argv);
 
-const [location] = program.args;
-
-if (!location) {
-    return reportError(new Error('You need to provide a Docker location'), program);
-}
+const [location = 'all'] = program.args;
 
 return loadConfig()
     .then((config) => {
