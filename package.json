@@ -29,7 +29,9 @@
     "dotenv": "4.0.0",
     "execa": "0.8.0",
     "handlebars": "4.0.10",
-    "shelljs": "0.7.8"
+    "hostile": "1.3.1",
+    "shelljs": "0.7.8",
+    "sudo-prompt": "8.2.0"
   },
   "devDependencies": {
     "@idearium/eslint-config": "2.1.2"

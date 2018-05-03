@@ -26,7 +26,10 @@ The following is a summary of the top level commands.
 
 - `c d` is for everything Docker.
 - `c dc` is for everything Docker Compose.
+- `c hosts` helps with hosts management.
+- `c mk` is for everything Minikube.
 - `c npm` is for everything NPM.
+- `c yarn` is for everything is for everything Yarn.
 
 ## Configuration
 

@@ -3,7 +3,7 @@
 const chalk = require('chalk');
 const { readFile, writeFile } = require('fs');
 const { homedir } = require('os');
-const { join } = require('path');
+const { resolve: pathResolve, join } = require('path');
 const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
@@ -55,6 +55,16 @@ const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => 
     });
 
 });
+
+/**
+ * Work out the path to the hostile binary (within node_modules).
+ * @return {String}
+ */
+const hostilePath = () => {
+
+    return pathResolve(__dirname, '..', '..', 'node_modules', '.bin', 'hostile');
+
+};
 
 /**
  * Given a program object, make sure there is an actual command running. If not, log a console error.
@@ -129,6 +139,21 @@ const loadConfig = (key, type = 'c') => new Promise((resolve, reject) => {
 });
 
 /**
+ * Given a boolean, determine if a newline character should be used.
+ * @param {Boolean} exclude Should the newline character be used?
+ * @returns {String}
+ */
+const newline = (exclude) => {
+
+    if (exclude) {
+        return '';
+    }
+
+    return '\n';
+
+};
+
+/**
  * Run a command, at a particular path.
  * @param {String} location An absolute path.
  * @param {String} command A command to run at that path.
@@ -186,8 +211,10 @@ const throwErr = (err) => {
 module.exports = {
     composeUp,
     executeTemplate,
+    hostilePath,
     loadConfig,
     missingCommand,
+    newline,
     npmAuthToken,
     proxyCommand,
     proxyCommands,
