@@ -4,7 +4,7 @@
 
 const program = require('commander');
 const { exec } = require('shelljs');
-const { loadConfig, reportError, storeState } = require('./lib/c');
+const { loadConfig, reportError } = require('./lib/c');
 const getPropertyPath = require('get-value');
 
 program

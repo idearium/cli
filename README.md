@@ -39,6 +39,8 @@ The following is a summary of the top level commands.
 - `c project` is for project nanagement.
 - `c yarn` is for everything is for everything Yarn.
 
+Be aware that `kubectl` uses a global configuration, but the `c kc` command supercedes those where possible and ensures kubectl runs in the context of the project you're within.
+
 ## Concepts
 
 The cli has two concepts to be aware of:

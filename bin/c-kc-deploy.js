@@ -31,7 +31,7 @@ return loadState()
 
         const prefix = exec('c project prefix -n', { silent: true }).stdout;
         const tag = state.kubernetes.build.tags[`${prefix}/${location}`];
-        const cmd = `kubectl set image ${service.type}/${location} ${location}=${prefix}/${location}:${tag}`;
+        const cmd = `c kc cmd set image ${service.type}/${location} ${location}=${prefix}/${location}:${tag}`;
 
         exec(cmd);
 

@@ -76,10 +76,10 @@ return loadState()
         }
 
         // Deploy the namespace first.
-        exec(`kubectl apply -f ${resolvePath(process.cwd(), path, namespace)}`);
+        exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, namespace)}`);
 
         // Everything else next.
-        exec(`kubectl apply -f ${resolvePath(process.cwd(), path)}`);
+        exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path)}`);
 
         return resolve();
 

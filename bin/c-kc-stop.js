@@ -19,7 +19,7 @@ return loadState()
 
         kubernetesLocationsToObjects(locations)
             .filter(service => ['deployment', 'ingress', 'pod', 'secret', 'service'].includes(service.type))
-            .forEach(service => exec(`kubectl delete ${service.type} ${service.location}`));
+            .forEach(service => exec(`c kc cmd delete ${service.type} ${service.location}`));
 
     })
     .catch((err) => {

@@ -97,7 +97,7 @@ return Promise.all([
     .then(([services, path]) => new Promise((resolve) => {
 
         services.forEach((service) => {
-            exec(`kubectl apply -f ${resolvePath(process.cwd(), path, `${service.path}.yaml`)}`);
+            exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, `${service.path}.yaml`)}`);
         });
 
         return resolve();
