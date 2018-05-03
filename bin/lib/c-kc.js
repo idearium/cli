@@ -126,7 +126,7 @@ const setLocalsForServices = (state, namespace, prefix, services) => {
 
             if (typeof local === 'string' && local === 'tag') {
 
-                service.locals[local] = state.kubernetes.build.tags[`${prefix}/${service.location}`];
+                service.locals[local] = state.kubernetes.environments[state.env].build.tags[`${prefix}/${service.location}`];
 
                 return;
 
