@@ -27,13 +27,18 @@ return loadConfig()
 
         const locations = location === 'all' ? Object.keys(getPropertyPath(config, 'docker.locations')) : [location];
 
-        return Promise.all([prefix, config, locations]);
+        return Promise.all([
+            prefix,
+            config,
+            loadState(),
+            locations,
+        ]);
 
     })
-    .then(([prefix, config, locations]) => {
+    .then(([prefix, config, state, locations]) => {
 
         return Promise.all([
-            loadState(),
+            state,
             config,
             Promise.all(locations.map(loc => new Promise((resolve, reject) => {
 
@@ -56,7 +61,7 @@ return loadConfig()
                         return reject(err);
                     }
 
-                    storeState(`kubernetes.build.tags.${prefix}/${loc}`, tag)
+                    storeState(`kubernetes.environments.${state.env}.build.tags.${prefix}/${loc}`, tag)
                         .then(() => resolve(loc))
                         .catch(reject);
 
