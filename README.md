@@ -20,6 +20,12 @@ We actually recommend installing `@idearium/cli` locally in your project. This a
 
 Once installed, simply run `c`, and you'll get the help output for all commands. Running a sub-command and then `--help` will give you the help output for that command (i.e. `c dc --help`).
 
+## Requirements
+
+The cli has been designed to work closely with [infrastructure-common](https://github.com/idearium/infrastructure-common). Infrastructure provides MongoDB, Redis, RabbitMQ and importantly for the cli, Kubernetes ingress.
+
+You can read more about how this all hangs together at https://github.com/idearium/developers/tree/master/stack
+
 ## Commands
 
 The following is a summary of the top level commands.
@@ -27,10 +33,22 @@ The following is a summary of the top level commands.
 - `c d` is for everything Docker.
 - `c dc` is for everything Docker Compose.
 - `c hosts` helps with hosts management.
+- `c kc` is for everything kubectrl.
 - `c mk` is for everything Minikube.
 - `c npm` is for everything NPM.
 - `c project` is for project nanagement.
 - `c yarn` is for everything is for everything Yarn.
+
+## Concepts
+
+The cli has two concepts to be aware of:
+
+- Configuration
+- State
+
+The cli can be highly configured within information about your project, and work with Docker, NPM and Kubernetes with the information provided. All configuration is stored within a `c.js` file that lives in the root of your project. This file should be stored in Git.
+
+The cli is designed to work with multiple environments. You put your project into a particular environment, and the commands run within the context of that environment. All state is stored in `devops/state.json` (this file should be added to `.gitignore`).
 
 ## Configuration
 
