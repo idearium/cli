@@ -76,10 +76,10 @@ return Promise.all([
         return resolve([services, path]);
 
     }))
-    .then(([services, path]) => new Promise((resolve, reject) => {
+    .then(([services, path]) => new Promise(async (resolve, reject) => {
 
         try {
-            ensureServiceFilesExist(path, services);
+            await ensureServiceFilesExist(path, services);
         } catch (e) {
             reject(e);
         }
@@ -87,17 +87,21 @@ return Promise.all([
         return resolve([services, path]);
 
     }))
-    .then(([services, path]) => {
+    .then(([services, path]) => new Promise(async (resolve, reject) => {
 
-        renderServicesTemplates(path, services);
+        try {
+            await renderServicesTemplates(path, services);
+        } catch (e) {
+            reject(e);
+        }
 
-        return [services, path];
+        return resolve([services, path]);
 
-    })
+    }))
     .then(([services, path]) => new Promise((resolve) => {
 
         services.forEach((service) => {
-            exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, `${service.path}.yaml`)}`);
+            exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, '.compiled', `${service.path}.yaml`)}`);
         });
 
         return resolve();

@@ -47,10 +47,10 @@ return loadState()
         return resolve([services, path]);
 
     }))
-    .then(([services, path]) => new Promise((resolve, reject) => {
+    .then(([services, path]) => new Promise(async (resolve, reject) => {
 
         try {
-            ensureServiceFilesExist(path, services);
+            await ensureServiceFilesExist(path, services);
         } catch (e) {
             reject(e);
         }
@@ -58,13 +58,17 @@ return loadState()
         return resolve([services, path]);
 
     }))
-    .then(([services, path]) => {
+    .then(([services, path]) => new Promise(async (resolve, reject) => {
 
-        renderServicesTemplates(path, services);
+        try {
+            await renderServicesTemplates(path, services);
+        } catch (e) {
+            reject(e);
+        }
 
-        return [services, path];
+        return resolve([services, path]);
 
-    })
+    }))
     .then(([services, path]) => new Promise((resolve, reject) => {
 
         const [namespace] = services
@@ -76,10 +80,10 @@ return loadState()
         }
 
         // Deploy the namespace first.
-        exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, namespace)}`);
+        exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, '.compiled', namespace)}`);
 
         // Everything else next.
-        exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path)}`);
+        exec(`c kc cmd apply -f ${resolvePath(process.cwd(), path, '.compiled')}`);
 
         return resolve();
 

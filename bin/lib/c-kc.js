@@ -1,8 +1,33 @@
 'use strict';
 
-const { accessSync, constants, readFileSync, writeFileSync } = require('fs');
-const { resolve: resolvePath } = require('path');
+const fs = require('fs');
+const { copy, ensureDir } = require('fs-extra');
+const { join, resolve: resolvePath } = require('path');
 const Mustache = require('Mustache');
+const { promisify } = require('util');
+
+const { constants } = fs;
+
+const access = promisify(fs.access);
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
+
+/**
+ * Given an array, and an async callback, pass each item in the array to the callback.
+ * @param {Array} array An array to loop over.
+ * @param {Function} callback An async function.
+ * @returns {void}
+ */
+const asyncForEach = async (array, callback) => {
+
+    for (let index = 0; index < array.length; index++) {
+
+        // eslint-disable-next-line no-await-in-loop, callback-return
+        await callback(array[index], index, array);
+
+    }
+
+};
 
 /**
  * Check that a file for each service exists (either a .yaml or .tmpl.yaml file).
@@ -10,37 +35,53 @@ const Mustache = require('Mustache');
  * @param {Array} services An array of Kubernetes location services.
  * @returns {void}
  */
-const ensureServiceFilesExist = (path = '', services = []) => {
+const ensureServiceFilesExist = async (path = '', services = []) => {
 
-    services.forEach((service) => {
+    await asyncForEach(services, async (service) => {
 
-        const servicePath = resolvePath(process.cwd(), path, service.path);
+        const sourceFolder = resolvePath(process.cwd(), path);
+        const destinationFolder = join(sourceFolder, '.compiled');
+        const sourcePath = join(sourceFolder, service.path);
+        const destinationPath = join(destinationFolder, service.path);
 
         try {
-            accessSync(`${servicePath}.yaml.tmpl`, constants.R_OK);
+
+            await access(`${sourcePath}.yaml.tmpl`, constants.R_OK);
+
         } catch (e) {
+
             try {
-                accessSync(`${servicePath}.yaml`, constants.R_OK);
+
+                await access(`${sourcePath}.yaml`, constants.R_OK);
+                await ensureDir(destinationFolder);
+                await copy(`${sourcePath}.yaml`, `${destinationPath}.yaml`);
+
             } catch (err) {
+
                 throw new Error(new Error(`Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`));
+
             }
+
         }
 
     });
 
 };
 
-const renderServicesTemplates = (path = '', services = []) => {
+const renderServicesTemplates = async (path = '', services = []) => {
 
-    services.forEach((service) => {
+    await asyncForEach(services, async (service) => {
 
-        const servicePath = resolvePath(process.cwd(), path, service.path);
+        const sourceFolder = resolvePath(process.cwd(), path);
+        const sourcePath = join(sourceFolder, service.path);
+        const destinationFolder = join(sourceFolder, '.compiled');
+        const destinationPath = join(destinationFolder, service.path);
 
         try {
 
-            const content = readFileSync(`${servicePath}.yaml.tmpl`, 'utf-8');
+            const content = await readFile(`${sourcePath}.yaml.tmpl`, 'utf-8');
 
-            writeFileSync(`${servicePath}.yaml`, Mustache.render(content, service.locals), 'utf8');
+            await writeFile(`${destinationPath}.yaml`, Mustache.render(content, service.locals), 'utf8');
 
         } catch (e) {
             // Do nothing.
