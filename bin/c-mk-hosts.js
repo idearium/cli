@@ -24,13 +24,15 @@ return loadConfig('environments')
             return reportError(new Error('Could not find the url in the local environment.'), false, true);
         }
 
+        const url = (Array.isArray(local.url) ? local.url : [local.url]).map(uri => new Url(uri).host);
+
         exec('c mk ip -n', { silent: true }, (err, ip) => {
 
             if (err) {
                 return reportError(err, false, true);
             }
 
-            exec(`c hosts add ${ip} ${new Url(local.url).host}`);
+            exec(`c hosts add ${ip} ${url.join(' ')}`);
 
         });
 
