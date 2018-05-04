@@ -81,6 +81,7 @@ const renderServicesTemplates = async (path = '', services = []) => {
 
             const content = await readFile(`${sourcePath}.yaml.tmpl`, 'utf-8');
 
+            await ensureDir(destinationFolder);
             await writeFile(`${destinationPath}.yaml`, Mustache.render(content, service.locals), 'utf8');
 
         } catch (e) {
