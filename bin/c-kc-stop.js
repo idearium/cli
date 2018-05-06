@@ -2,6 +2,7 @@
 'use strict';
 
 const program = require('commander');
+const inquirer = require('inquirer');
 const { exec } = require('shelljs');
 const { kubernetesLocationsToObjects, loadConfig, loadState, reportError } = require('./lib/c');
 
@@ -12,9 +13,32 @@ program
 return loadState()
     .then((state) => {
 
-        return loadConfig(`kubernetes.environments.${state.env}.locations`);
+        if (state.env !== 'production') {
+            return state;
+        }
+
+        return inquirer
+            .prompt([
+                {
+                    'default': false,
+                    'message': 'You\'re in production mode and stopping everything is destructive. Are you sure you would like to continue?',
+                    'name': 'continue',
+                    'type': 'confirm',
+                },
+            ])
+            .then((answers) => {
+
+                if (answers.continue) {
+                    return state;
+                }
+
+                // eslint-disable-next-line no-process-exit
+                process.exit(0);
+
+            });
 
     })
+    .then(state => loadConfig(`kubernetes.environments.${state.env}.locations`))
     .then((locations) => {
 
         kubernetesLocationsToObjects(locations)
