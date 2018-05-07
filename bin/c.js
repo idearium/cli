@@ -9,6 +9,7 @@ const { missingCommand } = require('./lib/c');
 program
     .command('d <command>', 'Shortcuts to control Docker.')
     .command('dc <command>', 'Shortcuts to control Docker Compose.')
+    .command('gc <command>', 'Shortcuts to help with gcloud.')
     .command('hosts <command>', 'Shortcuts to help with hosts management.')
     .command('kc <command>', 'Shortcuts to help with kubectrl.')
     .command('mk <command>', 'Shortcuts to control Minikube.')
