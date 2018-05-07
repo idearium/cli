@@ -2,6 +2,7 @@
 'use strict';
 
 const program = require('commander');
+const getPropertyPath = require('get-value');
 const { exec } = require('shelljs');
 const { loadConfig, loadState, reportError } = require('./lib/c');
 const { formatProjectPrefix } = require('./lib/c-project');
@@ -21,7 +22,7 @@ return Promise.all([
         const { organisation, name } = project;
         const { environments } = kubernetes;
 
-        const namespace = formatProjectPrefix(organisation, name, env, true, true);
+        const namespace = getPropertyPath(config, `kubernetes.environments.${env}.namespace`) || formatProjectPrefix(organisation, name, env, true, true);
 
         // Remove the first two entries.
         const parts = program

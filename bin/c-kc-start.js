@@ -2,36 +2,30 @@
 'use strict';
 
 const program = require('commander');
+const getPropertyPath = require('get-value');
 const { resolve: resolvePath } = require('path');
 const { exec } = require('shelljs');
 const { kubernetesLocationsToObjects, loadConfig, loadState, reportError } = require('./lib/c');
+const { formatProjectPrefix } = require('./lib/c-project');
 const { ensureServiceFilesExist, renderServicesTemplates, setLocalsForServices } = require('./lib/c-kc');
 
 program
     .description('This command will start all of your Kubernetes locations.')
     .parse(process.argv);
 
-return loadState()
-    .then((state) => {
+return Promise.all([
+    loadState(),
+    loadConfig(),
+])
+    .then(([state, config]) => {
 
-        return Promise.all([
-            loadConfig(`kubernetes.environments.${state.env}`),
-            state,
-        ]);
+        const { project } = config;
+        const { organisation, name } = project;
+        const { locations, path } = getPropertyPath(config, `kubernetes.environments.${state.env}`);
+        const prefix = formatProjectPrefix(organisation, name, state.env, false, true);
+        const namespace = getPropertyPath(config, `kubernetes.environments.${state.env}.namespace`) || formatProjectPrefix(organisation, name, state.env, true, true);
 
-    })
-    .then(([environment, state]) => {
-
-        // Retrieve the loactions, namespace and path.
-        const { locations, path } = environment;
-
-        return Promise.all([
-            locations,
-            exec('c project prefix -n', { silent: true }).stdout,
-            exec('c project prefix -e -n', { silent: true }).stdout,
-            path,
-            state,
-        ]);
+        return [locations, prefix, namespace, path, state];
 
     })
     .then(([kubernetesLocations, prefix, namespace, path, state]) => new Promise((resolve, reject) => {

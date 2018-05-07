@@ -190,6 +190,7 @@ module.exports = {
             },
             production: {
                 context: 'gke_focus-booster_us-east1-b_focus-booster',
+                namespace: 'override',
                 region: 'us-east1',
             },
         }
@@ -201,6 +202,7 @@ The `kubernetes.environments` path holds a descrete environment. Each Kubernetes
 
 - context, the kubectl context that should be used.
 - locations, the Kubernetes objects to work with.
+- namespace, if provied, will override the generated namespace.
 - path, the path to the folder containing Kuberentes manifest YAML files.
 - region, an optional region, mostly required for production.
 

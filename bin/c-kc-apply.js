@@ -59,7 +59,7 @@ return Promise.all([
         const { organisation, name } = project;
 
         const prefix = formatProjectPrefix(organisation, name, state.env, false, true);
-        const namespace = formatProjectPrefix(organisation, name, state.env, true, true);
+        const namespace = getPropertyPath(config, `kubernetes.environments.${state.env}.namespace`) || formatProjectPrefix(organisation, name, state.env, true, true);
 
         let services = kubernetesLocationsToObjects({ [location]: matchingLocation });
 
