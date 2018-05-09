@@ -287,11 +287,11 @@ const proxyCommands = (commands = []) => commands.forEach(command => proxyComman
 const reportError = (err, program, exit = false) => {
 
     /* eslint-disable no-process-env, no-console */
-    if (!process.env.DEBUG.includes('idearium-cli')) {
+    if (!process.env.DEBUG || !process.env.DEBUG.includes('idearium-cli')) {
         console.error(`\n${red('Error:')} ${err.message}\n`);
     }
 
-    if (process.env.DEBUG.includes('idearium-cli')) {
+    if (process.env.DEBUG && process.env.DEBUG.includes('idearium-cli')) {
         console.error('');
         console.error(err);
         console.error('');
