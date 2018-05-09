@@ -286,8 +286,17 @@ const proxyCommands = (commands = []) => commands.forEach(command => proxyComman
  */
 const reportError = (err, program, exit = false) => {
 
-    // eslint-disable-next-line no-console
-    console.error(`\n${red('Error:')} ${err.message}\n`);
+    /* eslint-disable no-process-env, no-console */
+    if (!process.env.DEBUG.includes('idearium-cli')) {
+        console.error(`\n${red('Error:')} ${err.message}\n`);
+    }
+
+    if (process.env.DEBUG.includes('idearium-cli')) {
+        console.error('');
+        console.error(err);
+        console.error('');
+    }
+    /* eslint-enable no-process-env, no-console */
 
     /* eslint-disable padded-blocks */
     if (program) {
