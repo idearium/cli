@@ -4,7 +4,7 @@
 
 const program = require('commander');
 const { exec } = require('shelljs');
-const { dockerToKubernetesLocation, loadConfig, loadState, reportError, storeState } = require('./lib/c');
+const { dockerToKubernetesLocation, loadConfig, loadState, storeState } = require('./lib/c');
 const getPropertyPath = require('get-value');
 
 program
@@ -45,7 +45,7 @@ return loadConfig()
                 const dockerfilePath = getPropertyPath(config, `docker.locations.${loc}`);
 
                 if (!dockerfilePath) {
-                    return reportError(new Error(`Could not find the ${loc} Docker location.`), false, true);
+                    return reject(new Error(`Could not find the ${loc} Docker location.`), false, true);
                 }
 
                 const tag = String(Math.floor(Date.now() / 1000));
@@ -75,14 +75,14 @@ return loadConfig()
 
         // Do we need to build too?
         if (!program.D) {
-            return;
+            return Promise.resolve();
         }
 
         const kubernetesLocations = getPropertyPath(config, `kubernetes.environments.${state.env}.locations`);
 
         locations.forEach((dockerLocation) => {
 
-            dockerToKubernetesLocation(dockerLocation, kubernetesLocations)
+            return dockerToKubernetesLocation(dockerLocation, kubernetesLocations)
                 .then((kLocation) => {
 
                     exec(`c kc deploy ${kLocation.dockerLocation}`);
@@ -91,4 +91,6 @@ return loadConfig()
 
         });
 
-    });
+    })
+    // eslint-disable-next-line handle-callback-err, no-unused-vars, no-empty-function
+    .catch((err) => {});
