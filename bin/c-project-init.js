@@ -10,7 +10,7 @@ const Mustache = require('mustache');
 const { exec } = require('shelljs');
 const { promisify } = require('util');
 const { readFile, writeFile } = require('fs');
-const { sep, dirname, resolve: pathResolve } = require('path');
+const { dirname, resolve: pathResolve, sep } = require('path');
 const { reportError, storeState } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
@@ -224,11 +224,7 @@ inquirer
                 }
 
             })
-            .then(() => {
-
-                return storeState('env', 'local');
-
-            });
+            .then(() => storeState('env', 'local'));
 
     })
     .catch((err) => {

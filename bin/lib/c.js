@@ -8,6 +8,7 @@ const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
 const { exec } = require('shelljs');
+const { ensureDir } = require('fs-extra');
 const getPropertyPath = require('get-value');
 const setPropertyPath = require('set-value');
 const merge = require('lodash.merge');
@@ -330,11 +331,13 @@ const stateFilePath = () => {
 const storeState = (keys, value) => new Promise((resolve, reject) => {
 
     // Ignore any errors as it probably just means that the file hasn't been created yet.
-    readFile(pathResolve(stateFilePath()), 'utf-8', (_, data) => {
+    readFile(pathResolve(stateFilePath()), 'utf-8', async (_, data) => {
 
         const json = data ? JSON.parse(data) : {};
         const nestedData = setPropertyPath({}, keys, value);
         const state = merge({}, json, nestedData);
+
+        await ensureDir(devopsPath());
 
         writeFile(stateFilePath(), JSON.stringify(state, null, 2), { flag: 'w' }, (writeErr) => {
 
