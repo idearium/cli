@@ -47,6 +47,7 @@ inquirer
                 // Generate some questions for each environment
                 const environmentQuestions = environments
                     .split(',')
+                    .sort()
                     .map(environment => ({
                         message: `Enter the url for the ${environment} environment (include the protocol):`,
                         name: `${environment}Url`,
@@ -105,11 +106,11 @@ inquirer
 
                 const environments = answers.environments
                     .split(',')
+                    .sort()
                     .map(env => ({
                         label: env.trim(),
                         url: answers[`${env.trim()}Url`],
-                    }))
-                    .sort();
+                    }));
 
                 const {
                     hasDockerLocations,
