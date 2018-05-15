@@ -8,6 +8,7 @@ const { missingCommand } = require('./lib/c');
 // The basic program, which uses sub-commands.
 program
     .command('d <command>', 'Shortcuts to control Docker.')
+    .command('db <command>', 'Shortcuts to help with the database.')
     .command('dc <command>', 'Shortcuts to control Docker Compose.')
     .command('gc <command>', 'Shortcuts to help with gcloud.')
     .command('hosts <command>', 'Shortcuts to help with hosts management.')
