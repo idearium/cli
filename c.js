@@ -22,7 +22,18 @@ module.exports = {
             },
 {{/environments}}
         },
-    },{{/usesKubernetes}}{{#hasNpmLocations}}
+    },{{/usesKubernetes}}{{#usesMongodb}}
+    mongo: {
+{{#environments}}            {{label}}: {
+                host: '',
+                name: '',
+                password: '',
+                port: '',
+                user: '',
+            },
+{{/environments}}
+    }
+{{/usesMongodb}},{{#hasNpmLocations}}
     npm: {
         locations: {
 {{#npm}}            {{label}}: '{{{value}}}',
