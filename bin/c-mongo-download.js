@@ -21,7 +21,7 @@ if (env.toLowerCase() === 'local') {
     return reportError(new Error('You cannot download the local database'), program);
 }
 
-loadConfig(`mongodb.${env}`)
+loadConfig(`mongo.${env}`)
     .then((db) => {
 
         let ssl = '';
@@ -30,7 +30,7 @@ loadConfig(`mongodb.${env}`)
             ssl = '--ssl --sslAllowInvalidCertificates';
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/db/data:/db/data --rm mongo:latest mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} -o db/data`, {
+        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:latest mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} -o data`, {
             shell: true,
             stdio: 'inherit',
         });

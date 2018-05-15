@@ -21,7 +21,7 @@ if (env.toLowerCase() === 'local') {
     return reportError(new Error('You cannot sync the local database'), program);
 }
 
-spawn(`c db download ${env} && c db import ${env}`, {
+spawn(`c mongo download ${env} && c mongo import ${env}`, {
     shell: true,
     stdio: 'inherit',
 });

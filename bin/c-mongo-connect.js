@@ -17,21 +17,23 @@ if (!program.args.length) {
 
 const [env] = program.args;
 
-if (env.toLowerCase() === 'local') {
-    return reportError(new Error('You cannot download the local database'), program);
-}
+loadConfig(`mongo.${env}`)
+    .then((db) => {
 
-Promise.all([
-    loadConfig(`mongodb.${env}`),
-    loadConfig('mongodb.local'),
-])
-    .then(([db, localDb]) => {
+        let dbAuth = '';
+        let ssl = '';
 
-        return spawn(`docker run -it -v ${process.cwd()}/db/data/${db.name}:/db/data/${db.name} --add-host ${localDb.host}:$(c hosts get -n ${localDb.host}) --rm mongo:latest mongorestore --drop -h ${localDb.host}:${localDb.port} -d ${localDb.name} db/data/${db.name}`, {
+        if (env.toLowerCase() !== 'local') {
+
+            dbAuth = `-u ${db.user} -p ${db.password}`;
+            ssl = '--ssl --sslAllowInvalidCertificates';
+
+        }
+
+        return spawn(`docker run -it --rm mongo:latest mongo ${ssl} ${db.host}:${db.port}/${db.name} ${dbAuth}`, {
             shell: true,
             stdio: 'inherit',
         });
-
 
     })
     .catch(reportError);
