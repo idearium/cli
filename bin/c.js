@@ -13,6 +13,7 @@ program
     .command('hosts <command>', 'Shortcuts to help with hosts management.')
     .command('kc <command>', 'Shortcuts to help with kubectrl.')
     .command('mk <command>', 'Shortcuts to control Minikube.')
+    .command('mongo <command>', 'Shortcuts to help with the database.')
     .command('npm <command>', 'Shortcuts to help with NPM.')
     .command('project <command>', 'Shortcuts to help with project management.')
     .command('yarn <command>', 'Shortcuts to help with Yarn.')

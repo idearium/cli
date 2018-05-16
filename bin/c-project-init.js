@@ -47,6 +47,7 @@ inquirer
                 // Generate some questions for each environment
                 const environmentQuestions = environments
                     .split(',')
+                    .sort()
                     .map(environment => ({
                         message: `Enter the url for the ${environment} environment (include the protocol):`,
                         name: `${environment}Url`,
@@ -82,6 +83,12 @@ inquirer
             },
             {
                 'default': true,
+                'message': 'Does this project use MongoDB?:',
+                'name': 'usesMongodb',
+                'type': 'confirm',
+            },
+            {
+                'default': true,
                 'message': 'Does this project use Kubernetes?:',
                 'name': 'usesKubernetes',
                 'type': 'confirm',
@@ -99,11 +106,11 @@ inquirer
 
                 const environments = answers.environments
                     .split(',')
+                    .sort()
                     .map(env => ({
                         label: env.trim(),
                         url: answers[`${env.trim()}Url`],
-                    }))
-                    .sort();
+                    }));
 
                 const {
                     hasDockerLocations,
@@ -112,6 +119,7 @@ inquirer
                     organisation,
                     project: name,
                     usesKubernetes,
+                    usesMongodb,
                 } = answers;
 
                 const data = {
@@ -124,6 +132,7 @@ inquirer
                         organisation,
                     },
                     usesKubernetes,
+                    usesMongodb,
                 };
 
                 return data;
@@ -220,7 +229,7 @@ inquirer
             .then((data) => {
 
                 if (!program.D && data.hasEslint) {
-                    exec('eslint --fix ./c.js');
+                    exec('./node_modules/.bin/eslint --fix ./c.js');
                 }
 
             })
