@@ -3,7 +3,7 @@
 
 const program = require('commander');
 const getPropertyPath = require('get-value');
-const { exec } = require('shelljs');
+const { spawn } = require('child_process');
 const { loadConfig, loadState, reportError } = require('./lib/c');
 const { formatProjectPrefix } = require('./lib/c-project');
 
@@ -38,7 +38,10 @@ return Promise.all([
         // The rest of the command.
         const cmd = parts.join(' ');
 
-        exec(cmd);
+        spawn(cmd, {
+            shell: true,
+            stdio: 'inherit',
+        });
 
     })
     .catch(err => reportError(err, false, true));
