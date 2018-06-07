@@ -26,7 +26,7 @@ if (!domains) {
     return reportError(new Error('You must pass the domain argument.'), program);
 }
 
-const { status, stderr } = spawnSync('sudo', [hostilePath(), 'set', ip, domains.toString(' ')]);
+const { status, stderr } = spawnSync('sudo', [hostilePath(), 'set', ip, domains.join(' ')]);
 
 if (status) {
     reportError(new Error(stderr.toString()), false, true);
