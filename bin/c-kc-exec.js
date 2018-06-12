@@ -8,7 +8,8 @@ const { reportError } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
-    .arguments('[location, command]')
+    .arguments('<location>')
+    .arguments('[command]')
     .parse(process.argv);
 
 const [location, command] = program.args;
