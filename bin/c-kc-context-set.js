@@ -20,7 +20,7 @@ program
  */
 const runCommand = (context, namespace) => {
 
-    exec(`kubectl config set-context ${context} --namespace=${namespace}`, { silent: program.S }, (err, stdout, stderr) => {
+    exec(`kubectl config use-context ${context} --namespace=${namespace}`, { silent: program.S }, (err, stdout, stderr) => {
 
         if (stderr) {
             reportError(new Error(stderr), false, true);
