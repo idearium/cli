@@ -40,7 +40,7 @@ return loadConfig('environments')
     .catch((err) => {
 
         if (err.code === 'ENOENT') {
-            return reportError(new Error('Please create a c.json file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
+            return reportError(new Error('Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
         }
 
         return reportError(err, false, true);

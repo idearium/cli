@@ -8,7 +8,7 @@ const { loadConfig, reportError, storeState } = require('./lib/c');
 // The basic program, which uses sub-commands.
 program
     .arguments('<env>')
-    .description('Set the current environment for your project. It must be one that you have defined with c.json.')
+    .description('Set the current environment for your project. It must be one that you have defined with c.js.')
     .parse(process.argv);
 
 const [env] = program.args;
@@ -30,7 +30,7 @@ return loadConfig('environments')
     .catch((err) => {
 
         if (err.code === 'ENOENT') {
-            return reportError(new Error('Please create a c.json file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
+            return reportError(new Error('Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
         }
 
         return reportError(err, false, true);
