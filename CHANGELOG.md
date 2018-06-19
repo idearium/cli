@@ -14,6 +14,7 @@ This file is a history of the changes made to @idearium/cli.
 - Added a `c d build` command.
 - Added `c kc apply`, `c kc build`, `c kc clean`, `c kc cmd`, `c kc context`, `c kc context get`, `c kc context set`, `c kc deploy`, `c kc logs`, `c kc pod`, `c kc start` and `c kc stop` commands to help with kubectrl.
 - Added `c gc cmd` and `c gc create` commands to help with gcloud.
+- Added `c fs symlink` command.
 
 ## 1.0.0-alpha.12
 
