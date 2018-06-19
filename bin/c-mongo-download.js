@@ -26,7 +26,7 @@ loadConfig(`mongo.${env}`)
 
         let ssl = '';
 
-        if (env.toLowerCase() !== 'local') {
+        if ((typeof db.ssl === 'undefined') ? true : db.ssl) {
             ssl = '--ssl --sslAllowInvalidCertificates';
         }
 

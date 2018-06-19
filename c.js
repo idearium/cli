@@ -29,6 +29,7 @@ module.exports = {
                 name: '',
                 password: '',
                 port: '',
+                ssl: true,
                 user: '',
             },
 {{/environments}}

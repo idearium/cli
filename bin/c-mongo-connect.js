@@ -23,11 +23,9 @@ loadConfig(`mongo.${env}`)
         let dbAuth = '';
         let ssl = '';
 
-        if (env.toLowerCase() !== 'local') {
-
+        if ((typeof db.ssl === 'undefined') ? true : db.ssl) {
             dbAuth = `-u ${db.user} -p ${db.password}`;
             ssl = '--ssl --sslAllowInvalidCertificates';
-
         }
 
         return spawn(`docker run -it --rm mongo:latest mongo ${ssl} ${db.host}:${db.port}/${db.name} ${dbAuth}`, {
