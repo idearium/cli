@@ -5,6 +5,7 @@ This file is a history of the changes made to @idearium/cli.
 ## Unreleased
 
 - New commands.
+- New concept.
 
 ## Improvements.
 
@@ -14,7 +15,9 @@ This file is a history of the changes made to @idearium/cli.
 - Added a `c d build` command.
 - Added `c kc apply`, `c kc build`, `c kc clean`, `c kc cmd`, `c kc context`, `c kc context get`, `c kc context set`, `c kc deploy`, `c kc logs`, `c kc pod`, `c kc start` and `c kc stop` commands to help with kubectrl.
 - Added `c gc cmd` and `c gc create` commands to help with gcloud.
-- Added `c fs symlink` command.
+- Added `c fs symlink` commands to help with the file system.
+- Added the concept of a workflow, allowing project specific needs for predefined workflows. Current workflows are `project-init` and `cli-init`.
+- Added `c workflow list` and `c workflow [cmd]` commands to help with project operation.
 
 ## 1.0.0-alpha.12
 
