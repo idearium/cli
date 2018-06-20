@@ -35,8 +35,9 @@ The following is a summary of the top level commands.
 - `c hosts` helps with hosts management.
 - `c kc` is for everything kubectrl.
 - `c mk` is for everything Minikube.
+- `c mongo` is for MongoDB connections.
 - `c npm` is for everything NPM.
-- `c project` is for project nanagement.
+- `c project` is for project management.
 - `c yarn` is for everything is for everything Yarn.
 
 Be aware that `kubectl` uses a global configuration, but the `c kc` command supercedes those where possible and ensures kubectl runs in the context of the project you're within.
@@ -67,6 +68,9 @@ module.exports = {
         // ...
     },
     kubernetes: {
+        // ...
+    },
+    mongo: {
         // ...
     },
     npm: {
@@ -258,6 +262,53 @@ You'll then need to supply all of the values that the template file requires. Yo
 ```
 
 The `c kc apply` will automatically provide the values for `namespace`, `prefix` and `tag`. If you'd like to provide something else, simply write a function that returns an object with `label` and `value`. Then use the value of `label` within a template placeholder (i.e. `{{a}}`) and it will be updated with the `value` (i.e. `{{b}}`).
+
+### MongoDB configuration
+
+The Idearium cli supports a MongoDB configuration. The MongoDB configuration can be used to access local and remote databases.
+
+An example MongoDB configuration:
+
+```JavaScript
+'use strict';
+
+module.exports = {
+    mongo: {
+        beta: {
+            host: 'dbhost.com',
+            name: 'db-beta',
+            password: 'password',
+            port: '12345',
+            ssl: true,
+            user: 'user',
+        },
+        local: {
+            host: 'db.common.idearium.local',
+            name: 'db',
+            port: '27017',
+            ssl: false,
+        },
+        beta: {
+            host: 'dbhost.com',
+            name: 'db',
+            password: 'password',
+            port: '12345',
+            ssl: true,
+            user: 'user',
+        },
+    },
+};
+```
+
+The MongoDB configuration supports the following keys.
+
+#### Environment
+
+Each top level key will be used as an `env` variable, setting the context for the commands. e.g. `c mongo connect local`.
+
+Each environment can contain the following keys `host`, `name`, `password`, `port`, `ssl`, and `user`.
+
+`password` and `user` are currently optional for local connections.
 
 ### NPM configuration
 
