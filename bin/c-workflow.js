@@ -31,9 +31,9 @@ const isCommand = commands.find(command => command.name === cmd);
 // Execute the function, if we're processing a command, it is a project workflow, but not a subcommand.
 if (cmd && isProjectWorkflow && !(isCommand)) {
 
-    const exec = projectWorkflows.find(workflow => workflow.name === cmd);
+    const { fn } = projectWorkflows.find(workflow => workflow.name === cmd);
 
-    return exec;
+    return fn();
 
 }
 
