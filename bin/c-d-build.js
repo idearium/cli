@@ -4,7 +4,7 @@
 
 const program = require('commander');
 const { exec } = require('shelljs');
-const { resolve } = require('path');
+const { basename, resolve } = require('path');
 const { loadConfig, newline, reportError } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
@@ -71,11 +71,20 @@ return loadConfig('docker.locations')
 
         const dockerLocation = locations[location];
         const locationPath = resolve(process.cwd(), dockerLocation.path);
+        const { useTar = false } = dockerLocation;
 
         const tag = program.T ? program.T : 'latest';
         const name = program.N ? program.N : location;
 
-        const cmd = `docker build -t ${name}:${tag}${formatBuildArgs(dockerLocation.buildArgs)} ${locationPath}`;
+        let cmd = `docker build -t ${name}:${tag}${formatBuildArgs(dockerLocation.buildArgs)}`;
+
+        if (useTar) {
+            cmd = `tar -chz -C ${locationPath} . | ${cmd} -`;
+        }
+
+        if (!useTar) {
+            cmd = `${cmd} ${locationPath}`;
+        }
 
         exec(cmd, { silent: program.R }, (err, stdout, stderr) => {
 

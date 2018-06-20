@@ -99,6 +99,7 @@ module.exports = {
                     NPM_AUTH_TOKEN: () => exec('c npm auth -n', { silent: true }).stdout,
                 },
                 path: './app',
+                useTar: true,
             },
             'static': {
                 path: './static',
@@ -121,6 +122,10 @@ A path to the Dockerfile location.
 ##### buildArgs
 
 An object represent key=value `--build-arg` flags to pass to `docker build`. Each property should present a build argument name, and the value for the build argument. The value can be either a static value (i.e. string, number) or a function.
+
+##### useTar
+
+If `useTar` is set to true, `tar` will be used to prepare the Docker context and package and send files to the Docker daemon. This allows for some additional flexibility such as using symlinks which point outside the Dockerfile context.
 
 ### Environments configuration
 
