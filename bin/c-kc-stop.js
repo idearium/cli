@@ -13,7 +13,7 @@ program
 return loadState()
     .then((state) => {
 
-        if (state.env !== 'production') {
+        if (state.env === 'development') {
             return state;
         }
 
