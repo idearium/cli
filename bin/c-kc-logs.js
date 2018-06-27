@@ -12,8 +12,7 @@ program
     .description('Output logs from all Kubernetes pods. The selector defaults to `--selector svc`.')
     .parse(process.argv);
 
-// Default the selector.
-const [selector = 'svc'] = program.args;
+const [svc] = program.args;
 
 return Promise.all([
     loadState('env'),
@@ -24,6 +23,11 @@ return Promise.all([
         const { kubernetes, project } = config;
         const { organisation, name } = project;
         const { environments } = kubernetes;
+        let selector = 'svc';
+
+        if (svc) {
+            selector = `svc=${svc}`;
+        }
 
         const namespace = getPropertyPath(config, `kubernetes.environments.${env}.namespace`) || formatProjectPrefix(organisation, name, env, true, true);
 
