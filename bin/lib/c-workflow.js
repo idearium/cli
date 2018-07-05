@@ -12,6 +12,10 @@ const workflows = [
         description: 'Use this to initialise the project (generally after \'git clone\').',
         name: 'project-init',
     },
+    {
+        description: 'Use this to run tests against the entire project',
+        name: 'test',
+    },
 ];
 
 /**
