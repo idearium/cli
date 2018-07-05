@@ -114,6 +114,14 @@ const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => 
 });
 
 /**
+ * Check if an object has the specified property.
+ * @param {Object} obj Object to check.
+ * @param {String} property Property to check for.
+ * @return {Boolean} True if the object has the specified property.
+ */
+const hasProperty = (obj, property) => hasOwnProperty.call(obj, property);
+
+/**
  * Work out the path to the hostile binary (within node_modules).
  * @return {String} The path to the hostile binary.
  */
@@ -369,6 +377,7 @@ module.exports = {
     dockerToKubernetesLocation,
     documentation,
     executeTemplate,
+    hasProperty,
     hostilePath,
     kubernetesLocationsToObjects,
     loadConfig,

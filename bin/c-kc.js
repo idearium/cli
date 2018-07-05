@@ -17,6 +17,7 @@ program
     .command('pod <location>', 'Get the name of a pod for a Kubernetes location.')
     .command('start', 'Deploy all Kubernetes locations.')
     .command('stop', 'Stop and remove certain Kubernetes objects described in Kubernetes locations.')
+    .command('test <location>', 'Test a specific Docker location.')
     .description('Helps run kubectl commands. Most commands run using the project\'s context, not kubectrl\'s context.')
     .parse(process.argv);
 

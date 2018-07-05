@@ -131,6 +131,13 @@ An object represent key=value `--build-arg` flags to pass to `docker build`. Eac
 
 If `useTar` is set to true, `tar` will be used to prepare the Docker context and package and send files to the Docker daemon. This allows for some additional flexibility such as using symlinks which point outside the Dockerfile context.
 
+##### test
+
+You can supply a `test` object to enable the `c kc test <location>` command. `test` has the following properties:
+
+- `cmd` containing the command to run, inside the Docker container. It defaults to `npm test`.
+- `params` containing an object keyed by `docker run` parameter name. For example: `{ '-e': ['foo="bar"', 'bar="foo"'], '-w': '/app' }`. This allows you to customise the `docker run` command used when testing the image.
+
 ### Environments configuration
 
 The Idearium cli supports multiple environments. The environments can be whatever you need them to be as long as you define them in `c.js`. Here is an example environments configuration:
