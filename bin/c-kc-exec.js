@@ -22,7 +22,12 @@ if (!command) {
     return reportError(new Error('Please provide a command'), program);
 }
 
-spawn(`c kc cmd exec $(c kc pod ${location}) -it ${command}`, {
+// Update the command to be all extra arguments
+const fullCommand = [].concat(program.args);
+
+fullCommand.splice(0, 1);
+
+spawn(`c kc cmd exec $(c kc pod ${location}) -it -- ${fullCommand.join(' ')}`, {
     shell: true,
     stdio: 'inherit',
 });
