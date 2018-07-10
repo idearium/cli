@@ -1,6 +1,7 @@
 'use strict';
 
 const { join, resolve } = require('path');
+const debug = require('debug')('idearium-cli:workflow');
 
 // The defined workflows.
 const workflows = [
@@ -39,14 +40,20 @@ const defined = name => typeof workflows.find(workflow => workflow.name === name
 const get = (name = '') => {
 
     const directory = dir();
+    const file = join(directory, name);
     let fn = null;
+
+    debug(`Trying to load ${file}`);
 
     // Does this workflow exist?
     try {
         // eslint-disable-next-line global-require
-        fn = require(join(directory, name));
+        fn = require(file);
     } catch (e) {
         // Do nothing, we'll ust return null.
+        if (e.code !== 'MODULE_NOT_FOUND') {
+            console.error(e);
+        }
     }
 
     // This workflow exists.
