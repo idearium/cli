@@ -18,6 +18,7 @@ program
     .command('start', 'Deploy all Kubernetes locations.')
     .command('stop', 'Stop and remove certain Kubernetes objects described in Kubernetes locations.')
     .command('test <location>', 'Test a specific Docker location.')
+    .command('secret', 'Base64 encode a string, ready for a Kubernetes secret.')
     .description('Helps run kubectl commands. Most commands run using the project\'s context, not kubectrl\'s context.')
     .parse(process.argv);
 
