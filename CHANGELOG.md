@@ -2,7 +2,24 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## 1.0.0-alpha.12
+## v1.0.0
+
+- New commands.
+- New concept.
+
+## Improvements.
+
+- Added `c mk delete`, `c mk hosts`, `c mk ip`, `c mk start`, `c mk stop` and `c mk restart` to control Minikube.
+- Added `c hosts add`, `c hosts get` and `c hosts remove` to help with easy hosts management.
+- Added `c project env ls`, `c project env get` and `c project env set`, `c project init`, `c project name`, `c project organisation`, `c project prefix` to help with project environment management.
+- Added a `c d build` command.
+- Added `c kc apply`, `c kc build`, `c kc clean`, `c kc cmd`, `c kc context`, `c kc context get`, `c kc context set`, `c kc deploy`, `c kc logs`, `c kc pod`, `c kc secret`, `c kc start`, `c kc stop` and `c kc test` commands to help with kubectrl.
+- Added `c gc cmd` and `c gc create` commands to help with gcloud.
+- Added `c fs symlink` commands to help with the file system.
+- Added the concept of a workflow, allowing project specific needs for predefined workflows. Current workflows are `project-init` and `cli-init`.
+- Added `c workflow list` and `c workflow [cmd]` commands to help with project operation.
+
+## v1.0.0-alpha.12
 
 - New command.
 - New concept.
@@ -13,7 +30,7 @@ This file is a history of the changes made to @idearium/cli.
 - Added a `c yarn proxy <location> [cmd...]` command which works exactly like `c npm proxy` but uses Yarn instead.
 - Added the concept of a configuration, allowing project specific configuration for certain aspects of the Idearium cli.
 
-## 1.0.0-alpha.11
+## v1.0.0-alpha.11
 
 - Minor improvements.
 - New commands.
@@ -25,7 +42,7 @@ This file is a history of the changes made to @idearium/cli.
 - Added the `--remove-orphans` to all `c dc down` command, as standard.
 - Added `c npm auth` to retrieve an NPM auth token from `~/.npmrc`.
 
-## 1.0.0-alpha.10
+## v1.0.0-alpha.10
 
 - New commands.
 - Updated commands.
@@ -35,7 +52,7 @@ This file is a history of the changes made to @idearium/cli.
 - Added `c dc rebuild [service]` to run `docker-compose build [service] && docker-compose up -d [service]`.
 - Added an optional `<service>` argument and if used, `docker-compose logs` will be limited to that service.
 
-## 1.0.0-alpha.9
+## v1.0.0-alpha.9
 
 - Bug fix.
 
@@ -43,7 +60,7 @@ This file is a history of the changes made to @idearium/cli.
 
 - Fixes `c dc env file` errors when a `.env` file doesn't exist.
 
-## 1.0.0-alpha.8
+## v1.0.0-alpha.8
 
 - Bug fix.
 
@@ -51,7 +68,7 @@ This file is a history of the changes made to @idearium/cli.
 
 - Updated the logic for `c dc env file` so that it produces more consistent results.
 
-## 1.0.0-alpha.7
+## v1.0.0-alpha.7
 
 - Improvements.
 
@@ -71,7 +88,7 @@ COMPOSE_PROJECT_NAME=cp
 COMPOSE_FILE=docker-compose.yml
 ```
 
-## 1.0.0-alpha.6
+## v1.0.0-alpha.6
 
 - New commands.
 
@@ -82,7 +99,7 @@ COMPOSE_FILE=docker-compose.yml
 - Added `c d clean images` to remove unused Docker images.
 - Added `c d clean containers` to remove unused Docker containers.
 
-## 1.0.0-alpha.5
+## v1.0.0-alpha.5
 
 - Minor improvements.
 
@@ -90,7 +107,7 @@ COMPOSE_FILE=docker-compose.yml
 
 - Updated `c dc env file` to work more like the original from `c.sh`. If you pass `reset` it will reset the `COMPOSE_FILE` entry to be `docker-compose.yml`. If you pass `show` and the `docker-compose.show.yml` file exists, it will set the `COMPOSE_FILE` entry to be `docker-compose.yml:docker-compose.show.yml`.
 
-## 1.0.0-alpha.4
+## v1.0.0-alpha.4
 
 - Bug fix release.
 
@@ -98,6 +115,6 @@ COMPOSE_FILE=docker-compose.yml
 
 - Fixed an issue with `package.json`.
 
-## 1.0.0-alpha.3
+## v1.0.0-alpha.3
 
 - First published version of the cli.
