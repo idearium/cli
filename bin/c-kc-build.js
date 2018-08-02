@@ -10,6 +10,7 @@ const getPropertyPath = require('get-value');
 program
     .arguments('<location>')
     .option('-d', 'Also deploy the location(s).')
+    .option('-t', 'Also test the location(s).')
     .description('Provide a Docker location and the Dockerfile will be used to build a Docker image. If you don\'t pass a location, all locations will be built.')
     .parse(process.argv);
 
@@ -71,6 +72,37 @@ return loadConfig()
         ]);
 
     })
+    .then(([state, config, locations]) => new Promise((resolve, reject) => {
+
+        // Do we need to test too?
+        if (!program.T) {
+            return Promise.resolve();
+        }
+
+        const kubernetesLocations = getPropertyPath(config, `kubernetes.environments.${state.env}.locations`);
+
+        Promise.all(locations.map(dockerLocation => dockerToKubernetesLocation(dockerLocation, kubernetesLocations)
+            .then(kLocation => new Promise((resolveTest, rejectTest) => {
+
+                exec(`c kc test ${kLocation.dockerLocation}`, (err, stdout, stderr) => {
+
+                    if ((err || stderr) && stderr) {
+                        return rejectTest(new Error(stderr));
+                    }
+
+                    if ((err || stderr) && err) {
+                        return rejectTest(err);
+                    }
+
+                    return resolveTest([state, config, locations]);
+
+                });
+
+            }))))
+            .then(() => resolve([state, config, locations]))
+            .catch(reject);
+
+    }))
     .then(([state, config, locations]) => {
 
         // Do we need to build too?
