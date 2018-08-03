@@ -76,7 +76,7 @@ return loadConfig()
 
         // Do we need to test too?
         if (!program.T) {
-            return Promise.resolve();
+            return resolve([state, config, locations]);
         }
 
         const kubernetesLocations = getPropertyPath(config, `kubernetes.environments.${state.env}.locations`);
