@@ -361,3 +361,48 @@ module.exports = {
 The Idearium cli, understands the concept of state. The only state it manages at present is the environment of your project. The current environment of your project will be used in certain commands, but not all commands.
 
 State is stored in a JSON file at `./devops/state.json`, and is created and written to by the `c project env set` and `c project setup` commands.
+
+## Ngrok
+
+The Idearium cli can be used to easily expose a Kubernetes service to the world via Ngrok, and the `c kc ngrok` command.
+
+To use this command, however, you need to provide a configuration file for Ngrok. Follow these steps.
+
+1. Create a file at `./manifests/local/ngrok.configmap.yaml.tmpl`.
+2. Add the code from the _Manifest template_ (below) to the file and update `<authtoken>` with your Ngrok authtoken (or remove that line) and update `<hostname>` with the hostname you'd like the tunnel to be exposed at.
+3. Added the code from the _Kubernetes location_ (below) to `c.js` in the `kubernetes.environments.local.locations` array.
+4. Then run `c kc ngrok` in a new terminal (after running `c mk docker-env`).
+5. To stop, issue `CTRL + C`, then run `c kc ngrok -s` to stop ngrok.
+
+**Manifest template**:
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ngrok
+  namespace: {{namespace}}
+data:
+  ngrok.yaml: |
+    authtoken: <authtoken>
+    console_ui: false
+    log: stdout
+    region: au
+    tunnels:
+      http:
+        proto: http
+        bind_tls: false
+        addr: static:80
+        hostname: <hostname>
+    update: false
+```
+
+**Kubernetes location**:
+```
+'ngrok': [
+    {
+        path: 'ngrok.configmap',
+        templateLocals: ['namespace'],
+        type: 'configmap',
+    },
+],
+```

@@ -2,6 +2,14 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unrelease
+
+- New commands.
+
+## Improvements.
+
+- Added `c kc ngrok` to support exposing Kubernetes services to the world using Ngrok.
+
 ## v1.0.0
 
 - New commands.
