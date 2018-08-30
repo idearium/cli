@@ -371,8 +371,8 @@ To use this command, however, you need to provide a configuration file for Ngrok
 1. Create a file at `./manifests/local/ngrok.configmap.yaml.tmpl`.
 2. Add the code from the _Manifest template_ (below) to the file and update `<authtoken>` with your Ngrok authtoken (or remove that line) and update `<hostname>` with the hostname you'd like the tunnel to be exposed at.
 3. Added the code from the _Kubernetes location_ (below) to `c.js` in the `kubernetes.environments.local.locations` array.
-4. Then run `c kc ngrok` in a new terminal (after running `c mk docker-env`).
-5. To stop, issue `CTRL + C`, then run `c kc ngrok -s` to stop ngrok.
+4. Then run `c kc ngrok start` in a new terminal (after running `c mk docker-env`).
+5. To stop, issue `CTRL + C`, then run `c kc ngrok stop` to stop ngrok.
 
 **Manifest template**:
 ```
