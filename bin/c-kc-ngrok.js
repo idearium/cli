@@ -10,9 +10,15 @@ const { loadConfig, reportError } = require('./lib/c');
 const location = 'ngrok';
 
 program
-    .description('Expose services to the world via Ngrok.')
-    .option('-s', 'Stops and removes the ngrok pod.')
+    .arguments('<action>', 'Either start or stop')
+    .description('Expose services to the world via Ngrok. The <action> should be either start or stop.')
     .parse(process.argv);
+
+const [action] = program.args;
+
+if (!['start', 'stop'].includes(action)) {
+    return reportError(new Error('You need to provide an action. Either start or stop.'), program, true);
+}
 
 loadConfig()
     .then(config => new Promise((resolve, reject) => {
@@ -21,7 +27,7 @@ loadConfig()
         const { organisation, name } = project;
         const prefix = formatProjectPrefix(organisation, name, 'local', true, true);
 
-        if (program.S) {
+        if (action === 'stop') {
 
             exec(`c kc cmd delete pod ${location}`);
 
