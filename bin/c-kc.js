@@ -14,6 +14,7 @@ program
     .command('deploy <location>', 'Update all instances of a Docker location to the latest tag.')
     .command('exec <location> <command>', 'Execute a command on a pod.')
     .command('logs', 'View all logs from Kubernetes pods.')
+    .command('ngrok', 'Expose services to the world via Ngrok.')
     .command('pod <location>', 'Get the name of a pod for a Kubernetes location.')
     .command('start', 'Deploy all Kubernetes locations.')
     .command('stop', 'Stop and remove certain Kubernetes objects described in Kubernetes locations.')
