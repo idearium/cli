@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unrelease
+## v1.1.0
 
 - New commands.
 
