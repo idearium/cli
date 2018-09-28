@@ -2,6 +2,12 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+- Updated command.
+
+- Add `<location>` to `c kc stop` allowing you to stop a specific Kubernetes location. Defaults to `all` so it's a backwards compatible improvement.
+
 ## v1.1.0
 
 - New commands.
