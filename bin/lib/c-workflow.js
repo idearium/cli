@@ -14,6 +14,10 @@ const workflows = [
         name: 'project-init',
     },
     {
+        description: 'Use this to re-initialise the project (generally after \'gco <pull-request-branch>\').',
+        name: 'pr-init',
+    },
+    {
         description: 'Use this to run tests against the entire project',
         name: 'test',
     },

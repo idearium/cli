@@ -2,6 +2,14 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+- New workflow.
+
+## Improvements
+
+- Added a new workflow `pr-init`. Used when switching between multiple PR branches on the same project.
+
 ## v1.1.0
 
 - New commands.
