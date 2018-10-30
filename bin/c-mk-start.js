@@ -9,4 +9,4 @@ const { exec } = require('shelljs');
 program
     .parse(process.argv);
 
-exec('minikube start --extra-config=apiserver.ServiceNodePortRange=80-32767 --memory=8192 --disk-size 64g --vm-driver=vmwarefusion');
+exec('minikube start --extra-config=apiserver.ServiceNodePortRange=80-32767 --memory=4096 --disk-size 64g --vm-driver=vmwarefusion');
