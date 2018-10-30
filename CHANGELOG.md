@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased
+## v1.1.1
 
 - Halved the minikube memory requirements to 4096MB.
 
