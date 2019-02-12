@@ -7,11 +7,15 @@ const debug = require('debug')('idearium-cli:workflow');
 const workflows = [
     {
         description: 'Use this to initialise the cli (generally after changing into a project directory with a new terminal tab/window)',
-        name: 'cli-init',
+        name: 'cli',
     },
     {
         description: 'Use this to initialise the project (generally after \'git clone\').',
-        name: 'project-init',
+        name: 'init',
+    },
+    {
+        description: 'Use this to stop and restart the project (generally after \'gco <pull-request-branch>\').',
+        name: 'restart',
     },
     {
         description: 'Use this to run tests against the entire project',

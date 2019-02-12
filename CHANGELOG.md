@@ -2,13 +2,18 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased
+## v2.0.0
 
-- New commands.
+- New and renamed workflows.
 
 ### Improvements
 
 - Added `c mk init` to be used when creating a new Minikube instance. `c mk start` should be reserved for starting it after a stop.
+
+### Breaking changes
+
+- Renamed `cli-init` to `cli`.
+- Renamed `project-init` to `init`.
 
 ## v1.1.1
 
