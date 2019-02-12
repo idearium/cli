@@ -2,6 +2,19 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## v2.0.0
+
+- New and renamed workflows.
+
+### Improvements
+
+- Added a new workflow `pr-init`. Used when switching between multiple PR branches on the same project.
+
+### Breaking changes
+
+- Renamed `cli-init` to `cli`.
+- Renamed `project-init` to `init`.
+
 ## v1.1.1
 
 - Halved the minikube memory requirements to 4096MB.
