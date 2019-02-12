@@ -4,13 +4,11 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
-- New command.
 - New workflow.
 - Improved commands.
 
 ### Improvements
 
-- Added `c mk init` to be used when creating a new Minikube instance. `c mk start` should be reserved for starting it after a stop.
 - Added a new workflow, `start`. Used to start the project.
 - `c workflow list` now shows all workflows and indicates those that aren't available.
 - `c workflow list` now shows any errors a workflow is producing.
