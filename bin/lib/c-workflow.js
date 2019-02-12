@@ -6,7 +6,7 @@ const debug = require('debug')('idearium-cli:workflow');
 // The defined workflows.
 const workflows = [
     {
-        description: 'Use this to initialise the cli (generally after changing into a project directory with a new terminal tab/window)',
+        description: 'Use this to initialise the cli (generally after changing into a project directory with a new terminal tab/window).',
         name: 'cli',
     },
     {
@@ -14,11 +14,15 @@ const workflows = [
         name: 'init',
     },
     {
+        description: 'Use this to start a project (generally after \'c workflow init\').',
+        name: 'start',
+    },
+    {
         description: 'Use this to stop and restart the project (generally after \'gco <pull-request-branch>\').',
         name: 'restart',
     },
     {
-        description: 'Use this to run tests against the entire project',
+        description: 'Use this to run tests against the entire project.',
         name: 'test',
     },
 ];
@@ -45,7 +49,11 @@ const get = (name = '') => {
 
     const directory = dir();
     const file = join(directory, name);
-    let fn = null;
+
+    let error;
+    let fn;
+    let status = 'ok';
+    let include = true;
 
     debug(`Trying to load ${file}`);
 
@@ -54,21 +62,26 @@ const get = (name = '') => {
         // eslint-disable-next-line global-require
         fn = require(file);
     } catch (e) {
-        // Do nothing, we'll ust return null.
-        if (e.code !== 'MODULE_NOT_FOUND') {
-            console.error(e);
+
+        // Do nothing, we'll just return null.
+        if (e.code === 'MODULE_NOT_FOUND') {
+            include = false;
         }
+
+        status = 'error';
+        error = e;
+
     }
 
     // This workflow exists.
-    return fn;
+    return { error, fn, include, status };
 
 };
 
 const getAll = () => workflows
     // Try and load the workflow
-    .map(workflow => Object.assign(workflow, { fn: get(workflow.name) }))
+    .map(workflow => Object.assign(workflow, get(workflow.name)));
     // Filter out anything that doesn't exist.
-    .filter(workflow => (workflow.fn !== null));
+    // .filter(({ include }) => (include));
 
 module.exports = { defined, dir, get, getAll, workflows };
