@@ -1,6 +1,14 @@
-# @ideariym/cli
+# @idearium/cli
 
 This file is a history of the changes made to @idearium/cli.
+
+## Unreleased
+
+- New commands.
+
+### Improvements
+
+- Added `c mk init` to be used when creating a new Minikube instance. `c mk start` should be reserved for starting it after a stop.
 
 ## v1.1.1
 
@@ -10,7 +18,7 @@ This file is a history of the changes made to @idearium/cli.
 
 - New commands.
 
-## Improvements.
+### Improvements
 
 - Added `c kc ngrok` to support exposing Kubernetes services to the world using Ngrok.
 
@@ -19,7 +27,7 @@ This file is a history of the changes made to @idearium/cli.
 - New commands.
 - New concept.
 
-## Improvements.
+### Improvements
 
 - Added `c mk delete`, `c mk hosts`, `c mk ip`, `c mk start`, `c mk stop` and `c mk restart` to control Minikube.
 - Added `c hosts add`, `c hosts get` and `c hosts remove` to help with easy hosts management.
@@ -36,7 +44,7 @@ This file is a history of the changes made to @idearium/cli.
 - New command.
 - New concept.
 
-## Improvements
+### Improvements
 
 - Added a `c npm proxy <location> [cmd...]` command to proxy NPM commands to certain configured NPM locations within your project. Also supports `all` inplace of `<location>` to proxy against multiple locations in sequence.
 - Added a `c yarn proxy <location> [cmd...]` command which works exactly like `c npm proxy` but uses Yarn instead.

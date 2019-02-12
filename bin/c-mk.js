@@ -10,6 +10,7 @@ program
     .command('delete', 'Delete minikube')
     .command('docker-env', 'Setup the docker command to use Minikube\'s Docker daemon')
     .command('hosts', 'Add Minikube\'s IP to your hosts record')
+    .command('init', 'Initialise a new minikube instance')
     .command('ip', 'Retrieve Minikube\'s IP')
     .command('restart', 'Restart minikube')
     .command('start', 'Start minikube')
