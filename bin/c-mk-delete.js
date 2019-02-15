@@ -7,6 +7,10 @@ const { exec } = require('shelljs');
 
 // The basic program, which uses sub-commands.
 program
+    .option('-p [profile]', 'Specify a minikube profile, otherwise the default minikube profile will be used.')
     .parse(process.argv);
 
-exec('minikube delete');
+const profile = program.P ? ` --profile ${program.P}` : '';
+const command = `minikube delete${profile}`;
+
+exec(command);

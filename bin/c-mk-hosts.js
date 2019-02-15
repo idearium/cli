@@ -9,6 +9,7 @@ const { loadConfig, reportError } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
+    .option('-p [profile]', 'Specify a minikube profile, otherwise the default minikube profile will be used.')
     .parse(process.argv);
 
 return loadConfig('environments')
@@ -25,8 +26,10 @@ return loadConfig('environments')
         }
 
         const url = (Array.isArray(local.url) ? local.url : [local.url]).map(uri => new Url(uri).host);
+        const profile = program.P ? ` -p ${program.P}` : '';
+        const command = `c mk ip -n${profile}`;
 
-        exec('c mk ip -n', { silent: true }, (err, ip) => {
+        exec(command, { silent: true }, (err, ip) => {
 
             if (err) {
                 return reportError(err, false, true);

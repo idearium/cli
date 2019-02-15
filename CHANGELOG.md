@@ -2,6 +2,14 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased (#minikube-profiles)
+
+- Updated commands.
+
+## Improvements
+
+- Added support for a `-p` on all `c mk` commands to support Minikube profiles.
+
 ## Unreleased
 
 - New workflow.
