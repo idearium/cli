@@ -20,6 +20,17 @@ if (!projectWorkflows.length) {
 
 if (projectWorkflows.length) {
     out('\nAvailable workflows:\n');
-    projectWorkflows.forEach(workflow => out(`- ${workflow.name}\t\t${workflow.description}`));
+    projectWorkflows.forEach((workflow) => {
+
+        const isAvailable = (workflow.include) ? '' : ' (n/a)';
+        const label = `- ${workflow.name}${isAvailable}`.padEnd(20);
+
+        out(`${label}${workflow.description}`);
+
+        if (workflow.include && workflow.status !== 'ok') {
+            out(`\n\t\tCaught error: "${workflow.error.toString()}"\n`);
+        }
+
+    });
     out('\n');
 }
