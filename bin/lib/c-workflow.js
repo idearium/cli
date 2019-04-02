@@ -78,10 +78,7 @@ const get = (name = '') => {
 
 };
 
-const getAll = () => workflows
-    // Try and load the workflow
-    .map(workflow => Object.assign(workflow, get(workflow.name)));
-    // Filter out anything that doesn't exist.
-    // .filter(({ include }) => (include));
+// Try and load the workflow
+const getAll = () => workflows.map(workflow => Object.assign(workflow, get(workflow.name)));
 
 module.exports = { defined, dir, get, getAll, workflows };
