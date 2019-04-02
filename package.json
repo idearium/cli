@@ -1,6 +1,6 @@
 {
   "name": "@idearium/cli",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "The Idearium cli, which makes working with our projects much easier.",
   "main": "index.js",
   "bin": {
@@ -21,6 +21,9 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/idearium/cli/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "homepage": "https://github.com/idearium/cli#readme",
   "dependencies": {
