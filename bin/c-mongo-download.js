@@ -30,7 +30,7 @@ loadConfig(`mongo.${env}`)
             ssl = '--ssl --sslAllowInvalidCertificates';
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:latest mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} -o data`, {
+        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.2 mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} -o data`, {
             shell: true,
             stdio: 'inherit',
         });
