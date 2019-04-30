@@ -4,11 +4,17 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased (#minikube-profiles)
 
-- Updated commands.
+- Improved command.
 
 ## Improvements
 
 - Added support for a `-p` on all `c mk` commands to support Minikube profiles.
+
+## v2.1.1 (30 April 2019)
+
+- Improved command.
+
+- Add `<location>` to `c kc stop` allowing you to stop a specific Kubernetes location. Defaults to `all` so it's a backwards compatible improvement.
 
 ## v2.1.0 (2 April 2019)
 
