@@ -5,16 +5,23 @@ const program = require('commander');
 const inquirer = require('inquirer');
 const { exec } = require('shelljs');
 const { kubernetesLocationsToObjects, loadConfig, loadState, reportError } = require('./lib/c');
+const getPropertyPath = require('get-value');
 
 program
-    .description('Stop all Kubernetes locations. Only deployment, ingress, pod, secret and service objects are removed, all other types will remain.')
+    .arguments('<location>')
+    .description('Stop all (or a specific) Kubernetes locations. Only deployment, ingress, pod, secret and service objects are removed. <location> defaults to `all`.')
     .parse(process.argv);
 
-return loadState()
-    .then((state) => {
+const [location = 'all'] = program.args;
+
+return Promise.all([
+    loadState(),
+    loadConfig(),
+])
+    .then(([state, config]) => {
 
         if (state.env === 'local') {
-            return state;
+            return [state, config];
         }
 
         return inquirer
@@ -29,7 +36,7 @@ return loadState()
             .then((answers) => {
 
                 if (answers.continue) {
-                    return state;
+                    return [state, config];
                 }
 
                 // eslint-disable-next-line no-process-exit
@@ -38,7 +45,23 @@ return loadState()
             });
 
     })
-    .then(state => loadConfig(`kubernetes.environments.${state.env}.locations`))
+    .then(([state, config]) => {
+
+        let jsonPath = `kubernetes.environments.${state.env}.locations`;
+
+        if (location !== 'all') {
+            jsonPath = `${jsonPath}.${location}`;
+        }
+
+        let locations = getPropertyPath(config, jsonPath);
+
+        if (location !== 'all') {
+            locations = { [location]: locations };
+        }
+
+        return locations;
+
+    })
     .then((locations) => {
 
         kubernetesLocationsToObjects(locations)
