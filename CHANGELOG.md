@@ -1,18 +1,46 @@
-# @ideariym/cli
+# @idearium/cli
 
 This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
-- Updated command.
+- Improved command.
 
 - Add `<location>` to `c kc stop` allowing you to stop a specific Kubernetes location. Defaults to `all` so it's a backwards compatible improvement.
+
+## v2.1.0 (2 April 2019)
+
+- New workflow.
+- Improved commands.
+
+### Improvements
+
+- Added a new workflow, `start`. Used to start the project.
+- `c workflow list` now shows all workflows and indicates those that aren't available.
+- `c workflow list` now shows any errors a workflow is producing.
+
+## v2.0.0
+
+- New and renamed workflows.
+
+### Improvements
+
+- Added a new workflow, `restart`. Used when switching between multiple PR branches on the same project.
+
+### Breaking changes
+
+- Renamed `cli-init` to `cli`.
+- Renamed `project-init` to `init`.
+
+## v1.1.1
+
+- Halved the minikube memory requirements to 4096MB.
 
 ## v1.1.0
 
 - New commands.
 
-## Improvements.
+### Improvements
 
 - Added `c kc ngrok` to support exposing Kubernetes services to the world using Ngrok.
 
@@ -21,7 +49,7 @@ This file is a history of the changes made to @idearium/cli.
 - New commands.
 - New concept.
 
-## Improvements.
+### Improvements
 
 - Added `c mk delete`, `c mk hosts`, `c mk ip`, `c mk start`, `c mk stop` and `c mk restart` to control Minikube.
 - Added `c hosts add`, `c hosts get` and `c hosts remove` to help with easy hosts management.
@@ -38,7 +66,7 @@ This file is a history of the changes made to @idearium/cli.
 - New command.
 - New concept.
 
-## Improvements
+### Improvements
 
 - Added a `c npm proxy <location> [cmd...]` command to proxy NPM commands to certain configured NPM locations within your project. Also supports `all` inplace of `<location>` to proxy against multiple locations in sequence.
 - Added a `c yarn proxy <location> [cmd...]` command which works exactly like `c npm proxy` but uses Yarn instead.
