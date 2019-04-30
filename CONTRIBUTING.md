@@ -13,7 +13,7 @@ To get started with development, you'll need:
 
 We use `eslint` and `.editorconfig` to keep our code neat and tidy. Make sure you do too.
 
-If you're developing locally and want to test out the cli against an actual project, run `yarn link` from this directory. When you're done, make sure you run `npm unlink` to ensure you remove the global install.
+If you're developing locally and want to test out the cli against an actual project, run `yarn link` from this directory. When you're done, make sure you run `yarn unlink` to ensure you remove the global install.
 
 ## Publishing
 
