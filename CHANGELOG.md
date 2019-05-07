@@ -10,6 +10,12 @@ This file is a history of the changes made to @idearium/cli.
 
 - `c mongo download`, `c mongo import` and `c mongo sync` now support a `collection` argument to act only on a specific collection.
 
+## v2.1.1 (30 April 2019)
+
+- Improved command.
+
+- Add `<location>` to `c kc stop` allowing you to stop a specific Kubernetes location. Defaults to `all` so it's a backwards compatible improvement.
+
 ## v2.1.0 (2 April 2019)
 
 - New workflow.
