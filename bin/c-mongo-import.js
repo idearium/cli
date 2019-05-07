@@ -20,7 +20,7 @@ if (!program.args.length) {
 const [env, collection] = program.args;
 
 if (env.toLowerCase() === 'local') {
-    return reportError(new Error('You cannot download the local database'), program);
+    return reportError(new Error('You cannot import the local database'), program);
 }
 
 loadConfig('mongo')
@@ -45,7 +45,7 @@ loadConfig('mongo')
             return reportError(new Error(`Could not find the ${env} db`), program);
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/data/${db.name}:/data/${db.name} --add-host ${localDb.host}:$(c hosts get -n ${localDb.host}) --rm mongo:3.2 mongorestore --noIndexRestore --drop -h ${localDb.host}:${localDb.port} ${collectionArg} data/`, {
+        return spawn(`docker run -it -v ${process.cwd()}/data/${db.name}:/data/${db.name} --add-host ${localDb.host}:$(c hosts get -n ${localDb.host}) --rm mongo:3.4 mongorestore --noIndexRestore --drop -h ${localDb.host}:${localDb.port} ${collectionArg} data/`, {
             shell: true,
             stdio: 'inherit',
         });
