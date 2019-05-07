@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased
+## v2.1.1 (7 May 2019)
 
 - Locked down the mongo version.
 
