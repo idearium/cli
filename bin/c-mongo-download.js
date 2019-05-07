@@ -37,7 +37,7 @@ loadConfig(`mongo.${env}`)
             collectionArg = `-c ${collection}`;
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:latest mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} ${collectionArg} -o data`, {
+        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.2 mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} ${collectionArg} -o data`, {
             shell: true,
             stdio: 'inherit',
         });

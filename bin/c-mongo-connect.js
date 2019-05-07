@@ -28,7 +28,7 @@ loadConfig(`mongo.${env}`)
             ssl = '--ssl --sslAllowInvalidCertificates';
         }
 
-        return spawn(`docker run -it --rm mongo:latest mongo ${ssl} ${db.host}:${db.port}/${db.name} ${dbAuth}`, {
+        return spawn(`docker run -it --rm mongo:3.2 mongo ${ssl} ${db.host}:${db.port}/${db.name} ${dbAuth}`, {
             shell: true,
             stdio: 'inherit',
         });
