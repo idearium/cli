@@ -37,7 +37,7 @@ loadConfig(`mongo.${env}`)
             dbAuth = `-u ${user} -p ${password}`;
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.2 mongodump ${dbAuth} ${params.join(' ')} -h ${host} -d ${name} ${collectionArg} -o data`, {
+        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.4 mongodump ${dbAuth} ${params.join(' ')} -h ${host} -d ${name} ${collectionArg} -o data`, {
             shell: true,
             stdio: 'inherit',
         });
