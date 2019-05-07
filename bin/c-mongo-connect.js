@@ -26,7 +26,7 @@ loadConfig(`mongo.${env}`)
             dbAuth = `-u ${user} -p ${password}`;
         }
 
-        return spawn(`docker run -it --rm mongo:latest mongo ${dbAuth} ${params.join(' ')} --host ${host} ${name}`, {
+        return spawn(`docker run -it --rm mongo:3.2 mongo ${dbAuth} ${params.join(' ')} --host ${host} ${name}`, {
             shell: true,
             stdio: 'inherit',
         });
