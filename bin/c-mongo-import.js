@@ -20,7 +20,7 @@ if (!program.args.length) {
 const [env, collection] = program.args;
 
 if (env.toLowerCase() === 'local') {
-    return reportError(new Error('You cannot download the local database'), program);
+    return reportError(new Error('You cannot import the local database'), program);
 }
 
 loadConfig('mongo')

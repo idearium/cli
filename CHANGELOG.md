@@ -9,6 +9,7 @@ This file is a history of the changes made to @idearium/cli.
 ### Improvements
 
 - `c mongo download`, `c mongo import` and `c mongo sync` now support a `collection` argument to act only on a specific collection.
+- `c mongo download`, `c mongo import` and `c mongo sync` now support a more flexible definition in `c.js` files.
 
 ## v2.1.0 (2 April 2019)
 

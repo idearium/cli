@@ -24,20 +24,20 @@ if (env.toLowerCase() === 'local') {
 }
 
 loadConfig(`mongo.${env}`)
-    .then((db) => {
+    .then(({ host, name, params = [], password, user }) => {
 
-        let ssl = '';
         let collectionArg = '';
-
-        if ((typeof db.ssl === 'undefined') ? true : db.ssl) {
-            ssl = '--ssl --sslAllowInvalidCertificates';
-        }
+        let dbAuth = '';
 
         if (typeof collection !== 'undefined') {
             collectionArg = `-c ${collection}`;
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:latest mongodump ${ssl} -h ${db.host}:${db.port} -u ${db.user} -p ${db.password} -d ${db.name} ${collectionArg} -o data`, {
+        if (user && password) {
+            dbAuth = `-u ${user} -p ${password}`;
+        }
+
+        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:latest mongodump ${dbAuth} ${params.join(' ')} -h ${host} -d ${name} ${collectionArg} -o data`, {
             shell: true,
             stdio: 'inherit',
         });
