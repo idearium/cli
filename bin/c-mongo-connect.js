@@ -18,17 +18,15 @@ if (!program.args.length) {
 const [env] = program.args;
 
 loadConfig(`mongo.${env}`)
-    .then((db) => {
+    .then(({ host, name, params = [], password, user }) => {
 
         let dbAuth = '';
-        let ssl = '';
 
-        if ((typeof db.ssl === 'undefined') ? true : db.ssl) {
-            dbAuth = `-u ${db.user} -p ${db.password}`;
-            ssl = '--ssl --sslAllowInvalidCertificates';
+        if (user && password) {
+            dbAuth = `-u ${user} -p ${password}`;
         }
 
-        return spawn(`docker run -it --rm mongo:latest mongo ${ssl} ${db.host}:${db.port}/${db.name} ${dbAuth}`, {
+        return spawn(`docker run -it --rm mongo:3.4 mongo ${dbAuth} ${params.join(' ')} --host ${host} ${name}`, {
             shell: true,
             stdio: 'inherit',
         });
