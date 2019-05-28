@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased (27 May 2019)
+## v3.0.1 (28 May 2019)
 
 - Bug fixes.
 - Improved command.
