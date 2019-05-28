@@ -2,11 +2,16 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased (#minikube-profiles)
+## v3.0.1 (28 May 2019)
 
+- Bug fixes.
 - Improved command.
 
-## Improvements
+### Bug fixes
+
+- The `c mongo download`, `c mongo import` and `c mongo sync` now actually work when the database name is different between servers.
+
+### Improvements
 
 - Added support for a `-p` on all `c mk` commands to support Minikube profiles.
 
