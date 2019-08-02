@@ -19,7 +19,6 @@ const merge = require('lodash.merge');
  * @return {string}         The `docker-compose` command string.
  */
 const composeUp = (service) => {
-
     // We're bringing up just one container.
     let upCommand = 'docker-compose up -d --force-recreate';
 
@@ -33,7 +32,6 @@ const composeUp = (service) => {
     upCommand += ` ${service}`;
 
     return upCommand;
-
 };
 
 /**
@@ -41,9 +39,7 @@ const composeUp = (service) => {
  * @return {String} The path to the devops folder.
  */
 const devopsPath = () => {
-
     return pathResolve(process.cwd(), 'devops');
-
 };
 
 /**
@@ -52,33 +48,35 @@ const devopsPath = () => {
  * @param {Object} locations An object containing Kubernetes locations.
  * @returns {Promise} Resolves with a Promise containing a Kubernetes location.
  */
-const dockerToKubernetesLocation = (location, locations) => new Promise((resolve, reject) => {
+const dockerToKubernetesLocation = (location, locations) =>
+    new Promise((resolve, reject) => {
+        const keys = Object.keys(locations);
 
-    const keys = Object.keys(locations);
+        // Use for loops so we can exit the function with `return` as soon as possible.
+        for (let keysIndex = 0; keysIndex < keys.length; keysIndex++) {
+            const locationServices = locations[keys[keysIndex]];
 
-    // Use for loops so we can exit the function with `return` as soon as possible.
-    for (let keysIndex = 0; keysIndex < keys.length; keysIndex++) {
+            for (
+                let locationServicesIndex = 0;
+                locationServicesIndex < locationServices.length;
+                locationServicesIndex++
+            ) {
+                const locationService = locationServices[locationServicesIndex];
 
-        const locationServices = locations[keys[keysIndex]];
-
-        for (let locationServicesIndex = 0; locationServicesIndex < locationServices.length; locationServicesIndex++) {
-
-            const locationService = locationServices[locationServicesIndex];
-
-            if (locationService.dockerLocation === location) {
-                return resolve(locationService);
+                if (locationService.dockerLocation === location) {
+                    return resolve(locationService);
+                }
             }
-
         }
 
-    }
-
-    return reject(new Error(`Could not find a Kubernetes location that uses the ${location} Docker location.`));
-
-});
+        return reject(
+            new Error(
+                `Could not find a Kubernetes location that uses the ${location} Docker location.`,
+            ),
+        );
+    });
 
 const documentation = (anchor = '') => {
-
     const url = 'https://github.com/idearium/cli';
 
     if (['configuration'].includes(anchor)) {
@@ -86,8 +84,15 @@ const documentation = (anchor = '') => {
     }
 
     return url;
+};
 
-}
+/**
+ * Retrieve an environment variable.
+ * @param {String} key The environment variable to retrieve.
+ * @returns {String} The environment variable's value.
+ */
+// eslint-disable-next-line no-process-env
+const env = (key) => process.env[key];
 
 /**
  * Given a template file, and a locals object, compile the template and generate the result.
@@ -95,23 +100,24 @@ const documentation = (anchor = '') => {
  * @param  {Object} [locals={}] The locals to the pass to the template.
  * @return {Promise}            A promise.
  */
-const executeTemplate = (file, locals = {}) => new Promise((resolve, reject) => {
+const executeTemplate = (file, locals = {}) =>
+    new Promise((resolve, reject) => {
+        readFile(
+            join(devopsPath(), 'templates', file),
+            'utf-8',
+            (err, data) => {
+                /* eslint-disable padded-blocks */
+                if (err) {
+                    return reject(err);
+                }
+                /* eslint-enable padded-blocks */
 
-    readFile(join(devopsPath(), 'templates', file), 'utf-8', (err, data) => {
+                const template = compile(data);
 
-        /* eslint-disable padded-blocks */
-        if (err) {
-            return reject(err);
-        }
-        /* eslint-enable padded-blocks */
-
-        const template = compile(data);
-
-        return resolve(template(locals));
-
+                return resolve(template(locals));
+            },
+        );
     });
-
-});
 
 /**
  * Check if an object has the specified property.
@@ -126,9 +132,14 @@ const hasProperty = (obj, property) => hasOwnProperty.call(obj, property);
  * @return {String} The path to the hostile binary.
  */
 const hostilePath = () => {
-
-    return pathResolve(__dirname, '..', '..', 'node_modules', '.bin', 'hostile');
-
+    return pathResolve(
+        __dirname,
+        '..',
+        '..',
+        'node_modules',
+        '.bin',
+        'hostile',
+    );
 };
 
 /**
@@ -137,20 +148,16 @@ const hostilePath = () => {
  * @return {Array} An array of Kubernetes objects.
  */
 const kubernetesLocationsToObjects = (kubernetesLocations) => {
-
     // Prepare the locals for each `.yaml.tmpl`
     const services = [];
 
     Object.keys(kubernetesLocations).forEach((location) => {
-
         kubernetesLocations[location].forEach((service) => {
             services.push(Object.assign({}, service, { location }));
         });
-
     });
 
     return services;
-
 };
 
 /**
@@ -159,7 +166,6 @@ const kubernetesLocationsToObjects = (kubernetesLocations) => {
  * @return {void}
  */
 const missingCommand = (program) => {
-
     if (program.runningCommand) {
         return;
     }
@@ -169,31 +175,27 @@ const missingCommand = (program) => {
     console.error(chalk.red(`\nThere is no '${missing}' command`));
 
     program.help();
-
 };
 
 /**
  * Read `~/.npmrc` and retrieve the `authToken`.
  * @return {Promise} A promise that will resolve with the token (string).
  */
-const npmAuthToken = () => new Promise((resolve, reject) => {
+const npmAuthToken = () =>
+    new Promise((resolve, reject) => {
+        readFile(join(homedir(), '.npmrc'), 'utf-8', (err, data) => {
+            /* eslint-disable padded-blocks */
+            if (err) {
+                return reject(err);
+            }
+            /* eslint-enable padded-blocks */
 
-    readFile(join(homedir(), '.npmrc'), 'utf-8', (err, data) => {
+            const result = /(?:_authToken=)([0-9a-z-].+)/.exec(data);
+            const authToken = result ? result[1] : '';
 
-        /* eslint-disable padded-blocks */
-        if (err) {
-            return reject(err);
-        }
-        /* eslint-enable padded-blocks */
-
-        const result = (/(?:_authToken=)([0-9a-z-].+)/).exec(data);
-        const authToken = result ? result[1] : '';
-
-        return resolve(authToken);
-
+            return resolve(authToken);
+        });
     });
-
-});
 
 /**
  * Load and parse a JSON configuration fiile.
@@ -201,56 +203,60 @@ const npmAuthToken = () => new Promise((resolve, reject) => {
  * @param {String} type The name of a config file to load.
  * @return {Promise} A promise that will resolve with some JSON data.
  */
-const loadConfig = (keys, type = 'c') => new Promise((resolve, reject) => {
+const loadConfig = (keys, type = 'c') =>
+    new Promise((resolve, reject) => {
+        // eslint-disable-next-line global-require
+        const data = require(join(process.cwd(), type));
 
-    // eslint-disable-next-line global-require
-    const data = require(join(process.cwd(), type));
+        // If there are no keys, return the entire config.
+        if (!keys) {
+            return resolve(data);
+        }
 
-    // If there are no keys, return the entire config.
-    if (!keys) {
-        return resolve(data);
-    }
+        // Find the config using property paths.
+        const config = getPropertyPath(data, keys);
 
-    // Find the config using property paths.
-    const config = getPropertyPath(data, keys);
+        if (!config) {
+            return reject(
+                new Error(
+                    `The '${keys}' configuration was not found in ${type}.js. See https://github.com/idearium/cli#configuration`,
+                ),
+            );
+        }
 
-    if (!config) {
-        return reject(new Error(`The '${keys}' configuration was not found in ${type}.js. See https://github.com/idearium/cli#configuration`));
-    }
-
-    return resolve(config);
-
-});
+        return resolve(config);
+    });
 
 /**
  * Load and parse a JSON state fiile.
  * @param {String} key The name of a top-level key to return.
  * @return {Promise} A promise that will resolve with some JSON data.
  */
-const loadState = key => new Promise((resolve, reject) => {
+const loadState = (key) =>
+    new Promise((resolve, reject) => {
+        // eslint-disable-next-line no-use-before-define
+        readFile(stateFilePath(), 'utf-8', (err, data) => {
+            if (err) {
+                return reject(err);
+            }
 
-    // eslint-disable-next-line no-use-before-define
-    readFile(stateFilePath(), 'utf-8', (err, data) => {
+            const json = JSON.parse(data);
 
-        if (err) {
-            return reject(err);
-        }
+            if (key && !json[key]) {
+                return reject(
+                    new Error(
+                        `The '${key}' state was not found in state.json.`,
+                    ),
+                );
+            }
 
-        const json = JSON.parse(data);
+            if (key && json[key]) {
+                return resolve(json[key]);
+            }
 
-        if (key && !json[key]) {
-            return reject(new Error(`The '${key}' state was not found in state.json.`));
-        }
-
-        if (key && json[key]) {
-            return resolve(json[key]);
-        }
-
-        return resolve(json);
-
+            return resolve(json);
+        });
     });
-
-});
 
 /**
  * Given a boolean, determine if a newline character should be used.
@@ -258,13 +264,11 @@ const loadState = key => new Promise((resolve, reject) => {
  * @returns {String} Either an empty string, or a newline.
  */
 const newline = (exclude) => {
-
     if (exclude) {
         return '';
     }
 
     return '\n';
-
 };
 
 /**
@@ -274,9 +278,7 @@ const newline = (exclude) => {
  * @returns {void}
  */
 const proxyCommand = (location, command) => {
-
     exec(command, { cwd: location });
-
 };
 
 /**
@@ -284,7 +286,8 @@ const proxyCommand = (location, command) => {
  * @param {Array} commands An array of [location, command] arrays.
  * @returns {void}
  */
-const proxyCommands = (commands = []) => commands.forEach(command => proxyCommand(...command));
+const proxyCommands = (commands = []) =>
+    commands.forEach((command) => proxyCommand(...command));
 
 /**
  * Given an error, report it.
@@ -294,7 +297,6 @@ const proxyCommands = (commands = []) => commands.forEach(command => proxyComman
  * @return {void}
  */
 const reportError = (err, program, exit = false) => {
-
     /* eslint-disable no-process-env, no-console */
     if (!process.env.DEBUG || !process.env.DEBUG.includes('idearium-cli')) {
         console.error(`\n${red('Error:')} ${err.message}\n`);
@@ -317,7 +319,6 @@ const reportError = (err, program, exit = false) => {
         // eslint-disable-next-line no-process-exit
         process.exit(1);
     }
-
 };
 
 /**
@@ -325,9 +326,7 @@ const reportError = (err, program, exit = false) => {
  * @returns {String} An absolute path to the state file.
  */
 const stateFilePath = () => {
-
     return pathResolve(devopsPath(), 'state.json');
-
 };
 
 /**
@@ -336,30 +335,30 @@ const stateFilePath = () => {
  * @param {any} value The value to store.
  * @return {Promise} A promise.
  */
-const storeState = (keys, value) => new Promise((resolve, reject) => {
+const storeState = (keys, value) =>
+    new Promise((resolve, reject) => {
+        // Ignore any errors as it probably just means that the file hasn't been created yet.
+        readFile(pathResolve(stateFilePath()), 'utf-8', async (_, data) => {
+            const json = data ? JSON.parse(data) : {};
+            const nestedData = setPropertyPath({}, keys, value);
+            const state = merge({}, json, nestedData);
 
-    // Ignore any errors as it probably just means that the file hasn't been created yet.
-    readFile(pathResolve(stateFilePath()), 'utf-8', async (_, data) => {
+            await ensureDir(devopsPath());
 
-        const json = data ? JSON.parse(data) : {};
-        const nestedData = setPropertyPath({}, keys, value);
-        const state = merge({}, json, nestedData);
+            writeFile(
+                stateFilePath(),
+                JSON.stringify(state, null, 2),
+                { flag: 'w' },
+                (writeErr) => {
+                    if (writeErr) {
+                        return reject(writeErr);
+                    }
 
-        await ensureDir(devopsPath());
-
-        writeFile(stateFilePath(), JSON.stringify(state, null, 2), { flag: 'w' }, (writeErr) => {
-
-            if (writeErr) {
-                return reject(writeErr);
-            }
-
-            return resolve();
-
+                    return resolve();
+                },
+            );
         });
-
     });
-
-});
 
 /**
  * Given an error, throw it.
@@ -367,15 +366,14 @@ const storeState = (keys, value) => new Promise((resolve, reject) => {
  * @return {void}
  */
 const throwErr = (err) => {
-
     throw err;
-
 };
 
 module.exports = {
     composeUp,
     dockerToKubernetesLocation,
     documentation,
+    env,
     executeTemplate,
     hasProperty,
     hostilePath,
