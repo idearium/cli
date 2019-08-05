@@ -105,8 +105,6 @@ return (
                 });
             });
         })
-        // eslint-disable-next-line handle-callback-err, no-unused-vars, no-empty-function
-        .catch((err) => {
-            console.error('ERRRRRRR', err);
-        })
+        // eslint-disable-next-line no-console
+        .catch(console.error)
 );
