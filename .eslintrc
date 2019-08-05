@@ -1,7 +1,0 @@
-{
-    "root": true,
-    "extends": "@idearium/eslint-config",
-    "parserOptions": {
-        "ecmaVersion": 8
-    }
-}
