@@ -22,6 +22,4 @@ if (!env('IMAGES')) {
 const [, image] = env('IMAGES').split('/');
 const [name, tag] = image.split(':');
 
-const command = `yarn c kc build ${name} -t ${tag}`;
-
-exec(command);
+exec(`yarn c kc build ${name} -t ${tag}`);

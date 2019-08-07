@@ -8,7 +8,8 @@ This file is a history of the changes made to @idearium/cli.
 
 ### Improvements
 
-    Added the `c kc manifests` command.
+-   Added the `c kc manifests` command.
+-   Added the `c skaffold dev` command.
 
 ## v3.0.2 (5 August 2019)
 
