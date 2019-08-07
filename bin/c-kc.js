@@ -14,9 +14,9 @@ program
     .command('clean <location>', 'Clean images specific to a Docker location.')
     .command(
         'cmd [command...]',
-        'Execute a kubectrl command within the projects context and namespace.',
+        'Execute a kubectl command within the projects context and namespace.',
     )
-    .command('context', 'Get and set the kubectrl context.')
+    .command('context', 'Get and set the kubectl context.')
     .command(
         'deploy <location>',
         'Update all instances of a Docker location to the latest tag.',
@@ -37,7 +37,7 @@ program
     )
     .command('test <location>', 'Test a specific Docker location.')
     .description(
-        "Helps run kubectl commands. Most commands run using the project's context, not kubectrl's context.",
+        "Helps run kubectl commands. Most commands run using the project's context, not kubectl's context.",
     )
     .parse(process.argv);
 
