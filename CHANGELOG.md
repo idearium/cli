@@ -2,6 +2,15 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+-   Improved command.
+
+### Improved command
+
+-   The path property (from `c.js) used by`c d build <location>` has been deprecated.
+-   `c d build <location>` now prefers `context` and `file` properties, rather than `path`.
+
 ## v3.0.3 (8 August 2019)
 
 -   Bug fixes.
