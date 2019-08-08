@@ -12,5 +12,4 @@ program
     .parse(process.argv);
 
 exec(`yarn c kc manifests`);
-console.log('DONE');
 exec(`skaffold dev`);
