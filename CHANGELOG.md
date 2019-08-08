@@ -2,6 +2,20 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## v3.1.0 (8 August 2019)
+
+-   Improved command.
+-   Bug fixes.
+
+### Improved command
+
+-   The path property (from `c.js) used by`c d build <location>` has been deprecated.
+-   `c d build <location>` now prefers `context` and `file` properties, rather than `path`.
+
+### Bug fixes
+
+-   Updated `c skaffold dev` to a bash command (works better with CTRL + C).
+
 ## v3.0.3 (8 August 2019)
 
 -   Bug fixes.
