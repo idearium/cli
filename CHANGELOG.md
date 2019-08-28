@@ -2,6 +2,10 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+-   Set the number of cpus to 2.
+
 ## v3.1.0 (8 August 2019)
 
 -   Improved command.
