@@ -7,10 +7,15 @@ const { exec } = require('shelljs');
 
 // The basic program, which uses sub-commands.
 program
-    .option('-p [profile]', 'Specify a minikube profile, otherwise the default minikube profile will be used.')
+    .option(
+        '-p [profile]',
+        'Specify a minikube profile, otherwise the default minikube profile will be used.'
+    )
     .parse(process.argv);
 
 const profile = program.P ? ` --profile ${program.P}` : '';
 const command = `minikube start${profile}`;
 
-exec(`${command} --disk-size 64g --extra-config=apiserver.service-node-port-range=80-32767 --kubernetes-version v1.9.4 --memory=4096 --vm-driver=vmware`);
+exec(
+    `${command} --disk-size 64g --extra-config=apiserver.service-node-port-range=80-32767 --kubernetes-version v1.9.4 --memory=4096 --vm-driver=vmware`
+);

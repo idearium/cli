@@ -16,9 +16,16 @@ const [location] = program.args;
 const { R: replica = 0 } = program;
 
 if (!location) {
-    return reportError(new Error('You need to provide a Kubernetes location'), program, true);
+    return reportError(
+        new Error('You need to provide a Kubernetes location'),
+        program,
+        true
+    );
 }
 
-const name = exec(`c kc cmd get pods --selector=svc=${location} --output=jsonpath={.items[${replica}].metadata.name}`, { silent: true }).stdout;
+const name = exec(
+    `c kc cmd get pods --selector=svc=${location} --output=jsonpath={.items[${replica}].metadata.name}`,
+    { silent: true }
+).stdout;
 
 process.stdout.write(`${name}${newline(program.N)}`);

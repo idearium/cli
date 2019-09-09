@@ -6,7 +6,6 @@ const program = require('commander');
 const { exec } = require('shelljs');
 
 // The basic program, which uses sub-commands.
-program
-    .parse(process.argv);
+program.parse(process.argv);
 
 exec('docker rm `docker ps -aq --no-trunc --filter "status=exited"`');

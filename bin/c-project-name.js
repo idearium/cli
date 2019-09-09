@@ -11,13 +11,19 @@ program
     .parse(process.argv);
 
 loadConfig('project.name')
-    .then(name => process.stdout.write(`${name}${newline(program.N)}`))
+    .then((name) => process.stdout.write(`${name}${newline(program.N)}`))
     .catch((err) => {
-
         if (err.code === 'ENOENT') {
-            return reportError(new Error(`Your project's name hasn't been configured yet. See ${documentation('configuration')}.`), false, true);
+            return reportError(
+                new Error(
+                    `Your project's name hasn't been configured yet. See ${documentation(
+                        'configuration'
+                    )}.`
+                ),
+                false,
+                true
+            );
         }
 
         return reportError(err, false, true);
-
     });

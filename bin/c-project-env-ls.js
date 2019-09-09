@@ -11,16 +11,18 @@ program
 
 return loadConfig('environments')
     .then((data) => {
-
         process.stdout.write(`${Object.keys(data)}${newline(program.N)}`);
-
     })
     .catch((err) => {
-
         if (err.code === 'ENOENT') {
-            return reportError(new Error('Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'), false, true);
+            return reportError(
+                new Error(
+                    'Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'
+                ),
+                false,
+                true
+            );
         }
 
         return reportError(err, false, true);
-
     });

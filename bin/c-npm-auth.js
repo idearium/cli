@@ -10,5 +10,6 @@ program
     .option('-n', 'Do not print the trailing newline character.')
     .parse(process.argv);
 
-npmAuthToken()
-    .then(token => process.stdout.write(`${token}${newline(program.N)}`));
+npmAuthToken().then((token) =>
+    process.stdout.write(`${token}${newline(program.N)}`)
+);

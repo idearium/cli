@@ -10,7 +10,9 @@ const { loadConfig, reportError } = require('./lib/c');
 program
     .arguments('[env]')
     .arguments('<collection>')
-    .description('Download all or a specific collection from a Mongo database. If you don\'t provide a collection, all will be downloaded.')
+    .description(
+        "Download all or a specific collection from a Mongo database. If you don't provide a collection, all will be downloaded."
+    )
     .parse(process.argv);
 
 if (!program.args.length) {
@@ -20,12 +22,14 @@ if (!program.args.length) {
 const [env, collection] = program.args;
 
 if (env.toLowerCase() === 'local') {
-    return reportError(new Error('You cannot download the local database'), program);
+    return reportError(
+        new Error('You cannot download the local database'),
+        program
+    );
 }
 
 loadConfig(`mongo.${env}`)
     .then(({ host, name, params = [], password, user }) => {
-
         let collectionArg = '';
         let dbAuth = '';
 
@@ -37,11 +41,14 @@ loadConfig(`mongo.${env}`)
             dbAuth = `-u ${user} -p ${password}`;
         }
 
-        return spawn(`docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.4 mongodump ${dbAuth} ${params.join(' ')} -h ${host} -d ${name} ${collectionArg} -o data`, {
-            shell: true,
-            stdio: 'inherit',
-        });
-
-
+        return spawn(
+            `docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.4 mongodump ${dbAuth} ${params.join(
+                ' '
+            )} -h ${host} -d ${name} ${collectionArg} -o data`,
+            {
+                shell: true,
+                stdio: 'inherit',
+            }
+        );
     })
     .catch(reportError);

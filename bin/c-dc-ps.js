@@ -7,17 +7,12 @@ const { exec } = require('shelljs');
 const { npmAuthToken } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
-program
-    .parse(process.argv);
+program.parse(process.argv);
 
-npmAuthToken()
-    .then((token) => {
+npmAuthToken().then((token) => {
+    const env = { NPM_AUTH_TOKEN: token };
 
-        const env = { NPM_AUTH_TOKEN: token };
-
-        // Using shelljs here.
-        // Quicker than `child_process.execFile` because it doesn't require a full path to the binary.
-        exec('docker-compose ps', { env });
-
-
-    });
+    // Using shelljs here.
+    // Quicker than `child_process.execFile` because it doesn't require a full path to the binary.
+    exec('docker-compose ps', { env });
+});

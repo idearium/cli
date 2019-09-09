@@ -13,20 +13,20 @@ program
     .arguments('<location>')
     .option(
         '-t [tag]',
-        'Supply a specific tag, otherwise `latest` will be used',
+        'Supply a specific tag, otherwise `latest` will be used'
     )
     .option(
         '-n [name]',
-        'Supply a name for the image, otherwise the location name will be used',
+        'Supply a name for the image, otherwise the location name will be used'
     )
     .description(
-        'Provide a Docker location and the Dockerfile will be used to build a Docker image. See https://github.com/idearium/cli#docker-configuration for configuration options.',
+        'Provide a Docker location and the Dockerfile will be used to build a Docker image. See https://github.com/idearium/cli#docker-configuration for configuration options.'
     )
     .parse(process.argv);
 
 const getPath = deprecate(
     ({ path }) => path,
-    'The path property has been deprecated in favour of the context property.',
+    'The path property has been deprecated in favour of the context property.'
 );
 
 /**
@@ -59,7 +59,7 @@ const formatBuildArgs = (args = {}) => {
             (key) =>
                 `--build-arg ${key}=${
                     typeof args[key] === 'function' ? args[key]() : args[key]
-                }`,
+                }`
         )
         .join(' ');
 
@@ -71,7 +71,7 @@ const [location] = program.args;
 if (!location) {
     return reportError(
         new Error('You need to provide a Docker location'),
-        program,
+        program
     );
 }
 
@@ -80,10 +80,10 @@ return loadConfig('docker.locations').then((locations) => {
     if (!locations) {
         return reportError(
             new Error(
-                'Could not find any NPM locations. See https://github.com/idearium/cli#configuration',
+                'Could not find any NPM locations. See https://github.com/idearium/cli#configuration'
             ),
             false,
-            true,
+            true
         );
     }
 
@@ -91,7 +91,7 @@ return loadConfig('docker.locations').then((locations) => {
         return reportError(
             new Error(`Could not find the ${location} location.`),
             false,
-            true,
+            true
         );
     }
 
@@ -104,7 +104,7 @@ return loadConfig('docker.locations').then((locations) => {
     const name = program.N ? program.N : location;
 
     let cmd = `docker build -t ${name}:${tag}${formatBuildArgs(
-        dockerLocation.buildArgs,
+        dockerLocation.buildArgs
     )} -f ${file}`;
 
     if (useTar) {

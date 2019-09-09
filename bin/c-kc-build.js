@@ -17,7 +17,7 @@ program
     .option('-d', 'Also deploy the location(s).')
     .option('-t --tag <tag>', 'A tag for the generated Docker image(s).')
     .description(
-        "Provide a Docker location and the Dockerfile will be used to build a Docker image. If you don't pass a location, all locations will be built.",
+        "Provide a Docker location and the Dockerfile will be used to build a Docker image. If you don't pass a location, all locations will be built."
     )
     .parse(process.argv);
 
@@ -49,16 +49,16 @@ return (
                             new Promise((resolve, reject) => {
                                 const dockerfilePath = getPropertyPath(
                                     config,
-                                    `docker.locations.${loc}`,
+                                    `docker.locations.${loc}`
                                 );
 
                                 if (!dockerfilePath) {
                                     return reject(
                                         new Error(
-                                            `Could not find the ${loc} Docker location.`,
+                                            `Could not find the ${loc} Docker location.`
                                         ),
                                         false,
-                                        true,
+                                        true
                                     );
                                 }
 
@@ -75,13 +75,13 @@ return (
 
                                     storeState(
                                         `kubernetes.environments.${state.env}.build.tags.${prefix}/${loc}`,
-                                        tag,
+                                        tag
                                     )
                                         .then(() => resolve(loc))
                                         .catch(reject);
                                 });
-                            }),
-                    ),
+                            })
+                    )
                 ),
             ]);
         })
@@ -93,13 +93,13 @@ return (
 
             const kubernetesLocations = getPropertyPath(
                 config,
-                `kubernetes.environments.${state.env}.locations`,
+                `kubernetes.environments.${state.env}.locations`
             );
 
             locations.forEach((dockerLocation) => {
                 return dockerToKubernetesLocation(
                     dockerLocation,
-                    kubernetesLocations,
+                    kubernetesLocations
                 ).then((kLocation) => {
                     exec(`c kc deploy ${kLocation.dockerLocation}`);
                 });
