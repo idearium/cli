@@ -2,6 +2,10 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+-   Added the `c project bump` command which accepts a `--type` option to set the bump type.
+
 ## v3.1.0 (8 August 2019)
 
 -   Improved command.
