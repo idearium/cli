@@ -20,6 +20,7 @@ This file is a history of the changes made to @idearium/cli.
 -   Updated sudo-prompt v9.0.0.
 -   Removed unused `c dc env` commands.
 -   Removed unused `globby` package.
+-   Fixed error with db imports.
 
 ## v3.1.0 (8 August 2019)
 

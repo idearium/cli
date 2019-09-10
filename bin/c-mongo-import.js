@@ -55,14 +55,14 @@ loadConfig('mongo')
             );
         }
 
+        const [host] = localDb.host.split(':');
+
         return spawn(
             `docker run -it -v ${process.cwd()}/data/${db.name}:/data/${
                 db.name
-            } --add-host ${localDb.host}:$(c hosts get -n ${
+            } --add-host ${host}:$(c hosts get -n ${host}) --rm mongo:3.4 mongorestore --noIndexRestore --drop -h ${
                 localDb.host
-            }) --rm mongo:3.4 mongorestore --noIndexRestore --drop -h ${
-                localDb.host
-            }:${localDb.port} ${collectionArg} data/`,
+            } ${collectionArg} data/`,
             {
                 shell: true,
                 stdio: 'inherit',
