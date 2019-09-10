@@ -34,7 +34,6 @@
         "execa": "2.0.4",
         "fs-extra": "8.1.0",
         "get-value": "3.0.1",
-        "globby": "10.0.1",
         "gulp": "4.0.2",
         "gulp-replace": "1.0.0",
         "handlebars": "4.2.0",

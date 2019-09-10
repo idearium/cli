@@ -23,9 +23,9 @@ const command = `minikube docker-env${profile}`;
 
 Promise.all([
     // The Docker environment variables we need
-    execa.shell(command),
+    execa(command, { shell: true }),
     // The current shell's environment
-    execa.shell('env'),
+    execa('env', { shell: true }),
 ]).then(([{ stdout: minikubeStdOut }, { stdout: envStdOut }]) => {
     // Format the Docker environment variables with the current shell's variables
     const shellExports = minikubeStdOut

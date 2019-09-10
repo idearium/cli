@@ -9,7 +9,6 @@ This file is a history of the changes made to @idearium/cli.
 -   Updated eslint-config-prettier v6.2.0.
 -   Updated execa v2.0.4.
 -   Updated fs-extra v8.1.0.
--   Updated globby v10.0.1.
 -   Updated handlebars v4.2.0.
 -   Updated hostile v1.3.2.
 -   Updated husky v3.0.5.
@@ -20,6 +19,7 @@ This file is a history of the changes made to @idearium/cli.
 -   Updated shelljs v0.8.3.
 -   Updated sudo-prompt v9.0.0.
 -   Removed unused `c dc env` commands.
+-   Removed unused `globby` package.
 
 ## v3.1.0 (8 August 2019)
 
