@@ -31,7 +31,6 @@
         "clipboardy": "2.1.0",
         "commander": "3.0.1",
         "debug": "4.1.1",
-        "dotenv": "8.1.0",
         "execa": "2.0.4",
         "fs-extra": "8.1.0",
         "get-value": "3.0.1",

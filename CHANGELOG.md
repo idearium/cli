@@ -6,7 +6,6 @@ This file is a history of the changes made to @idearium/cli.
 
 -   Added the `c project bump` command which accepts a `--type` option to set the bump type.
 -   Updated debug v4.1.1.
--   Updated dotenv v8.1.0.
 -   Updated eslint-config-prettier v6.2.0.
 -   Updated execa v2.0.4.
 -   Updated fs-extra v8.1.0.
@@ -20,6 +19,7 @@ This file is a history of the changes made to @idearium/cli.
 -   Updated set-value v3.0.1.
 -   Updated shelljs v0.8.3.
 -   Updated sudo-prompt v9.0.0.
+-   Removed unused `c dc env` commands.
 
 ## v3.1.0 (8 August 2019)
 
