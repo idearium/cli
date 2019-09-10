@@ -203,10 +203,8 @@ inquirer
                                 const content = Mustache.render(template, data);
 
                                 if (program.D) {
-                                    /* eslint-disable no-console */
                                     console.log('');
                                     console.log(content);
-                                    /* eslint-enable no-console */
 
                                     return resolve(data);
                                 }
