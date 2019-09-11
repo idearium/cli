@@ -17,5 +17,5 @@ const profile = program.P ? ` --profile ${program.P}` : '';
 const command = `minikube start${profile}`;
 
 exec(
-    `${command} --disk-size 64g --extra-config=apiserver.service-node-port-range=80-32767 --kubernetes-version v1.9.4 --memory=4096 --vm-driver=vmware`
+    `${command} --disk-size 64g --extra-config=apiserver.service-node-port-range=80-32767 --memory=8192 --vm-driver=vmware`
 );
