@@ -44,7 +44,7 @@ Promise.all([
     });
 
     // Create our new login shell
-    spawn('/bin/bash', ['--login'], {
+    spawn('/bin/zsh', ['--login'], {
         env,
         stdio: 'inherit',
     });
