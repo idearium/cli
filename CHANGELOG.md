@@ -21,6 +21,7 @@ This file is a history of the changes made to @idearium/cli.
 -   Removed unused `c dc env` commands.
 -   Removed unused `globby` package.
 -   Fixed error with db imports.
+-   Added `c redis connect` to connect to a Redis db.
 
 ## v3.1.0 (8 August 2019)
 
