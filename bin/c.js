@@ -17,6 +17,7 @@ program
     .command('mongo <command>', 'Shortcuts to help with the database.')
     .command('npm <command>', 'Shortcuts to help with NPM.')
     .command('project <command>', 'Shortcuts to help with project management.')
+    .command('redis <command>', 'Shortcuts to help with the Redis database.')
     .command('skaffold <command>', 'Shortcuts to help with Skaffold.')
     .command(
         'workflow <command>',
