@@ -30,15 +30,16 @@ You can read more about how this all hangs together at https://github.com/ideari
 
 The following is a summary of the top level commands.
 
-- `c d` is for everything Docker.
-- `c dc` is for everything Docker Compose.
-- `c hosts` helps with hosts management.
-- `c kc` is for everything kubectrl.
-- `c mk` is for everything Minikube.
-- `c mongo` is for MongoDB connections.
-- `c npm` is for everything NPM.
-- `c project` is for project management.
-- `c yarn` is for everything is for everything Yarn.
+-   `c d` is for everything Docker.
+-   `c dc` is for everything Docker Compose.
+-   `c hosts` helps with hosts management.
+-   `c kc` is for everything kubectrl.
+-   `c mk` is for everything Minikube.
+-   `c mongo` is for MongoDB connections.
+-   `c npm` is for everything NPM.
+-   `c project` is for project management.
+-   `c redis` is for Redis connections.
+-   `c yarn` is for everything is for everything Yarn.
 
 Be aware that `kubectl` uses a global configuration, but the `c kc` command supercedes those where possible and ensures kubectl runs in the context of the project you're within.
 
@@ -46,8 +47,8 @@ Be aware that `kubectl` uses a global configuration, but the `c kc` command supe
 
 The cli has two concepts to be aware of:
 
-- Configuration
-- State
+-   Configuration
+-   State
 
 The cli can be highly configured within information about your project, and work with Docker, NPM and Kubernetes with the information provided. All configuration is stored within a `c.js` file that lives in the root of your project. This file should be stored in Git.
 
@@ -135,8 +136,8 @@ If `useTar` is set to true, `tar` will be used to prepare the Docker context and
 
 You can supply a `test` object to enable the `c kc test <location>` command. `test` has the following properties:
 
-- `cmd` containing the command to run, inside the Docker container. It defaults to `npm test`.
-- `params` containing an object keyed by `docker run` parameter name. For example: `{ '-e': ['foo="bar"', 'bar="foo"'], '-w': '/app' }`. This allows you to customise the `docker run` command used when testing the image.
+-   `cmd` containing the command to run, inside the Docker container. It defaults to `npm test`.
+-   `params` containing an object keyed by `docker run` parameter name. For example: `{ '-e': ['foo="bar"', 'bar="foo"'], '-w': '/app' }`. This allows you to customise the `docker run` command used when testing the image.
 
 ### Environments configuration
 
@@ -216,11 +217,11 @@ module.exports = {
 
 The `kubernetes.environments` path holds a descrete environment. Each Kubernetes environment supports the following keys:
 
-- context, the kubectl context that should be used.
-- locations, the Kubernetes objects to work with.
-- namespace, if provied, will override the generated namespace.
-- path, the path to the folder containing Kuberentes manifest YAML files.
-- region, an optional region, mostly required for production.
+-   context, the kubectl context that should be used.
+-   locations, the Kubernetes objects to work with.
+-   namespace, if provied, will override the generated namespace.
+-   path, the path to the folder containing Kuberentes manifest YAML files.
+-   region, an optional region, mostly required for production.
 
 #### Kubernetes locations
 
@@ -245,10 +246,10 @@ Each location should be an array of services. One Kubernetes location can contai
 
 Each service object should provide:
 
-- `dockerLocation` (optional): The Docker location that a particular Kubernetes service object is associated with. This is usually provided with a `deployment` or `pod` object.
-- `path`: The filename within the Kubernetes environment path. The filename should not include the extension; but only `yaml` and `yaml.tmpl` are supported.
-- `templateLocals`: An array to provide a list of locals that should be passed to a `tmpl` file to create a `yaml` file.
-- `type`: The type of Kubernetes object this service describes (i.e. `pod`, `deployment`, `namespace`).
+-   `dockerLocation` (optional): The Docker location that a particular Kubernetes service object is associated with. This is usually provided with a `deployment` or `pod` object.
+-   `path`: The filename within the Kubernetes environment path. The filename should not include the extension; but only `yaml` and `yaml.tmpl` are supported.
+-   `templateLocals`: An array to provide a list of locals that should be passed to a `tmpl` file to create a `yaml` file.
+-   `type`: The type of Kubernetes object this service describes (i.e. `pod`, `deployment`, `namespace`).
 
 ##### YAML templates
 
@@ -338,8 +339,8 @@ You should customise it, but you need to provide a `locations` key, containing a
 
 For example, the `c npm proxy` command can be used to run a NPM command, at a specific location or all locations:
 
-- Execute `c npm proxy all install -SE logentries` to install the `logentries` module at all NPM locations in your project.
-- Execute `c npm proxy project install -DE jest` to install the `jest` module at the `project` location in your project.
+-   Execute `c npm proxy all install -SE logentries` to install the `logentries` module at all NPM locations in your project.
+-   Execute `c npm proxy project install -DE jest` to install the `jest` module at the `project` location in your project.
 
 ### Project configuration
 
@@ -375,6 +376,7 @@ To use this command, however, you need to provide a configuration file for Ngrok
 5. To stop, issue `CTRL + C`, then run `c kc ngrok stop` to stop ngrok.
 
 **Manifest template**:
+
 ```
 apiVersion: v1
 kind: ConfigMap
@@ -397,6 +399,7 @@ data:
 ```
 
 **Kubernetes location**:
+
 ```
 'ngrok': [
     {
