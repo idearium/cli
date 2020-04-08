@@ -4,11 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
--   Improved command.
+-   Improved commands.
 
 ### Improved command
 
 -   `c mk start` no longer specifies the Kubernetes version to use.
+-   `c mk docker-env` now starts a shell with `zsh` rather than `bash`.
 
 ## v3.1.0 (8 August 2019)
 
