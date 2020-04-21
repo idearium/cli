@@ -2,6 +2,12 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## Unreleased
+
+### Added
+
+-   Added a new build workflow.
+
 ## v3.1.0 (8 August 2019)
 
 -   Improved command.
