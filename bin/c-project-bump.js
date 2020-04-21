@@ -89,18 +89,11 @@ loadConfig('npm.locations')
             Object.keys(locations)
                 .filter((location) => location !== 'project')
                 .map((location) =>
-                    Promise.all([
-                        bumpVersion({
-                            file: 'package.json',
-                            location: locations[location],
-                            newVersion,
-                        }),
-                        bumpVersion({
-                            file: 'version.json',
-                            location: locations[location],
-                            newVersion,
-                        }),
-                    ]),
+                    bumpVersion({
+                        file: 'version.json',
+                        location: locations[location],
+                        newVersion,
+                    }),
                 ),
         ),
     )
