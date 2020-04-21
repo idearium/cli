@@ -113,7 +113,7 @@ loadConfig('npm.locations')
     )
     .then(() => loadConfig('project'))
     .then(({ gcpProjectId, name }) => {
-        const environment = type.includes('pre')
+        const environment = /(alpha|beta|pre)/.test(type)
             ? `${prereleaseIdentifier}`
             : 'production';
         const suffix =
