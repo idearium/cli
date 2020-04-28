@@ -12,9 +12,42 @@ const chalk = require('chalk');
 const clipboardy = require('clipboardy');
 const fs = require('fs');
 
-program
-    .option('-t, --type <type>', 'The version bump type', 'patch')
-    .parse(process.argv);
+program.option('-t, --type <type>', 'The version bump type', 'patch');
+
+program.on('--help', () => {
+    console.log('');
+    console.log('  The following types are currently accepted:');
+    console.log('');
+    console.log(
+        '    alpha: increment the patch version, then makes an alpha release. If the input version is already an alpha release it simply increments it.',
+    );
+    console.log(
+        '    alphamajor: bump the version up to the next major version and down to an alpha release of that major version.',
+    );
+    console.log(
+        '    alphaminor: bump the version up to the next minor version and down to an alpha release of that minor version.',
+    );
+    console.log(
+        '    alphapatch: bump the version up to the next patch version and down to an alpha release of that patch version.',
+    );
+    console.log(
+        '    beta: increment the patch version, then makes a beta release. If the input version is already a beta release it simply increments it.',
+    );
+    console.log(
+        '    betamajor: bump the version up to the next major version and down to a beta release of that major version.',
+    );
+    console.log(
+        '    betaminor: bump the version up to the next minor version and down to a beta release of that minor version.',
+    );
+    console.log(
+        '    betapatch: bump the version up to the next patch version and down to a beta release of that patch version.',
+    );
+    console.log(
+        '    prerelease: increment the patch version, then makes an alpha release. If the input version is already a prerelease it simply increments it.',
+    );
+});
+
+program.parse(process.argv);
 
 const { version: currentVersion } = require(`${pathResolve(
     process.cwd(),
