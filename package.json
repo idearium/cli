@@ -1,6 +1,6 @@
 {
     "name": "@idearium/cli",
-    "version": "3.2.0",
+    "version": "3.3.0",
     "description": "The Idearium cli, which makes working with our projects much easier.",
     "main": "index.js",
     "bin": {
