@@ -4,6 +4,14 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v3.3.0 - 2020-04-28
+
+### Added
+
+-   Added a new version bump commands.
+
+## v3.2.0 - 2020-04-21
+
 ### Added
 
 -   Added a new build workflow.
