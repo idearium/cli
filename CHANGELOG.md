@@ -8,6 +8,10 @@ This file is a history of the changes made to @idearium/cli.
 
 -   Fixed `c mk start` for newer kubernetes environments.
 
+### Changed
+
+-   `c mk docker-env` now uses the zsh shell.
+
 ## v3.3.0 - 2020-04-28
 
 ### Added
