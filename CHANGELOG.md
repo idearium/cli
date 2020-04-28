@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Fixed
+
+-   Fixed `c mk start` for newer kubernetes environments.
+
 ## v3.3.0 - 2020-04-28
 
 ### Added
