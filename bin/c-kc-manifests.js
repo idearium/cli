@@ -26,19 +26,19 @@ return Promise.all([loadState(), loadConfig()])
         const { organisation, name } = project;
         const { locations, path } = getPropertyPath(
             config,
-            `kubernetes.environments.${state.env}`,
+            `kubernetes.environments.${state.env}`
         );
         const prefix = formatProjectPrefix(
             organisation,
             name,
             state.env,
             false,
-            true,
+            true
         );
         const namespace =
             getPropertyPath(
                 config,
-                `kubernetes.environments.${state.env}.namespace`,
+                `kubernetes.environments.${state.env}.namespace`
             ) || formatProjectPrefix(organisation, name, state.env, true, true);
 
         return [locations, prefix, namespace, path, state];
@@ -47,7 +47,7 @@ return Promise.all([loadState(), loadConfig()])
         ([kubernetesLocations, prefix, namespace, path, state]) =>
             new Promise((resolve, reject) => {
                 const services = kubernetesLocationsToObjects(
-                    kubernetesLocations,
+                    kubernetesLocations
                 );
 
                 try {
@@ -57,7 +57,7 @@ return Promise.all([loadState(), loadConfig()])
                 }
 
                 return resolve([services, path]);
-            }),
+            })
     )
     .then(
         ([services, path]) =>
@@ -69,7 +69,7 @@ return Promise.all([loadState(), loadConfig()])
                 }
 
                 return resolve([services, path]);
-            }),
+            })
     )
     .then(
         ([services, path]) =>
@@ -81,16 +81,16 @@ return Promise.all([loadState(), loadConfig()])
                 }
 
                 return resolve();
-            }),
+            })
     )
     .catch((err) => {
         if (err.code === 'ENOENT') {
             return reportError(
                 new Error(
-                    'Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration',
+                    'Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'
                 ),
                 false,
-                true,
+                true
             );
         }
 

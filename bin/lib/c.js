@@ -71,8 +71,8 @@ const dockerToKubernetesLocation = (location, locations) =>
 
         return reject(
             new Error(
-                `Could not find a Kubernetes location that uses the ${location} Docker location.`,
-            ),
+                `Could not find a Kubernetes location that uses the ${location} Docker location.`
+            )
         );
     });
 
@@ -115,7 +115,7 @@ const executeTemplate = (file, locals = {}) =>
                 const template = compile(data);
 
                 return resolve(template(locals));
-            },
+            }
         );
     });
 
@@ -138,7 +138,7 @@ const hostilePath = () => {
         '..',
         'node_modules',
         '.bin',
-        'hostile',
+        'hostile'
     );
 };
 
@@ -219,8 +219,8 @@ const loadConfig = (keys, type = 'c') =>
         if (!config) {
             return reject(
                 new Error(
-                    `The '${keys}' configuration was not found in ${type}.js. See https://github.com/idearium/cli#configuration`,
-                ),
+                    `The '${keys}' configuration was not found in ${type}.js. See https://github.com/idearium/cli#configuration`
+                )
             );
         }
 
@@ -244,9 +244,7 @@ const loadState = (key) =>
 
             if (key && !json[key]) {
                 return reject(
-                    new Error(
-                        `The '${key}' state was not found in state.json.`,
-                    ),
+                    new Error(`The '${key}' state was not found in state.json.`)
                 );
             }
 
@@ -355,7 +353,7 @@ const storeState = (keys, value) =>
                     }
 
                     return resolve();
-                },
+                }
             );
         });
     });

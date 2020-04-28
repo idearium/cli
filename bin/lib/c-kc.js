@@ -19,14 +19,10 @@ const writeFile = promisify(fs.writeFile);
  * @returns {void}
  */
 const asyncForEach = async (array, callback) => {
-
     for (let index = 0; index < array.length; index++) {
-
         // eslint-disable-next-line no-await-in-loop, callback-return
         await callback(array[index], index, array);
-
     }
-
 };
 
 /**
@@ -36,61 +32,51 @@ const asyncForEach = async (array, callback) => {
  * @returns {void}
  */
 const ensureServiceFilesExist = async (path = '', services = []) => {
-
     await asyncForEach(services, async (service) => {
-
         const sourceFolder = resolvePath(process.cwd(), path);
         const destinationFolder = join(sourceFolder, '.compiled');
         const sourcePath = join(sourceFolder, service.path);
         const destinationPath = join(destinationFolder, service.path);
 
         try {
-
             await access(`${sourcePath}.yaml.tmpl`, constants.R_OK);
-
         } catch (e) {
-
             try {
-
                 await access(`${sourcePath}.yaml`, constants.R_OK);
                 await ensureDir(destinationFolder);
                 await copy(`${sourcePath}.yaml`, `${destinationPath}.yaml`);
-
             } catch (err) {
-
-                throw new Error(new Error(`Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`));
-
+                throw new Error(
+                    new Error(
+                        `Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`
+                    )
+                );
             }
-
         }
-
     });
-
 };
 
 const renderServicesTemplates = async (path = '', services = []) => {
-
     await asyncForEach(services, async (service) => {
-
         const sourceFolder = resolvePath(process.cwd(), path);
         const sourcePath = join(sourceFolder, service.path);
         const destinationFolder = join(sourceFolder, '.compiled');
         const destinationPath = join(destinationFolder, service.path);
 
         try {
-
             const content = await readFile(`${sourcePath}.yaml.tmpl`, 'utf-8');
 
             await ensureDir(destinationFolder);
-            await writeFile(`${destinationPath}.yaml`, Mustache.render(content, service.locals), 'utf8');
-
+            await writeFile(
+                `${destinationPath}.yaml`,
+                Mustache.render(content, service.locals),
+                'utf8'
+            );
         } catch (e) {
             // Do nothing.
             // It just means we don't have a templ file to render.
         }
-
     });
-
 };
 
 /**
@@ -102,9 +88,7 @@ const renderServicesTemplates = async (path = '', services = []) => {
  * @returns {void}
  */
 const setLocalsForServices = (state, namespace, prefix, services) => {
-
     services.forEach((service) => {
-
         const templateLocals = service.templateLocals || [];
         const constantLocals = {
             environment: state.env,
@@ -116,39 +100,35 @@ const setLocalsForServices = (state, namespace, prefix, services) => {
         service.locals = {};
 
         templateLocals.forEach((local) => {
-
-            if (typeof local === 'string' && Object.keys(constantLocals).includes(local)) {
-
+            if (
+                typeof local === 'string' &&
+                Object.keys(constantLocals).includes(local)
+            ) {
                 service.locals[local] = constantLocals[local];
 
                 return;
-
             }
 
             if (typeof local === 'string' && local === 'tag') {
-
-                service.locals[local] = state.kubernetes.environments[state.env].build.tags[`${prefix}/${service.location}`];
+                service.locals[local] =
+                    state.kubernetes.environments[state.env].build.tags[
+                        `${prefix}/${service.location}`
+                    ];
 
                 return;
-
             }
 
             if (typeof local === 'function') {
-
                 const { label, value } = local();
 
                 service.locals[label] = value;
 
                 return;
-
             }
 
             throw Error(`Could not resolve '${local}' local`);
-
         });
-
     });
-
 };
 
 module.exports = {

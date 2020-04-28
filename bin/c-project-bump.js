@@ -19,31 +19,31 @@ program.on('--help', () => {
     console.log('  The following types are currently accepted:');
     console.log('');
     console.log(
-        '    alpha: increment the patch version, then makes an alpha release. If the input version is already an alpha release it simply increments it.',
+        '    alpha: increment the patch version, then makes an alpha release. If the input version is already an alpha release it simply increments it.'
     );
     console.log(
-        '    alphamajor: bump the version up to the next major version and down to an alpha release of that major version.',
+        '    alphamajor: bump the version up to the next major version and down to an alpha release of that major version.'
     );
     console.log(
-        '    alphaminor: bump the version up to the next minor version and down to an alpha release of that minor version.',
+        '    alphaminor: bump the version up to the next minor version and down to an alpha release of that minor version.'
     );
     console.log(
-        '    alphapatch: bump the version up to the next patch version and down to an alpha release of that patch version.',
+        '    alphapatch: bump the version up to the next patch version and down to an alpha release of that patch version.'
     );
     console.log(
-        '    beta: increment the patch version, then makes a beta release. If the input version is already a beta release it simply increments it.',
+        '    beta: increment the patch version, then makes a beta release. If the input version is already a beta release it simply increments it.'
     );
     console.log(
-        '    betamajor: bump the version up to the next major version and down to a beta release of that major version.',
+        '    betamajor: bump the version up to the next major version and down to a beta release of that major version.'
     );
     console.log(
-        '    betaminor: bump the version up to the next minor version and down to a beta release of that minor version.',
+        '    betaminor: bump the version up to the next minor version and down to a beta release of that minor version.'
     );
     console.log(
-        '    betapatch: bump the version up to the next patch version and down to a beta release of that patch version.',
+        '    betapatch: bump the version up to the next patch version and down to a beta release of that patch version.'
     );
     console.log(
-        '    prerelease: increment the patch version, then makes an alpha release. If the input version is already a prerelease it simply increments it.',
+        '    prerelease: increment the patch version, then makes an alpha release. If the input version is already a prerelease it simply increments it.'
     );
 });
 
@@ -51,7 +51,7 @@ program.parse(process.argv);
 
 const { version: currentVersion } = require(`${pathResolve(
     process.cwd(),
-    'package.json',
+    'package.json'
 )}`);
 let { type } = program;
 
@@ -98,8 +98,8 @@ const bumpVersion = ({ file, location }) =>
 
             console.log(
                 `Bumping ${src} from ${chalk.white.bold(
-                    currentVersion,
-                )} to ${chalk.cyan.bold(newVersion)}`,
+                    currentVersion
+                )} to ${chalk.cyan.bold(newVersion)}`
             );
 
             const stream = gulp
@@ -107,8 +107,8 @@ const bumpVersion = ({ file, location }) =>
                 .pipe(
                     replace(
                         new RegExp('"version": "([0-9a-z.-]+)"'),
-                        `"version": "${newVersion}"`,
-                    ),
+                        `"version": "${newVersion}"`
+                    )
                 )
                 .pipe(gulp.dest(location));
 
@@ -126,23 +126,23 @@ loadConfig('npm.locations')
                         file: 'version.json',
                         location: locations[location],
                         newVersion,
-                    }),
-                ),
-        ),
+                    })
+                )
+        )
     )
     .then(() =>
         bumpVersion({
             file: 'version.json',
             location: './static/root/www/',
             newVersion,
-        }),
+        })
     )
     .then(() =>
         bumpVersion({
             file: 'package.json',
             location: './',
             newVersion,
-        }),
+        })
     )
     .then(() => loadConfig('project'))
     .then(({ gcpProjectId, name }) => {
@@ -158,8 +158,8 @@ loadConfig('npm.locations')
 
         console.log(
             `Bumping ${environment} manifests from ${chalk.white.bold(
-                currentVersion,
-            )} to ${chalk.cyan.bold(newVersion)}`,
+                currentVersion
+            )} to ${chalk.cyan.bold(newVersion)}`
         );
 
         return gulp
@@ -167,14 +167,14 @@ loadConfig('npm.locations')
             .pipe(
                 replace(
                     new RegExp(toReplace),
-                    `gcr.io/${gcpProjectId}/${name}-$1${suffix}:${newVersion}`,
-                ),
+                    `gcr.io/${gcpProjectId}/${name}-$1${suffix}:${newVersion}`
+                )
             )
             .pipe(gulp.dest(`./manifests/${environment}`));
     })
     .then(() => {
         console.log(
-            `\nCopied ${chalk.cyan.bold(newVersion)} to your clipboard.`,
+            `\nCopied ${chalk.cyan.bold(newVersion)} to your clipboard.`
         );
 
         // Copy new version to the clipboard.
@@ -184,10 +184,10 @@ loadConfig('npm.locations')
         if (err.code === 'ENOENT') {
             return reportError(
                 new Error(
-                    'Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration',
+                    'Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'
                 ),
                 false,
-                true,
+                true
             );
         }
 

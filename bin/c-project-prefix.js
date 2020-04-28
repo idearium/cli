@@ -10,24 +10,30 @@ const { formatProjectPrefix } = require('./lib/c-project');
 program
     .option('-e', 'Include the current environment.')
     .option('-n', 'Do not print the trailing newline character.')
-    .description('Dynamically generate the projects prefix based on `name` and `organisation` values. The prefix can be used within Kubernetes configuration.')
+    .description(
+        'Dynamically generate the projects prefix based on `name` and `organisation` values. The prefix can be used within Kubernetes configuration.'
+    )
     .parse(process.argv);
 
 return loadConfig('project')
-    .then(config => Promise.all([config, loadState('env')]))
+    .then((config) => Promise.all([config, loadState('env')]))
     .then(([config, state]) => {
-
         const { name, organisation } = config;
 
-        return process.stdout.write(formatProjectPrefix(organisation, name, state, program.E, program.N));
-
+        return process.stdout.write(
+            formatProjectPrefix(organisation, name, state, program.E, program.N)
+        );
     })
     .catch((err) => {
-
         if (err.code === 'ENOENT') {
-            return reportError(new Error('Your project\'s environment hasn\'t been configured yet. Use `c project env set`.'), false, true);
+            return reportError(
+                new Error(
+                    "Your project's environment hasn't been configured yet. Use `c project env set`."
+                ),
+                false,
+                true
+            );
         }
 
         return reportError(err, false, true);
-
     });

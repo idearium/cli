@@ -10,11 +10,11 @@ const { spawn } = require('child_process');
 // The basic program, which uses sub-commands.
 program
     .description(
-        "Spawns a login shell with your current environment and additional Docker environment variables to use the Minikube's Docker daemon",
+        "Spawns a login shell with your current environment and additional Docker environment variables to use the Minikube's Docker daemon"
     )
     .option(
         '-p [profile]',
-        'Specify a minikube profile, otherwise the default minikube profile will be used.',
+        'Specify a minikube profile, otherwise the default minikube profile will be used.'
     )
     .parse(process.argv);
 

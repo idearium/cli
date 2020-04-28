@@ -12,14 +12,20 @@ const link = promisify(symlink);
 
 program
     .arguments('<from> <to>')
-    .description('Create a symlink at the <to> directory, pointing to the <from> directory.')
+    .description(
+        'Create a symlink at the <to> directory, pointing to the <from> directory.'
+    )
     .parse(process.argv);
 
 const [from, to] = program.args;
 
 if (!(from && to)) {
-    return reportError(new Error('You must pass the from and to arguments.'), program);
+    return reportError(
+        new Error('You must pass the from and to arguments.'),
+        program
+    );
 }
 
-link(resolve(process.cwd(), from), resolve(process.cwd(), to))
-    .catch(reportError);
+link(resolve(process.cwd(), from), resolve(process.cwd(), to)).catch(
+    reportError
+);

@@ -7,18 +7,17 @@ const { loadConfig, reportError } = require('./lib/c');
 
 program
     .arguments('[command...]')
-    .description('Runs a gcloud command, configured to use the project\'s configuration, rather than gcloud\'s configuration.')
+    .description(
+        "Runs a gcloud command, configured to use the project's configuration, rather than gcloud's configuration."
+    )
     .parse(process.argv);
 
 return loadConfig('gcloud')
     .then((gcloud) => {
-
         const { projectId } = gcloud;
 
         // Remove the first two entries.
-        const parts = program
-            .rawArgs
-            .slice(2);
+        const parts = program.rawArgs.slice(2);
 
         // The command starts with gcloud.
         parts.unshift('gcloud');
@@ -30,6 +29,5 @@ return loadConfig('gcloud')
         const cmd = parts.join(' ');
 
         exec(cmd);
-
     })
-    .catch(err => reportError(err, false, true));
+    .catch((err) => reportError(err, false, true));

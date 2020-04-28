@@ -8,14 +8,14 @@ const { env, reportError } = require('./lib/c');
 
 program
     .description(
-        "This command should be run via Skaffold. It interprets environment variables used by the Skaffold custom build script contract and builds images accordingly using 'c kc build'.",
+        "This command should be run via Skaffold. It interprets environment variables used by the Skaffold custom build script contract and builds images accordingly using 'c kc build'."
     )
     .parse(process.argv);
 
 if (!env('IMAGES')) {
     return reportError(
         new Error("The IMAGES environment variable didn't exist."),
-        program,
+        program
     );
 }
 
