@@ -1,4 +1,7 @@
 {
-    "root": true,
-    "extends": ["@idearium/eslint-config", "plugin:prettier/recommended"]
+    "extends": ["@idearium/eslint-config", "plugin:prettier/recommended"],
+    "parserOptions": {
+        "ecmaVersion": 2017
+    },
+    "root": true
 }
