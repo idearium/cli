@@ -1,4 +1,4 @@
 {
     "root": true,
-    "extends": "@idearium/eslint-config"
+    "extends": ["@idearium/eslint-config", "plugin:prettier/recommended"]
 }
