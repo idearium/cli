@@ -20,7 +20,7 @@ program
     .command('skaffold <command>', 'Shortcuts to help with Skaffold.')
     .command(
         'workflow <command>',
-        'Common workflows that can be executed within the context of a project.',
+        'Common workflows that can be executed within the context of a project.'
     )
     .command('yarn <command>', 'Shortcuts to help with Yarn.')
     .parse(process.argv);

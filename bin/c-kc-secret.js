@@ -15,7 +15,11 @@ program
 const [secret] = program.args;
 
 if (!secret) {
-    return reportError(new Error('You need to provide a secret'), program, true);
+    return reportError(
+        new Error('You need to provide a secret'),
+        program,
+        true
+    );
 }
 
 const decoded = secret.toString('base64');

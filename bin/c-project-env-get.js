@@ -12,16 +12,18 @@ program
 
 return loadState('env')
     .then((data) => {
-
         process.stdout.write(`${data}${newline(program.N)}`);
-
     })
     .catch((err) => {
-
         if (err.code === 'ENOENT') {
-            return reportError(new Error('Your project\'s environment hasn\'t been configured yet. Use `c project env set`.'), false, true);
+            return reportError(
+                new Error(
+                    "Your project's environment hasn't been configured yet. Use `c project env set`."
+                ),
+                false,
+                true
+            );
         }
 
         return reportError(err, false, true);
-
     });

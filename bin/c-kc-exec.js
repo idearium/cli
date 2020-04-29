@@ -7,10 +7,7 @@ const { spawn } = require('child_process');
 const { reportError } = require('./lib/c');
 
 // The basic program, which uses sub-commands.
-program
-    .arguments('<location>')
-    .arguments('[command]')
-    .parse(process.argv);
+program.arguments('<location>').arguments('[command]').parse(process.argv);
 
 const [location, command] = program.args;
 

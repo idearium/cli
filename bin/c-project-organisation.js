@@ -11,13 +11,21 @@ program
     .parse(process.argv);
 
 loadConfig('project.organisation')
-    .then(organisation => process.stdout.write(`${organisation}${newline(program.N)}`))
+    .then((organisation) =>
+        process.stdout.write(`${organisation}${newline(program.N)}`)
+    )
     .catch((err) => {
-
         if (err.code === 'ENOENT') {
-            return reportError(new Error(`Your project's organisation hasn't been configured yet. See ${documentation('configuration')}.`), false, true);
+            return reportError(
+                new Error(
+                    `Your project's organisation hasn't been configured yet. See ${documentation(
+                        'configuration'
+                    )}.`
+                ),
+                false,
+                true
+            );
         }
 
         return reportError(err, false, true);
-
     });
