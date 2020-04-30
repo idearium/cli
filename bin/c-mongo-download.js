@@ -29,7 +29,7 @@ if (env.toLowerCase() === 'local') {
 }
 
 loadConfig(`mongo.${env}`)
-    .then(({ host, name, params = [], password, user }) => {
+    .then(({ host, name, params = [], password, port, user }) => {
         let collectionArg = '';
         let dbAuth = '';
 
@@ -44,7 +44,7 @@ loadConfig(`mongo.${env}`)
         return spawn(
             `docker run -it -v ${process.cwd()}/data:/data --rm mongo:4.2 mongodump ${dbAuth} ${params.join(
                 ' '
-            )} -h ${host} -d ${name} ${collectionArg} -o data`,
+            )} -h ${host} --port ${port} -d ${name} ${collectionArg} -o data`,
             {
                 shell: true,
                 stdio: 'inherit',
