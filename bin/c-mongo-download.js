@@ -42,7 +42,7 @@ loadConfig(`mongo.${env}`)
         }
 
         return spawn(
-            `docker run -it -v ${process.cwd()}/data:/data --rm mongo:3.4 mongodump ${dbAuth} ${params.join(
+            `docker run -it -v ${process.cwd()}/data:/data --rm mongo:4.2 mongodump ${dbAuth} ${params.join(
                 ' '
             )} -h ${host} -d ${name} ${collectionArg} -o data`,
             {

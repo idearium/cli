@@ -60,7 +60,7 @@ loadConfig('mongo')
                 db.name
             } --add-host ${localDb.host}:$(c hosts get -n ${
                 localDb.host
-            }) --rm mongo:3.4 mongorestore --noIndexRestore --drop -h ${
+            }) --rm mongo:4.2 mongorestore --noIndexRestore --drop -h ${
                 localDb.host
             }:${localDb.port} ${collectionArg} data/`,
             {
