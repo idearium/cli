@@ -36,11 +36,11 @@ loadConfig('mongo')
         const toDb = mongo[to] || mongo.local;
 
         // Default to importing all collections.
-        let collectionArg = `--nsInclude '${db.name}.*' --nsFrom='${db.name}.*' --nsTo='${toDb.name}.*'`;
+        let collectionArg = `--nsInclude '${db.name}.*' --nsFrom '${db.name}.*' --nsTo '${toDb.name}.*'`;
 
         // Otherwise, import a specific collection only.
         if (typeof collection !== 'undefined') {
-            collectionArg = `--nsInclude '${db.name}.${collection}' --nsFrom='${db.name}.*' --nsTo='${toDb.name}.*'`;
+            collectionArg = `--nsInclude '${db.name}.${collection}' --nsFrom '${db.name}.*' --nsTo '${toDb.name}.*'`;
         }
 
         if (!toDb) {
