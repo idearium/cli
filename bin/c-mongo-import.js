@@ -65,13 +65,13 @@ loadConfig('mongo')
         let dbAuth = '';
 
         if (toDb.user && toDb.password) {
-            dbAuth = `-u ${toDb.user} -p ${toDb.password} --authenticationDatabase ${toDb.name}`;
+            dbAuth = ` -u ${toDb.user} -p ${toDb.password} --authenticationDatabase ${toDb.name}`;
         }
 
         return spawn(
             `docker run -it -v ${process.cwd()}/data/${db.name}:/data/${
                 db.name
-            }${addHost} --rm mongo:4.2 mongorestore --noIndexRestore ${dbAuth} ${(
+            }${addHost} --rm mongo:4.2 mongorestore --noIndexRestore${dbAuth} ${(
                 toDb.params || []
             ).join(' ')} --drop -h ${toDb.host} --port ${
                 toDb.port
