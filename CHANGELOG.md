@@ -7,6 +7,8 @@ This file is a history of the changes made to @idearium/cli.
 ### Changed
 
 -   Split up the mongo port again.
+-   The `--ssl` param should now be `--tls`.
+-   The `--sslAllowInvalidCertificates` param should now be `--tlsAllowInvalidCertificates`.
 
 ## v3.3.2 - 2020-04-29
 
