@@ -4,6 +4,8 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.0.0 - 2020-05-06
+
 ### Changed
 
 -   Split up the mongo port again.
