@@ -10,6 +10,7 @@ const { loadConfig, reportError } = require('./lib/c');
 program
     .arguments('[env]')
     .arguments('<collection>')
+    .option('-t, --to <env>', 'change the import destination')
     .description(
         "Import all or a specific collection from a Mongo database. If you don't provide a collection, all will be imported."
     )
@@ -20,6 +21,7 @@ if (!program.args.length) {
 }
 
 const [env, collection] = program.args;
+const { to } = program;
 
 if (env.toLowerCase() === 'local') {
     return reportError(
@@ -31,19 +33,19 @@ if (env.toLowerCase() === 'local') {
 loadConfig('mongo')
     .then((mongo) => {
         const db = mongo[`${env}`];
-        const localDb = mongo.local;
+        const toDb = mongo[to] || mongo.local;
 
         // Default to importing all collections.
-        let collectionArg = `--nsInclude '${db.name}.*' --nsFrom '${db.name}.*' --nsTo '${localDb.name}.*'`;
+        let collectionArg = `--nsInclude '${db.name}.*' --nsFrom '${db.name}.*' --nsTo '${toDb.name}.*'`;
 
         // Otherwise, import a specific collection only.
         if (typeof collection !== 'undefined') {
-            collectionArg = `--nsInclude '${db.name}.${collection}' --nsFrom '${db.name}.${collection}' --nsTo '${localDb.name}.${collection}'`;
+            collectionArg = `--nsInclude '${db.name}.${collection}' --nsFrom '${db.name}.*' --nsTo '${toDb.name}.*'`;
         }
 
-        if (!localDb) {
+        if (!toDb) {
             return reportError(
-                new Error('Could not find the local db'),
+                new Error('Could not find a db to import into'),
                 program
             );
         }
@@ -55,14 +57,25 @@ loadConfig('mongo')
             );
         }
 
+        const addHost =
+            toDb.host === mongo.local.host
+                ? ` --add-host ${toDb.host}:$(c hosts get -n ${toDb.host})`
+                : '';
+
+        let dbAuth = '';
+
+        if (toDb.user && toDb.password) {
+            dbAuth = ` -u ${toDb.user} -p ${toDb.password} --authenticationDatabase ${toDb.name}`;
+        }
+
         return spawn(
             `docker run -it -v ${process.cwd()}/data/${db.name}:/data/${
                 db.name
-            } --add-host ${localDb.host}:$(c hosts get -n ${
-                localDb.host
-            }) --rm mongo:3.4 mongorestore --noIndexRestore --drop -h ${
-                localDb.host
-            }:${localDb.port} ${collectionArg} data/`,
+            }${addHost} --rm mongo:4.2 mongorestore --noIndexRestore${dbAuth} ${(
+                toDb.params || []
+            ).join(' ')} --drop -h ${toDb.host} --port ${
+                toDb.port
+            } ${collectionArg} data/`,
             {
                 shell: true,
                 stdio: 'inherit',

@@ -16,7 +16,7 @@ if (!program.args.length) {
 const [env] = program.args;
 
 loadConfig(`mongo.${env}`)
-    .then(({ host, name, params = [], password, user }) => {
+    .then(({ host, name, params = [], password, port, user }) => {
         let dbAuth = '';
 
         if (user && password) {
@@ -24,9 +24,9 @@ loadConfig(`mongo.${env}`)
         }
 
         return spawn(
-            `docker run -it --rm mongo:3.4 mongo ${dbAuth} ${params.join(
+            `docker run -it --rm mongo:4.2 mongo ${dbAuth} ${params.join(
                 ' '
-            )} --host ${host} ${name}`,
+            )} --host ${host}:${port} ${name}`,
             {
                 shell: true,
                 stdio: 'inherit',
