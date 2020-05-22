@@ -10,7 +10,7 @@
         "major-release": "npm version major && npm publish --access=public && git push --follow-tags",
         "minor-release": "npm version minor && npm publish --access=public && git push --follow-tags",
         "patch-release": "npm version patch && npm publish --access=public && git push --follow-tags",
-        "prerelease-release": "npm version prerelease && npm publish --access=public && git push --follow-tags",
+        "prerelease-release": "npm version prerelease --preid=beta && npm publish --access=public && git push --follow-tags",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
