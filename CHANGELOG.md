@@ -2,7 +2,9 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## Unreleased
+## v4.0.1-beta.1 - 2020-05-22
+
+-   Updated `c mk start` to initiate Minikube with a CNI plugin.
 
 ## v4.0.0 - 2020-05-06
 
