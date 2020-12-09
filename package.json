@@ -44,7 +44,7 @@
         "mustache": "2.3.0",
         "semver": "7.3.2",
         "set-value": "3.0.0",
-        "shelljs": "0.7.8",
+        "shelljs": "0.8.4",
         "sudo-prompt": "8.2.0"
     },
     "devDependencies": {
