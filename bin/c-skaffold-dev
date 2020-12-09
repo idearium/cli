@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 yarn c kc manifests
-skaffold dev
+skaffold dev --detect-minikube --tail=true
