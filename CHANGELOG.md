@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.0.1 - 2020-12-17
+
+### Fixed
+
+-   Fixed shelljs in node14+.
+
 ## v4.0.0 - 2020-05-06
 
 ### Changed
