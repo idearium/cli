@@ -11,12 +11,13 @@ program
     .command('dc <command>', 'Shortcuts to control Docker Compose.')
     .command('gc <command>', 'Shortcuts to help with gcloud.')
     .command('hosts <command>', 'Shortcuts to help with hosts management.')
-    .command('kc <command>', 'Shortcuts to help with kubectrl.')
+    .command('kc <command>', 'Shortcuts to help with kubectl.')
     .command('fs <command>', 'Shortcuts to help with the file system.')
     .command('mk <command>', 'Shortcuts to control Minikube.')
     .command('mongo <command>', 'Shortcuts to help with the database.')
     .command('npm <command>', 'Shortcuts to help with NPM.')
     .command('project <command>', 'Shortcuts to help with project management.')
+    .command('sdp <command>', "Shortcuts to help with Section's devpop.")
     .command('skaffold <command>', 'Shortcuts to help with Skaffold.')
     .command(
         'workflow <command>',

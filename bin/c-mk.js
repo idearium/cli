@@ -15,6 +15,7 @@ program
     .command('hosts', "Add Minikube's IP to your hosts record")
     .command('ip', "Retrieve Minikube's IP")
     .command('restart', 'Restart minikube')
+    .command('ssh', 'Run a command in minikube')
     .command('start', 'Start minikube')
     .command('stop', 'Stop minikube')
     .parse(process.argv);
