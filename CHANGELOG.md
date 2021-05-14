@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Changed
+
+-   Removed deprecated `$IMAGES` env variable with `$IMAGE`.
+
 ## v4.0.1 - 2020-12-17
 
 ### Fixed

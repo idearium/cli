@@ -12,14 +12,14 @@ program
     )
     .parse(process.argv);
 
-if (!env('IMAGES')) {
+if (!env('IMAGE')) {
     return reportError(
-        new Error("The IMAGES environment variable didn't exist."),
+        new Error("The IMAGE environment variable didn't exist."),
         program
     );
 }
 
-const [, image] = env('IMAGES').split('/');
+const [, image] = env('IMAGE').split('/');
 const [name, tag] = image.split(':');
 
 exec(`yarn c kc build ${name} -t ${tag}`);
