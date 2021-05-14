@@ -20,4 +20,4 @@ if (!cmd) {
     return reportError(new Error('You must pass the cmd argument.'), program);
 }
 
-exec(`kubectl ${cmd}`);
+exec(`kubectl --context section ${cmd}`);
