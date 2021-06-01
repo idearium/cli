@@ -4,6 +4,13 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.0 - 2021-06-02
+
+### Added
+
+-   `c sdp` commands.
+-   `c mk ssh` command.
+
 ### Changed
 
 -   Removed deprecated `$IMAGES` env variable with `$IMAGE`.
