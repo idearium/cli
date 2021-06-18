@@ -103,7 +103,7 @@ return loadConfig('docker.locations').then((locations) => {
     const tag = program.T ? program.T : 'latest';
     const name = program.N ? program.N : location;
 
-    let cmd = `docker build -t ${name}:${tag}${formatBuildArgs(
+    let cmd = `DOCKER_SCAN_SUGGEST=false docker build -t ${name}:${tag}${formatBuildArgs(
         dockerLocation.buildArgs
     )} -f ${file}`;
 
