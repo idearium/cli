@@ -4,6 +4,8 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.1-beta.1 - 2021-08-03
+
 ### Added
 
 -   A `-l` flag to `c hosts` to only return the last entry if multiple exist.
