@@ -10,6 +10,7 @@ const { newline, reportError } = require('./lib/c');
 program
     .arguments('<value>')
     .option('-n', 'Do not print the trailing newline character.')
+    .option('-l', 'Return the last result only.')
     .description(
         'Search /etc/hosts for an IP or a domain. Searching for an IP will return the matching domain. Searching for a domain will return the matching IP.'
     )
@@ -40,10 +41,14 @@ hostile.get(false, (err, lines) => {
     }
 
     const regexp = new RegExp(value);
+    const matchingLines = lines.filter(
+        ([ip, hosts]) => ip === value || regexp.test(hosts)
+    );
+    const linesToReport = program.L
+        ? [matchingLines[matchingLines.length - 1]]
+        : matchingLines;
 
-    lines.forEach((line) => {
-        const [ip, hosts] = line;
-
+    linesToReport.forEach(([ip, hosts]) => {
         if (ip === value) {
             return reportFound(hosts);
         }
