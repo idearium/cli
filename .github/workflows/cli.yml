@@ -39,11 +39,11 @@ jobs:
               run: yarn install
             - name: Publish (beta)
               if: contains(github.ref, 'beta')
-              run: yarn workspace @idearium/cli publish --tag beta --access public
+              run: yarn publish --tag beta --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Publish
               if: "!contains(github.ref , 'beta')"
-              run: yarn workspace @idearium/cli publish --access public
+              run: yarn publish --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
