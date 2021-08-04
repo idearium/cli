@@ -59,7 +59,7 @@ loadConfig('mongo')
 
         const addHost =
             toDb.host === mongo.local.host
-                ? ` --add-host ${toDb.host}:$(c hosts get -n ${toDb.host})`
+                ? ` --add-host ${toDb.host}:$(c hosts get -nl ${toDb.host})`
                 : '';
 
         let dbAuth = '';

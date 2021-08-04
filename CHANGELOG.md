@@ -4,6 +4,13 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.2 - 2021-08-04
+
+### Added
+
+-   A `-l` flag to `c hosts` to only return the last entry if multiple exist.
+-   `c mongo` commands now use the `-l` flag with `c hosts`.
+
 ## v4.1.0 - 2021-06-02
 
 ### Added
