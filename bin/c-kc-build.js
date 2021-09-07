@@ -2,7 +2,7 @@
 
 'use strict';
 
-const program = require('commander');
+const program = require('commander-latest');
 const { exec } = require('shelljs');
 const {
     dockerToKubernetesLocation,
@@ -11,18 +11,27 @@ const {
     storeState,
 } = require('./lib/c');
 const getPropertyPath = require('get-value');
+const {
+    flagBuildArgs,
+    formatBuildArgs,
+    validateBuildArgs,
+} = require('./lib/c-kc');
 
 program
     .arguments('<location>')
     .option('-d', 'Also deploy the location(s).')
-    .option('-t --tag <tag>', 'A tag for the generated Docker image(s).')
+    .option('-t, --tag <tag>', 'A tag for the generated Docker image(s).')
+    .option('--build-arg <arg...>', 'Build arguments to pass to Docker.')
     .description(
         "Provide a Docker location and the Dockerfile will be used to build a Docker image. If you don't pass a location, all locations will be built."
     )
     .parse(process.argv);
 
 const [location = 'all'] = program.args;
-const { tag = String(Math.floor(Date.now() / 1000)) } = program;
+const { tag = String(Math.floor(Date.now() / 1000)) } = program.opts();
+const buildArgs = flagBuildArgs(
+    validateBuildArgs(program.opts().buildArg || [])
+);
 
 return (
     loadConfig()
@@ -62,7 +71,9 @@ return (
                                     );
                                 }
 
-                                const cmd = `c d build -n ${prefix}/${loc} -t ${tag} ${loc}`;
+                                const cmd = `c d build -n ${prefix}/${loc} -t ${tag}${formatBuildArgs(
+                                    buildArgs
+                                )} ${loc}`;
 
                                 exec(cmd, (err, stdout, stderr) => {
                                     if ((err || stderr) && stderr) {

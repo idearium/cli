@@ -56,6 +56,48 @@ const ensureServiceFilesExist = async (path = '', services = []) => {
     });
 };
 
+const flagBuildArgs = (args = []) => args.map((arg) => `--build-arg ${arg}`);
+
+const formatBuildArgs = (args) => {
+    if (Array.isArray(args)) {
+        return args.length > 0 ? `${leftSpace(args.join(' '))}` : '';
+    }
+
+    if (typeof args === 'object' && args !== null) {
+        const keys = Object.keys(args);
+
+        if (keys.length) {
+            return `${leftSpace(
+                keys
+                    .map(
+                        (key) =>
+                            `--build-arg ${key}=${
+                                typeof args[key] === 'function'
+                                    ? args[key]()
+                                    : args[key]
+                            }`
+                    )
+                    .join(' ')
+            )}`;
+        }
+    }
+
+    return '';
+};
+
+/**
+ * Pad a string with a left space, if the string has a length.
+ * @param {String} str A string to pad with a left space.
+ * @return {String} A string left-padded with a space.
+ */
+const leftSpace = (str) => {
+    if (str && typeof str === 'string') {
+        return ` ${str}`;
+    }
+
+    return str;
+};
+
 const renderServicesTemplates = async (path = '', services = []) => {
     await asyncForEach(services, async (service) => {
         const sourceFolder = resolvePath(process.cwd(), path);
@@ -131,8 +173,14 @@ const setLocalsForServices = (state, namespace, prefix, services) => {
     });
 };
 
+const validateBuildArgs = (args = []) =>
+    args.filter((arg) => arg.split('=').length == 2);
+
 module.exports = {
     ensureServiceFilesExist,
+    flagBuildArgs,
+    formatBuildArgs,
     renderServicesTemplates,
     setLocalsForServices,
+    validateBuildArgs,
 };
