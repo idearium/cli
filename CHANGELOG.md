@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.3-beta.1 - 2021-09-07
+
+### Added
+
+-   `--build-arg` flag to build related commands.
+
 ## v4.1.2 - 2021-08-04
 
 ### Added
