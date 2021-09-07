@@ -18,7 +18,7 @@ program
 
 execa
     .shell(
-        `/usr/local/bin/c sdp service -n section-shared git-daemon-developer-pop --url`
+        `yarn c sdp service -n section-shared git-daemon-developer-pop --url`
     )
     .then(({ code, stderr, stdout }) => {
         if (!code && !stderr.length && stdout.length) {

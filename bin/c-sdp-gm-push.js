@@ -26,5 +26,5 @@ loadConfig('section').then((submodules) => {
         );
     }
 
-    exec(`/usr/local/bin/c sdp gm cmd -s ${submodule} push developer-pop`);
+    exec(`yarn c sdp gm cmd -s ${submodule} push developer-pop`);
 });

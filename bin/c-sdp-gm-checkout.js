@@ -41,19 +41,17 @@ loadConfig('section').then((submodules) => {
     }
 
     return execa
-        .shell(
-            `/usr/local/bin/c sdp gm cmd -s ${submodule} rev-parse --verify ${branch}`
-        )
+        .shell(`yarn c sdp gm cmd -s ${submodule} rev-parse --verify ${branch}`)
         .then(({ code, stderr, stdout }) => {
             if (!code && !stderr.length && stdout.length) {
                 return exec(
-                    `/usr/local/bin/c sdp gm cmd -s ${submodule} checkout ${branch}`
+                    `yarn c sdp gm cmd -s ${submodule} checkout ${branch}`
                 );
             }
 
             if (!code && stderr.length && create) {
                 return exec(
-                    `/usr/local/bin/c sdp gm cmd -s ${submodule} checkout -b ${branch}`
+                    `yarn c sdp gm cmd -s ${submodule} checkout -b ${branch}`
                 );
             }
 
