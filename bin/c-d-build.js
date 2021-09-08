@@ -74,7 +74,7 @@ return loadConfig('docker.locations').then((locations) => {
     const tag = opts.tag ? opts.tag : 'latest';
     const name = opts.name ? opts.name : location;
 
-    let cmd = `docker build -t ${name}:${tag}${formatBuildArgs(
+    let cmd = `DOCKER_SCAN_SUGGEST=false docker build -t ${name}:${tag}${formatBuildArgs(
         dockerLocation.buildArgs
     )}${formatBuildArgs(buildArgs)} -f ${file}`;
 
