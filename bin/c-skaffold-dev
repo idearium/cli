@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 yarn c kc manifests
-skaffold dev
+DOCKER_SCAN_SUGGEST=false skaffold dev
