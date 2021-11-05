@@ -5,6 +5,7 @@
 const program = require('commander');
 const { spawn } = require('child_process');
 const { loadConfig, reportError } = require('./lib/c');
+const { connectionParts } = require('./lib/c-mongo');
 
 // The basic program, which uses sub-commands.
 program
@@ -28,27 +29,36 @@ if (env.toLowerCase() === 'local') {
     );
 }
 
+const connectionStringWithAddress = ({ address, params, password, user }) => {
+    const url = new URL(address);
+
+    url.password = password;
+    url.username = user;
+
+    return `${params} --uri ${url.href}`;
+};
+
+const connectionStringWithHost = ({ auth, host, name, params }) =>
+    `--authenticationDatabase ${name}${auth}${params} --host ${host}`;
+
 loadConfig(`mongo.${env}`)
-    .then(({ host, name, params = [], password, port, user }) => {
-        let collectionArg = '';
-        let dbAuth = '';
+    .then((details) => {
+        const collectionArg =
+            typeof collection === 'undefined' ? '' : `-c ${collection}`;
+        const connection = connectionParts(details);
+        const cmd = `docker run -it -v ${process.cwd()}/data:/data --rm mongo:4.2 mongodump ${
+            connection.host
+                ? connectionStringWithHost(connection)
+                : connectionStringWithAddress(connection)
+        } ${collectionArg} -o data`;
 
-        if (typeof collection !== 'undefined') {
-            collectionArg = `-c ${collection}`;
-        }
+        console.log('cmd', cmd);
 
-        if (user && password) {
-            dbAuth = `-u ${user} -p ${password}`;
-        }
+        // process.exit(0);
 
-        return spawn(
-            `docker run -it -v ${process.cwd()}/data:/data --rm mongo:4.2 mongodump ${dbAuth} ${params.join(
-                ' '
-            )} -h ${host} --port ${port} -d ${name} ${collectionArg} -o data`,
-            {
-                shell: true,
-                stdio: 'inherit',
-            }
-        );
+        return spawn(cmd, {
+            shell: true,
+            stdio: 'inherit',
+        });
     })
     .catch(reportError);

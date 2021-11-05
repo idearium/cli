@@ -5,6 +5,7 @@
 const program = require('commander');
 const { spawn } = require('child_process');
 const { loadConfig, reportError } = require('./lib/c');
+const { connectionParts } = require('./lib/c-mongo');
 
 // The basic program, which uses sub-commands.
 program
@@ -22,6 +23,18 @@ if (!program.args.length) {
 
 const [env, collection] = program.args;
 const { to } = program;
+
+const connectionStringWithAddress = ({ address, params, password, user }) => {
+    const url = new URL(address);
+
+    url.password = password;
+    url.username = user;
+
+    return `${params} --uri ${url.href}`;
+};
+
+const connectionStringWithHost = ({ auth, host, name, params }) =>
+    `--authenticationDatabase ${name}${auth}${params} --host ${host}`;
 
 if (env.toLowerCase() === 'local') {
     return reportError(
@@ -57,29 +70,24 @@ loadConfig('mongo')
             );
         }
 
+        const toDbConnection = connectionParts(toDb);
+
         const addHost =
             toDb.host === mongo.local.host
                 ? ` --add-host ${toDb.host}:$(c hosts get -nl ${toDb.host})`
                 : '';
 
-        let dbAuth = '';
+        const cmd = `docker run -it -v ${process.cwd()}/data/${db.name}:/data/${
+            db.name
+        }${addHost} --rm mongo:4.2 mongorestore --noIndexRestore --drop ${
+            toDbConnection.host
+                ? connectionStringWithHost(toDbConnection)
+                : connectionStringWithAddress(toDbConnection)
+        } ${collectionArg} data/`;
 
-        if (toDb.user && toDb.password) {
-            dbAuth = ` -u ${toDb.user} -p ${toDb.password} --authenticationDatabase ${toDb.name}`;
-        }
-
-        return spawn(
-            `docker run -it -v ${process.cwd()}/data/${db.name}:/data/${
-                db.name
-            }${addHost} --rm mongo:4.2 mongorestore --noIndexRestore${dbAuth} ${(
-                toDb.params || []
-            ).join(' ')} --drop -h ${toDb.host} --port ${
-                toDb.port
-            } ${collectionArg} data/`,
-            {
-                shell: true,
-                stdio: 'inherit',
-            }
-        );
+        return spawn(cmd, {
+            shell: true,
+            stdio: 'inherit',
+        });
     })
     .catch(reportError);
