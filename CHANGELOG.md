@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.3 - 2021-11-05
+
+### Added
+
+-   `--build-arg` flag to build related commands.
+
 ### Fixed
 
 -   Fixed skaffold builds.

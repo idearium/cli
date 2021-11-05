@@ -2,23 +2,29 @@
 
 'use strict';
 
-const program = require('commander');
+const program = require('commander-latest');
 const { exec } = require('shelljs');
 const { basename, resolve } = require('path');
 const { deprecate } = require('util');
 const { loadConfig, newline, reportError } = require('./lib/c');
+const {
+    flagBuildArgs,
+    formatBuildArgs,
+    validateBuildArgs,
+} = require('./lib/c-kc');
 
 // The basic program, which uses sub-commands.
 program
     .arguments('<location>')
     .option(
-        '-t [tag]',
+        '-t, --tag <tag>',
         'Supply a specific tag, otherwise `latest` will be used'
     )
     .option(
-        '-n [name]',
+        '-n, --name <name>',
         'Supply a name for the image, otherwise the location name will be used'
     )
+    .option('--build-arg <arg...>', 'Build arguments to pass to Docker.')
     .description(
         'Provide a Docker location and the Dockerfile will be used to build a Docker image. See https://github.com/idearium/cli#docker-configuration for configuration options.'
     )
@@ -29,44 +35,9 @@ const getPath = deprecate(
     'The path property has been deprecated in favour of the context property.'
 );
 
-/**
- * Pad a string with a left space, if the string has a length.
- * @param {String} str A string to pad with a left space.
- * @return {String} A string left-padded with a space.
- */
-const leftSpace = (str) => {
-    if (str && typeof str === 'string') {
-        return ` ${str}`;
-    }
-
-    return str;
-};
-
-/**
- * Given a string of command seperated env variables, turn them into --build-arg arguments for `docker build`.
- * @param {String} args A string of comma seperated env variables.
- * @return {String} --build-arg arguments for `docker build`.
- */
-const formatBuildArgs = (args = {}) => {
-    const keys = Object.keys(args);
-
-    if (!keys.length) {
-        return '';
-    }
-
-    const buildArguments = keys
-        .map(
-            (key) =>
-                `--build-arg ${key}=${
-                    typeof args[key] === 'function' ? args[key]() : args[key]
-                }`
-        )
-        .join(' ');
-
-    return `${leftSpace(buildArguments)}`;
-};
-
 const [location] = program.args;
+const opts = program.opts();
+const buildArgs = flagBuildArgs(validateBuildArgs(opts.buildArg || []));
 
 if (!location) {
     return reportError(
@@ -100,12 +71,12 @@ return loadConfig('docker.locations').then((locations) => {
     const locationPath = resolve(process.cwd(), context);
     const { file = 'Dockerfile', useTar = false } = dockerLocation;
 
-    const tag = program.T ? program.T : 'latest';
-    const name = program.N ? program.N : location;
+    const tag = opts.tag ? opts.tag : 'latest';
+    const name = opts.name ? opts.name : location;
 
     let cmd = `DOCKER_SCAN_SUGGEST=false docker build -t ${name}:${tag}${formatBuildArgs(
         dockerLocation.buildArgs
-    )} -f ${file}`;
+    )}${formatBuildArgs(buildArgs)} -f ${file}`;
 
     if (useTar) {
         cmd = `tar -chz -C ${locationPath} . | ${cmd} -`;
@@ -125,7 +96,7 @@ return loadConfig('docker.locations').then((locations) => {
         }
 
         if (program.R) {
-            process.stdout.write(`${tag}${newline(program.N)}`);
+            process.stdout.write(`${tag}${newline(opts.name)}`);
         }
     });
 });

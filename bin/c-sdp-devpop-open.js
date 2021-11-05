@@ -4,4 +4,4 @@
 
 const { exec } = require('shelljs');
 
-exec('/usr/local/bin/c sdp service -n section-shared developer-pop');
+exec('yarn c sdp service -n section-shared developer-pop');
