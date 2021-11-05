@@ -4,6 +4,8 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.4-beta.1 - 2021-11-05
+
 ### Added
 
 -   Supporting a new `c.js` format for database information. `host` and `port` can be replaced with `address` in the format `mongodb+srv://domain`.
