@@ -33,8 +33,15 @@ const connectionStringWithAddress = ({ address, params, password, user }) => {
     return `${params} --uri ${url.href}`;
 };
 
-const connectionStringWithHost = ({ auth, host, name, params }) =>
-    `--authenticationDatabase ${name}${auth}${params} --host ${host}`;
+const connectionStringWithHost = ({ auth, host, name, params }) => {
+    let connectionString = `--host ${host}`;
+
+    if (auth) {
+        connectionString = `--authenticationDatabase ${name}${auth}${params} ${connectionString}`;
+    }
+
+    return connectionString;
+};
 
 if (env.toLowerCase() === 'local') {
     return reportError(
