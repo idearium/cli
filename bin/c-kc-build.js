@@ -98,7 +98,7 @@ return (
         })
         .then(([state, config, locations]) => {
             // Do we need to build too?
-            if (!program.D) {
+            if (!program.opts().d) {
                 return Promise.resolve();
             }
 
