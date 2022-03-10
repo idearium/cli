@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.4 - 2022-03-10
+
+### Changed
+
+-   Pinning `c mk start` to Kubernetes v1.20.7 (due to compatibility issues with Helm ingress and later version of Kubernetes).
+
 ## v4.1.3 - 2021-11-05
 
 ### Added
