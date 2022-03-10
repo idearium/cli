@@ -4,6 +4,8 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.1.4 - 2022-03-10
+
 ## v4.1.3 - 2021-11-05
 
 ### Added
