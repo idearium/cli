@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Changed
+
+-   Added `-s` flag to `c kc build` to enable building Docker locations sequentially.
+-   Added `-c` flag to `c kc build` to enable building Docker locations concurrently
+-   Added a deprecation message for `c kc build` without either `-s` or `-c`.
+
 ## v4.1.4 - 2022-03-10
 
 ### Changed
