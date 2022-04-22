@@ -29,17 +29,23 @@ if (env.toLowerCase() === 'local') {
     );
 }
 
-const connectionStringWithAddress = ({ address, params, password, user }) => {
+const connectionStringWithAddress = ({
+    address,
+    name,
+    params,
+    password,
+    user,
+}) => {
     const url = new URL(address);
 
     url.password = password;
     url.username = user;
 
-    return `${params} --uri ${url.href}`;
+    return `${params} --uri ${url.href}/${name}`;
 };
 
 const connectionStringWithHost = ({ auth, host, name, params }) =>
-    `--authenticationDatabase ${name}${auth}${params} --host ${host}`;
+    `--authenticationDatabase ${name}${auth}${params} --host ${host} -d ${name}`;
 
 loadConfig(`mongo.${env}`)
     .then((details) => {
