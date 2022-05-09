@@ -73,6 +73,7 @@ const buildLocation = ({ config, loc, prefix, state }) =>
         });
     });
 
+// eslint-disable-next-line complexity
 (async () => {
     const config = await loadConfig();
     const prefix = exec('c project prefix -n', { silent: true }).stdout;
@@ -83,7 +84,7 @@ const buildLocation = ({ config, loc, prefix, state }) =>
             : location.split(',');
 
     if (!program.opts().s || program.opts().c) {
-        if (!program.opts().c) {
+        if (!program.opts().c && (location === 'all' || locations.length > 1)) {
             // eslint-disable-next-line no-console
             console.error(
                 chalk.red(
