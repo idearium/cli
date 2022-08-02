@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Changed
+
+-   Added more CPU and memory when starting Minikube.
+
 ## v4.4.0-beta.1 - 2022-08-02
 
 ### Changed
