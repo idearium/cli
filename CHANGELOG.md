@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v4.4.0-beta.1 - 2022-08-02
+
+### Changed
+
+-   Updated `c mk start` to use the Docker driver.
+
 ## v4.3.0 - 2022-08-02
 
 ### Added
