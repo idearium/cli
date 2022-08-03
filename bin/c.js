@@ -19,6 +19,7 @@ program
     .command('project <command>', 'Shortcuts to help with project management.')
     .command('sdp <command>', "Shortcuts to help with Section's devpop.")
     .command('skaffold <command>', 'Shortcuts to help with Skaffold.')
+    .command('ts <command>', 'Shortcuts to help with Tailscale.')
     .command(
         'workflow <command>',
         'Common workflows that can be executed within the context of a project.'

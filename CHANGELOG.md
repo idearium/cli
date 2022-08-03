@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Added
+
+-   `c ts` commands.
+
 ## v4.4.0-beta.2 - 2022-08-02
 
 ### Changed
