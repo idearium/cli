@@ -7,6 +7,7 @@ This file is a history of the changes made to @idearium/cli.
 ### Added
 
 -   `c ts` commands.
+-   `c ds` commands.
 
 ## v4.4.0-beta.2 - 2022-08-02
 

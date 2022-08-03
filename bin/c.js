@@ -10,6 +10,7 @@ program
     .command('d <command>', 'Shortcuts to control Docker.')
     .command('dc <command>', 'Shortcuts to control Docker Compose.')
     .command('gc <command>', 'Shortcuts to help with gcloud.')
+    .command('ds <command>', 'Shortcuts to manage DevSpace.')
     .command('hosts <command>', 'Shortcuts to help with hosts management.')
     .command('kc <command>', 'Shortcuts to help with kubectl.')
     .command('fs <command>', 'Shortcuts to help with the file system.')
