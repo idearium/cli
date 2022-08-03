@@ -22,9 +22,9 @@ const ipFlag = program[6] ? '-6' : '-4';
 
 const command = `${app} ip ${ipFlag} ${name}`;
 
-exec(command, { silent: true }, (err, stdout) => {
+exec(command, { silent: true }, (err, stdout, stderr) => {
     if (err) {
-        return reportError(err, false, true);
+        return reportError(new Error(stderr), false, true);
     }
 
     process.stdout.write(

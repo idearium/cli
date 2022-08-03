@@ -9,6 +9,10 @@ This file is a history of the changes made to @idearium/cli.
 -   `c ts` commands.
 -   `c ds` commands.
 
+### Changed
+
+-   `c mk ip` now retrieves the IP of your Minikube machine on tailnet as configured with `c ds handle set`, or `c ds mk set`.
+
 ## v4.4.0-beta.2 - 2022-08-02
 
 ### Changed
