@@ -44,7 +44,7 @@
         "inquirer": "5.2.0",
         "lodash.merge": "4.6.2",
         "mustache": "2.3.0",
-        "semver": "7.3.2",
+        "semver": "7.3.7",
         "set-value": "4.1.0",
         "shelljs": "0.8.5",
         "sudo-prompt": "8.2.0"
