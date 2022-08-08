@@ -1,5 +1,3 @@
-#!/usr/bin/env -S node --trace-warnings
-
 'use strict';
 
 const os = require('os');

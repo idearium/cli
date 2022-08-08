@@ -1,8 +1,5 @@
-#!/usr/bin/env -S node --trace-warnings
-
 'use strict';
 
-const { args } = require('commander-latest');
 const program = require('commander-latest');
 const { exec } = require('shelljs');
 const { env } = require('./lib/c');
@@ -11,11 +8,12 @@ const {
     formatBuildArgs,
     validateBuildArgs,
 } = require('./lib/c-kc');
+const { reportError } = require('./lib/c');
 
 program
     .option(
         '--build-arg <args...>',
-        'A comma seperated list of environment variable names in which to retrieve values from to pass as build args'
+        'A comma separated list of environment variable names in which to retrieve values from to pass as build args'
     )
     .description(
         "This command should be run via Skaffold. It interprets environment variables used by the Skaffold custom build script contract and builds images accordingly using 'c kc build'."
