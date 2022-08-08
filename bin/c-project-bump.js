@@ -4,11 +4,12 @@ const program = require('commander');
 const { resolve: pathResolve } = require('path');
 const { loadConfig, reportError } = require('./lib/c');
 const semver = require('semver');
-const gulp = require('gulp');
-const replace = require('gulp-replace');
 const chalk = require('chalk');
 const clipboardy = require('clipboardy');
 const fs = require('fs');
+const fsPromises = require('fs/promises');
+const path = require('path');
+const glob = require('glob');
 
 program.option('-t, --type <type>', 'The version bump type', 'patch');
 
@@ -85,34 +86,30 @@ if (newVersion.includes(`${prereleaseIdentifier}.0`)) {
     newVersion = semver.inc(newVersion, 'prerelease', prereleaseIdentifier);
 }
 
-const bumpVersion = ({ file, location }) =>
-    new Promise((resolve) => {
-        const src = `${location}${file}`;
+const bump = async ({ src, from, to }) => {
+    await fsPromises.access(src, fs.constants.F_OK);
+    const data = await fsPromises.readFile(src, { encoding: 'utf8' });
+    await fsPromises.writeFile(src, data.replace(from, to));
+};
 
-        fs.access(src, fs.constants.F_OK, (err) => {
-            if (err) {
-                return resolve();
-            }
+const bumpVersion = async ({ file, location }) => {
+    const src = path.resolve(`${location}${file}`);
+    await fsPromises.access(src, fs.constants.F_OK);
 
-            console.log(
-                `Bumping ${src} from ${chalk.white.bold(
-                    currentVersion
-                )} to ${chalk.cyan.bold(newVersion)}`
-            );
+    console.log(`Bumping ${location}${file}`);
 
-            const stream = gulp
-                .src(src)
-                .pipe(
-                    replace(
-                        new RegExp('"version": "([0-9a-z.-]+)"'),
-                        `"version": "${newVersion}"`
-                    )
-                )
-                .pipe(gulp.dest(location));
-
-            stream.on('finish', () => resolve());
-        });
+    return bump({
+        src,
+        from: new RegExp('"version": "([0-9a-z.-]+)"'),
+        to: `"version": "${newVersion}"`,
     });
+};
+
+console.log(
+    `\nBumping from ${chalk.white.bold(currentVersion)} to ${chalk.cyan.bold(
+        newVersion
+    )}\n`
+);
 
 loadConfig('npm.locations')
     .then((locations) =>
@@ -144,31 +141,39 @@ loadConfig('npm.locations')
     )
     .then(() => loadConfig('project'))
     .then(({ gcpProjectId, name }) => {
-        const environment = /(alpha|beta|pre)/.test(type)
-            ? `${prereleaseIdentifier}`
-            : 'production';
-        const suffix =
-            environment === `${prereleaseIdentifier}`
-                ? `-${prereleaseIdentifier}`
-                : '';
+        return new Promise((resolve, reject) => {
+            const environment = /(alpha|beta|pre)/.test(type)
+                ? `${prereleaseIdentifier}`
+                : 'production';
+            const suffix =
+                environment === `${prereleaseIdentifier}`
+                    ? `-${prereleaseIdentifier}`
+                    : '';
 
-        const toReplace = `gcr.io/${gcpProjectId}/${name}-([a-z]+)${suffix}:(?:.+)`;
+            const toReplace = `gcr.io/${gcpProjectId}/${name}-([a-z]+)${suffix}:(?:.+)`;
 
-        console.log(
-            `Bumping ${environment} manifests from ${chalk.white.bold(
-                currentVersion
-            )} to ${chalk.cyan.bold(newVersion)}`
-        );
+            glob(
+                `./manifests/${environment}/*.deployment.yaml`,
+                (err, files) => {
+                    if (err) {
+                        reject(err);
+                    }
 
-        return gulp
-            .src(`./manifests/${environment}/*.deployment.yaml`)
-            .pipe(
-                replace(
-                    new RegExp(toReplace),
-                    `gcr.io/${gcpProjectId}/${name}-$1${suffix}:${newVersion}`
-                )
-            )
-            .pipe(gulp.dest(`./manifests/${environment}`));
+                    resolve(
+                        Promise.all(
+                            files.map((f) => {
+                                console.log(`Bumping ${f}`);
+                                return bump({
+                                    src: path.resolve(f),
+                                    from: new RegExp(toReplace),
+                                    to: `gcr.io/${gcpProjectId}/${name}-$1${suffix}:${newVersion}`,
+                                });
+                            })
+                        )
+                    );
+                }
+            );
+        });
     })
     .then(() => {
         console.log(
@@ -178,16 +183,4 @@ loadConfig('npm.locations')
         // Copy new version to the clipboard.
         clipboardy.write(newVersion);
     })
-    .catch((err) => {
-        if (err.code === 'ENOENT') {
-            return reportError(
-                new Error(
-                    'Please create a c.js file with your project configuration. See https://github.com/idearium/cli#configuration'
-                ),
-                false,
-                true
-            );
-        }
-
-        return reportError(err, false, true);
-    });
+    .catch((err) => reportError(err, false, true));

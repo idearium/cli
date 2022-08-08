@@ -4,9 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v5.0.0 - 2022-08-09
+
 ### Changed
 
 -   Version bumped all dev dependencies.
+-   Removed gulp and gulp-replace.
 
 ## v4.4.0-beta.3 - 2022-08-04
 
