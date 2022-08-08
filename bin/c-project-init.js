@@ -1,5 +1,3 @@
-#!/usr/bin/env -S node --trace-warnings
-
 'use strict';
 
 const program = require('commander');
@@ -174,9 +172,8 @@ inquirer
                         promisify(glob)('*/Dockerfile')
                             .then((dockerfiles) => {
                                 data.docker = dockerfiles.map((dockerfile) => {
-                                    const [name] = dirname(dockerfile).split(
-                                        sep
-                                    );
+                                    const [name] =
+                                        dirname(dockerfile).split(sep);
 
                                     return {
                                         label: name,

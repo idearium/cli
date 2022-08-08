@@ -46,9 +46,8 @@ return Promise.all([loadState(), loadConfig()])
     .then(
         ([kubernetesLocations, prefix, namespace, path, state]) =>
             new Promise((resolve, reject) => {
-                const services = kubernetesLocationsToObjects(
-                    kubernetesLocations
-                );
+                const services =
+                    kubernetesLocationsToObjects(kubernetesLocations);
 
                 try {
                     setLocalsForServices(state, namespace, prefix, services);
