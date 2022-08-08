@@ -1,5 +1,3 @@
-#!/usr/bin/env -S node --trace-warnings
-
 'use strict';
 
 const program = require('commander');
@@ -31,10 +29,8 @@ return loadState()
     .then((state) => {
         return Promise.all([
             state,
-            loadConfig(
-                `kubernetes.environments.${state.env}.locations`
-            ).then((locations) =>
-                dockerToKubernetesLocation(location, locations)
+            loadConfig(`kubernetes.environments.${state.env}.locations`).then(
+                (locations) => dockerToKubernetesLocation(location, locations)
             ),
         ]);
     })
