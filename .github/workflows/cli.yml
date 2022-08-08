@@ -30,9 +30,6 @@ jobs:
               uses: actions/setup-node@v3
               with:
                   registry-url: https://registry.npmjs.org/
-            - name: Get yarn cache
-              id: yarn-cache
-              run: echo "::set-output name=dir::$(yarn cache dir)"
             - name: Setup yarn
               run: yarn install
             - name: Publish (beta)
