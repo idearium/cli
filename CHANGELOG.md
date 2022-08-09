@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Fixed
+
+-   Fixed issue with `set-value` usage.
+
 ## v5.1.0-beta.2 - 2022-08-09
 
 ### Added

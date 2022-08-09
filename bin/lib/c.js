@@ -342,7 +342,9 @@ const storeState = (keys, value, file = pathResolve(stateFilePath())) =>
         // Ignore any errors as it probably just means that the file hasn't been created yet.
         readFile(file, 'utf-8', async (_, data) => {
             const json = data ? JSON.parse(data) : {};
-            const nestedData = setPropertyPath({}, keys, value);
+            const nestedData = setPropertyPath({}, keys, value, {
+                preservePaths: false,
+            });
             const state = merge({}, json, nestedData);
 
             await ensureDir(dirname(file));
