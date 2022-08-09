@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Fixed
+
+-   Now using import to use the execa ESM module.
+
 ## v5.0.0 - 2022-08-09
 
 ### Changed
