@@ -1,6 +1,5 @@
 'use strict';
 
-const execa = require('execa');
 const program = require('commander-latest');
 const { exec } = require('shelljs');
 const { loadConfig, reportError } = require('./lib/c');
@@ -38,8 +37,13 @@ loadConfig('section').then((submodules) => {
         );
     }
 
-    return execa
-        .shell(`yarn c sdp gm cmd -s ${submodule} rev-parse --verify ${branch}`)
+    return import('execa')
+        .then(({ execa }) =>
+            execa(
+                `yarn c sdp gm cmd -s ${submodule} rev-parse --verify ${branch}`,
+                { shell: true }
+            )
+        )
         .then(({ code, stderr, stdout }) => {
             if (!code && !stderr.length && stdout.length) {
                 return exec(
