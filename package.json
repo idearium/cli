@@ -46,7 +46,7 @@
         "semver": "7.3.7",
         "set-value": "4.1.0",
         "shelljs": "0.8.5",
-        "sudo-prompt": "8.2.0"
+        "sudo-prompt": "9.2.1"
     },
     "devDependencies": {
         "@idearium/eslint-config": "4.0.0",
