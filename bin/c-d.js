@@ -7,6 +7,7 @@ const { missingCommand } = require('./lib/c');
 program
     .command('build <location>', 'Builds a Docker image from a Docker location')
     .command('clean <type>', 'Removes unused containers and images')
+    .command('image', 'Commands for working with images')
     .command('images', 'List images')
     .command('ps', 'List containers')
     .parse(process.argv);
