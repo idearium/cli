@@ -150,7 +150,7 @@ loadConfig('npm.locations')
                     ? `-${prereleaseIdentifier}`
                     : '';
 
-            const toReplace = `gcr.io/${gcpProjectId}/${name}-([a-z]+)${suffix}:(?:.+)`;
+            const toReplace = `gcr.io/${gcpProjectId}/${name}-([a-z-]+)${suffix}:(?:.+)`;
 
             glob(
                 `./manifests/${environment}/*.deployment.yaml`,
