@@ -23,7 +23,11 @@ const connectionStringWithHost = ({ auth, host, name, params }) =>
 loadConfig(`mongo.${env}`)
     .then((details) => {
         const connection = connectionParts(details);
-        const cmd = `docker run -it --rm -v $(pwd)/data/mongo:/home/mongodb/ mongo:4.2 mongo ${
+        const cmd = `docker run -it --rm -v $(pwd)/data/mongo:/home/mongodb/${
+            connection.volumes.length > 0
+                ? ` ${connection.volumes.join(' ')}`
+                : ''
+        } mongo:4.2 mongo ${
             connection.host
                 ? connectionStringWithHost(connection)
                 : connectionStringWithAddress(connection)

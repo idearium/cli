@@ -31,11 +31,11 @@ const connectionStringWithAddress = ({ address, params, password, user }) => {
     return `${params} --uri ${url.href}`;
 };
 
-const connectionStringWithHost = ({ auth, host, name, params }) => {
+const connectionStringWithHost = ({ auth, host, params }) => {
     let connectionString = `--host ${host}`;
 
     if (auth) {
-        connectionString = `--authenticationDatabase ${name}${auth}${params} ${connectionString}`;
+        connectionString = `${auth}${params} ${connectionString}`;
     }
 
     return connectionString;
@@ -84,6 +84,10 @@ loadConfig('mongo')
 
         const cmd = `docker run -it -v ${process.cwd()}/data/${db.name}:/data/${
             db.name
+        }${
+            toDbConnection.volumes.length > 0
+                ? ` ${toDbConnection.volumes.join(' ')}`
+                : ''
         }${addHost} --rm mongo:4.2 mongorestore --noIndexRestore --drop ${
             toDbConnection.host
                 ? connectionStringWithHost(toDbConnection)
