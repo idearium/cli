@@ -27,7 +27,7 @@ loadConfig(`mongo.${env}`)
             connection.volumes.length > 0
                 ? ` ${connection.volumes.join(' ')}`
                 : ''
-        } mongo:4.2 mongo ${
+        } mongo:4.4 mongo ${
             connection.host
                 ? connectionStringWithHost(connection)
                 : connectionStringWithAddress(connection)

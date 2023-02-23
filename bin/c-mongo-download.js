@@ -54,7 +54,7 @@ loadConfig(`mongo.${env}`)
             connection.volumes.length > 0
                 ? ` ${connection.volumes.join(' ')}`
                 : ''
-        } --rm mongo:4.2 mongodump ${
+        } --rm mongo:4.4 mongodump ${
             connection.host
                 ? connectionStringWithHost(connection)
                 : connectionStringWithAddress(connection)
