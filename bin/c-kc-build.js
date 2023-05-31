@@ -54,12 +54,8 @@ const buildLocation = ({ config, loc, prefix, state }) =>
         )} ${loc}`;
 
         exec(cmd, (err, stdout, stderr) => {
-            if ((err || stderr) && stderr) {
+            if (err !== 0) {
                 return reject(new Error(stderr));
-            }
-
-            if ((err || stderr) && err) {
-                return reject(err);
             }
 
             storeState(
