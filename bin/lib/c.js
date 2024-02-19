@@ -3,7 +3,7 @@
 const chalk = require('chalk');
 const { readFile, writeFile } = require('fs');
 const { homedir } = require('os');
-const { resolve: pathResolve, join } = require('path');
+const { resolve: pathResolve, join, dirname } = require('path');
 const { compile } = require('handlebars');
 const { promisify } = require('util');
 const { red } = require('chalk');
@@ -23,11 +23,9 @@ const composeUp = (service) => {
     let upCommand = 'docker-compose up -d --force-recreate';
 
     // We need to scale some containers.
-    /* eslint-disable padded-blocks */
     if (['app', 'consul'].includes(service)) {
         upCommand += ` --scale ${service}=2`;
     }
-    /* eslint-enable padded-blocks */
 
     upCommand += ` ${service}`;
 
@@ -36,10 +34,19 @@ const composeUp = (service) => {
 
 /**
  * Resolve an asbsolute path to the devops folder for the project.
+ * @param  {string} path The path for the project.
  * @return {String} The path to the devops folder.
  */
-const devopsPath = () => {
-    return pathResolve(process.cwd(), 'devops');
+const devopsPath = (path = process.cwd()) => {
+    return pathResolve(path, 'devops');
+};
+
+/**
+ * Resolve an asbsolute path to the devops folder for devspace.
+ * @return {String} The path to the devops folder.
+ */
+const devspacePath = () => {
+    return devopsPath(pathResolve(homedir(), 'Developer', 'devspace'));
 };
 
 /**
@@ -106,11 +113,9 @@ const executeTemplate = (file, locals = {}) =>
             join(devopsPath(), 'templates', file),
             'utf-8',
             (err, data) => {
-                /* eslint-disable padded-blocks */
                 if (err) {
                     return reject(err);
                 }
-                /* eslint-enable padded-blocks */
 
                 const template = compile(data);
 
@@ -184,11 +189,9 @@ const missingCommand = (program) => {
 const npmAuthToken = () =>
     new Promise((resolve, reject) => {
         readFile(join(homedir(), '.npmrc'), 'utf-8', (err, data) => {
-            /* eslint-disable padded-blocks */
             if (err) {
                 return reject(err);
             }
-            /* eslint-enable padded-blocks */
 
             const result = /(?:_authToken=)([0-9a-z-].+)/.exec(data);
             const authToken = result ? result[1] : '';
@@ -198,7 +201,7 @@ const npmAuthToken = () =>
     });
 
 /**
- * Load and parse a JSON configuration fiile.
+ * Load and parse a JSON configuration file.
  * @param {String} keys The name of a top-level key to return.
  * @param {String} type The name of a config file to load.
  * @return {Promise} A promise that will resolve with some JSON data.
@@ -228,14 +231,15 @@ const loadConfig = (keys, type = 'c') =>
     });
 
 /**
- * Load and parse a JSON state fiile.
+ * Load and parse a JSON state file.
  * @param {String} key The name of a top-level key to return.
+ * @param {String} path The location of the state file to load.
  * @return {Promise} A promise that will resolve with some JSON data.
  */
-const loadState = (key) =>
+// eslint-disable-next-line no-use-before-define
+const loadState = (key, path = stateFilePath()) =>
     new Promise((resolve, reject) => {
-        // eslint-disable-next-line no-use-before-define
-        readFile(stateFilePath(), 'utf-8', (err, data) => {
+        readFile(path, 'utf-8', (err, data) => {
             if (err) {
                 return reject(err);
             }
@@ -307,11 +311,9 @@ const reportError = (err, program, exit = false) => {
     }
     /* eslint-enable no-process-env, no-console */
 
-    /* eslint-disable padded-blocks */
     if (program) {
         program.help();
     }
-    /* eslint-enable padded-blocks */
 
     if (exit) {
         // eslint-disable-next-line no-process-exit
@@ -321,31 +323,35 @@ const reportError = (err, program, exit = false) => {
 
 /**
  * The path to the state file.
+ * @param {String} path The parent devops path.
  * @returns {String} An absolute path to the state file.
  */
-const stateFilePath = () => {
-    return pathResolve(devopsPath(), 'state.json');
+const stateFilePath = (path = devopsPath()) => {
+    return pathResolve(path, 'state.json');
 };
 
 /**
  * Given a key and a value, store it in the state file.
  * @param {String} keys A property path to store the state in.
  * @param {any} value The value to store.
+ * @param {String} file The file to store the value in.
  * @return {Promise} A promise.
  */
-const storeState = (keys, value) =>
+const storeState = (keys, value, file = pathResolve(stateFilePath())) =>
     new Promise((resolve, reject) => {
         // Ignore any errors as it probably just means that the file hasn't been created yet.
-        readFile(pathResolve(stateFilePath()), 'utf-8', async (_, data) => {
+        readFile(file, 'utf-8', async (_, data) => {
             const json = data ? JSON.parse(data) : {};
-            const nestedData = setPropertyPath({}, keys, value);
+            const nestedData = setPropertyPath({}, keys, value, {
+                preservePaths: false,
+            });
             const state = merge({}, json, nestedData);
 
-            await ensureDir(devopsPath());
+            await ensureDir(dirname(file));
 
             writeFile(
-                stateFilePath(),
-                JSON.stringify(state, null, 2),
+                file,
+                `${JSON.stringify(state, null, 2)}\n`,
                 { flag: 'w' },
                 (writeErr) => {
                     if (writeErr) {
@@ -369,6 +375,8 @@ const throwErr = (err) => {
 
 module.exports = {
     composeUp,
+    devopsPath,
+    devspacePath,
     dockerToKubernetesLocation,
     documentation,
     env,
@@ -384,6 +392,7 @@ module.exports = {
     proxyCommand,
     proxyCommands,
     reportError,
+    stateFilePath,
     storeState,
     throwErr,
     writeFile: promisify(writeFile),

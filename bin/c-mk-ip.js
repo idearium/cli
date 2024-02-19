@@ -2,7 +2,13 @@
 
 const program = require('commander');
 const { exec } = require('shelljs');
-const { newline, reportError } = require('./lib/c');
+const {
+    devspacePath,
+    loadState,
+    newline,
+    reportError,
+    stateFilePath,
+} = require('./lib/c');
 
 // The basic program, which uses sub-commands.
 program
@@ -13,15 +19,18 @@ program
     )
     .parse(process.argv);
 
-const profile = program.P ? ` --profile ${program.P}` : '';
-const command = `minikube ip${profile}`;
+const run = async () => {
+    const mkName = await loadState('mkName', stateFilePath(devspacePath()));
 
-exec(command, { silent: true }, (err, stdout) => {
-    if (err) {
-        return reportError(err, false, true);
-    }
+    exec(`c ts ip ${mkName}`, { silent: true }, (err, stdout, stderr) => {
+        if (err) {
+            return reportError(new Error(stderr), false, true);
+        }
 
-    process.stdout.write(
-        `${stdout.replace(/\n/, '', 'g')}${newline(program.N)}`
-    );
-});
+        process.stdout.write(
+            `${stdout.replace(/\n/, '', 'g')}${newline(program.N)}`
+        );
+    });
+};
+
+run();

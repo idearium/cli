@@ -85,12 +85,8 @@ return loadConfig('docker.locations').then((locations) => {
     }
 
     exec(cmd, { silent: program.R }, (err, stdout, stderr) => {
-        if ((err || stderr) && stderr) {
+        if (err !== 0) {
             return reportError(stderr, false, true);
-        }
-
-        if ((err || stderr) && err) {
-            return reportError(err, false, true);
         }
 
         if (program.R) {

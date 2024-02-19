@@ -117,9 +117,7 @@ return buildLocation(program.B, location)
         );
 
         if (!buildTag) {
-            return Promise.resolve(
-                new Error(`Could not find a build tag for ${image}`)
-            );
+            throw Error(`Could not find a build tag for ${image}`);
         }
 
         const cmd = `docker run --rm --name ${prefix}-${location}-test --tty ${prefixWith(

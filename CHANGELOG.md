@@ -4,6 +4,26 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Added
+
+-   `c d image prune` command.
+
+## v5.1.0-beta.3 - 2022-08-09
+
+### Fixed
+
+-   Fixed issue with `set-value` usage.
+
+## v5.1.0-beta.2 - 2022-08-09
+
+### Added
+
+-   Incorporated v5.0.1.
+
+## v5.1.0-beta.1 - 2022-08-09
+
+-   Re-release of v4.4.0-beta.3.
+
 ## v5.0.1 - 2022-08-09
 
 ### Fixed
@@ -16,6 +36,29 @@ This file is a history of the changes made to @idearium/cli.
 
 -   Version bumped all dev dependencies.
 -   Removed gulp and gulp-replace.
+
+## v4.4.0-beta.3 - 2022-08-04
+
+### Added
+
+-   `c ts` commands.
+-   `c ds` commands.
+
+### Changed
+
+-   `c mk ip` now retrieves the IP of your Minikube machine on tailnet as configured with `c ds handle set`, or `c ds mk set`.
+
+## v4.4.0-beta.2 - 2022-08-02
+
+### Changed
+
+-   Added more CPU and memory when starting Minikube.
+
+## v4.4.0-beta.1 - 2022-08-02
+
+### Changed
+
+-   Updated `c mk start` to use the Docker driver.
 
 ## v4.3.0 - 2022-08-02
 

@@ -43,22 +43,22 @@ const connectionStringWithAddress = ({
 };
 
 const connectionStringWithHost = ({ auth, host, name, params }) =>
-    `--authenticationDatabase ${name}${auth}${params} --host ${host} -d ${name}`;
+    `${auth}${params} --host ${host} -d ${name}`;
 
 loadConfig(`mongo.${env}`)
     .then((details) => {
         const collectionArg =
             typeof collection === 'undefined' ? '' : `-c ${collection}`;
         const connection = connectionParts(details);
-        const cmd = `docker run -it -v ${process.cwd()}/data:/data --rm mongo:4.2 mongodump ${
+        const cmd = `docker run -it -v ${process.cwd()}/data:/data${
+            connection.volumes.length > 0
+                ? ` ${connection.volumes.join(' ')}`
+                : ''
+        } --rm mongo:4.4 mongodump ${
             connection.host
                 ? connectionStringWithHost(connection)
                 : connectionStringWithAddress(connection)
         } ${collectionArg} -o data`;
-
-        console.log('cmd', cmd);
-
-        // process.exit(0);
 
         return spawn(cmd, {
             shell: true,

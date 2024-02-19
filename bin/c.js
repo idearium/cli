@@ -10,6 +10,7 @@ program
     .command('d <command>', 'Shortcuts to control Docker.')
     .command('dc <command>', 'Shortcuts to control Docker Compose.')
     .command('gc <command>', 'Shortcuts to help with gcloud.')
+    .command('ds <command>', 'Shortcuts to manage DevSpace.')
     .command('hosts <command>', 'Shortcuts to help with hosts management.')
     .command('kc <command>', 'Shortcuts to help with kubectl.')
     .command('fs <command>', 'Shortcuts to help with the file system.')
@@ -19,6 +20,7 @@ program
     .command('project <command>', 'Shortcuts to help with project management.')
     .command('sdp <command>', "Shortcuts to help with Section's devpop.")
     .command('skaffold <command>', 'Shortcuts to help with Skaffold.')
+    .command('ts <command>', 'Shortcuts to help with Tailscale.')
     .command(
         'workflow <command>',
         'Common workflows that can be executed within the context of a project.'
