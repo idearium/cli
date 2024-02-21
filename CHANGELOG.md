@@ -4,25 +4,21 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v5.1.0 - 2024-02-21
+
+### Changed
+
+-   Now using MongoDB 7.
+-   Re-release of v4.4.0-beta.3.
+
 ### Added
 
 -   `c d image prune` command.
-
-## v5.1.0-beta.3 - 2022-08-09
+-   Incorporated v5.0.1.
 
 ### Fixed
 
 -   Fixed issue with `set-value` usage.
-
-## v5.1.0-beta.2 - 2022-08-09
-
-### Added
-
--   Incorporated v5.0.1.
-
-## v5.1.0-beta.1 - 2022-08-09
-
--   Re-release of v4.4.0-beta.3.
 
 ## v5.0.1 - 2022-08-09
 

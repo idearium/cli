@@ -88,7 +88,7 @@ loadConfig('mongo')
             toDbConnection.volumes.length > 0
                 ? ` ${toDbConnection.volumes.join(' ')}`
                 : ''
-        }${addHost} --rm mongo:4.4 mongorestore --noIndexRestore --drop ${
+        }${addHost} --rm mongo:7 mongorestore --noIndexRestore --drop ${
             toDbConnection.host
                 ? connectionStringWithHost(toDbConnection)
                 : connectionStringWithAddress(toDbConnection)
