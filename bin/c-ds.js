@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --trace-warnings
+#!/usr/bin/env -S node
 
 'use strict';
 
@@ -7,8 +7,10 @@ const { missingCommand } = require('./lib/c');
 
 program
     .command('handle', 'Manage your Idearium handle.')
-    .command('mk', 'Manage your Minikube name.')
-    .command('pc', 'Manager your computer name.')
+    .command('mk', 'Manage your minikube name.')
+    .command('dev', 'Manage your dev computer name.')
+    .command('pc', 'Manage your computer name.')
+    .command('target', 'Manage your deployment target.')
     .parse(process.argv);
 
 missingCommand(program);

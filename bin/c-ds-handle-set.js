@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --trace-warnings
+#!/usr/bin/env -S node
 
 'use strict';
 
@@ -29,6 +29,7 @@ const run = async () => {
 
     try {
         await storeState('handle', handle, file);
+        await storeState('devName', `${handle}-dev`, file);
         await storeState('mkName', `${handle}-minikube`, file);
         await storeState('pcName', `${handle}-pc`, file);
     } catch (err) {

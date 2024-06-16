@@ -1,7 +1,7 @@
 'use strict';
 
 const program = require('commander');
-const { spawnSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const { hostilePath, reportError } = require('./lib/c');
 
 let ip;
@@ -27,7 +27,25 @@ if (!domains) {
     );
 }
 
+const findNodePath = () => {
+    let nodePath;
+    try {
+        nodePath = execSync('which node').toString().trim();
+    } catch (error) {
+        console.error('Node.js is not installed or not found in PATH.');
+        process.exit(1);
+    }
+
+    if (!nodePath) {
+        console.error('Node.js is not installed or not found in PATH.');
+        process.exit(1);
+    }
+
+    return nodePath;
+};
+
 const { status, stderr } = spawnSync('sudo', [
+    findNodePath(),
     hostilePath(),
     'set',
     ip,

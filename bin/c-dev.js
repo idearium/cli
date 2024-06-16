@@ -5,9 +5,6 @@
 const program = require('commander');
 const { missingCommand } = require('./lib/c');
 
-program
-    .command('get', 'Get your handle.')
-    .command('set <handle>', 'Set your handle.')
-    .parse(process.argv);
+program.command('ip', 'Manage your dev computer.').parse(process.argv);
 
 missingCommand(program);

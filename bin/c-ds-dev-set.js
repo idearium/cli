@@ -11,22 +11,22 @@ const {
 } = require('./lib/c');
 
 program
-    .arguments('<mk-name>')
-    .description("Set your Minikube's name.")
+    .arguments('<dev-name>')
+    .description("Set your dev computer's name.")
     .parse(process.argv);
 
 const [name] = program.args;
 
 if (!name) {
     return reportError(
-        new Error("You must provide your Minikube's name."),
+        new Error("You must provide your dev computer's name."),
         program
     );
 }
 
 const run = async () => {
     try {
-        await storeState('mkName', name, stateFilePath(devspacePath()));
+        await storeState('devName', name, stateFilePath(devspacePath()));
     } catch (err) {
         reportError(err, program, true);
     }
