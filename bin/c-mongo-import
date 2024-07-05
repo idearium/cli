@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+set -e;
+
+SCRIPT_DIR=$(dirname "$0")
+
+report_error() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+usage() {
+    printf "\n\tUsage: c mongo import <environment> [collection]\n\n"
+    printf "\tImport all or a specific collection from a Mongo database download to another environment.\n"
+    printf "\tIf you don't provide a collection, all will be imported.\n\n"
+    printf "\tOptions:\n\n"
+    printf "\t-h, --help  Display this help message\n\n"
+    printf "\t-t, --to <env> The import destination (defaults to local)."
+}
+
+if [ "$#" -lt 1 ]; then
+    usage
+    exit 1
+fi
+
+DESTINATION="local"
+POSITIONAL=()
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -h|--help)
+        usage
+        exit 0
+        ;;
+        -t|--to)
+        if [ -z "$2" ]; then
+            report_error "Missing argument for $1"
+        fi
+        DESTINATION="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -*)
+        report_error "Unknown option $1"
+        ;;
+        *)    # unknown option, add to positional
+        POSITIONAL+=("$1")
+        shift # past argument
+        ;;
+    esac
+done
+
+# Restore positional parameters
+set -- "${POSITIONAL[@]}"
+
+if [ "${#POSITIONAL[@]}" -lt 1 ]; then
+    usage
+    exit 1
+fi
+
+ENV=${POSITIONAL[0]}
+COLLECTION=${POSITIONAL[1]}
+
+# Disallow "local" environment
+if [ "$ENV" == "local" ]; then
+    report_error "You cannot import the local database"
+fi
+
+CONFIG=$(node "$SCRIPT_DIR/c-mongo-import-config.js" "$ENV" "$DESTINATION" "$(c mk ip)" "$SCRIPT_DIR" "$COLLECTION")
+
+ARGS=$(echo $CONFIG | jq -r '.args')
+IFS=' ' read -r -a ARGS_ARRAY <<< "$ARGS"
+
+docker run "${ARGS_ARRAY[@]}"
