@@ -67,7 +67,7 @@ if [ "$ENV" == "local" ]; then
     report_error "You cannot import the local database"
 fi
 
-CONFIG=$(node "$SCRIPT_DIR/c-mongo-import-config.js" "$ENV" "$DESTINATION" "$(c mk ip)" "$SCRIPT_DIR" "$COLLECTION")
+CONFIG=$(node "$SCRIPT_DIR/c-mongo-import-config.js" "$ENV" "$DESTINATION" "$(c mk ip)" "$COLLECTION")
 
 ARGS=$(echo $CONFIG | jq -r '.args')
 IFS=' ' read -r -a ARGS_ARRAY <<< "$ARGS"

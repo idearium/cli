@@ -45,7 +45,7 @@ docker volume create "$DOCKER_VOLUME_NAME" >/dev/null 2>&1
 
 docker run --rm -v "$DOCKER_VOLUME_NAME:/data" busybox sh -c "mkdir -p $OUTPUT_PATH && chmod -R 777 /data"
 
-docker run --rm -v "$DOCKER_VOLUME_NAME:/data" mongo:7 mongodump $CONNECTION_STRING -o $OUTPUT_PATH
+docker run --rm -v "$DOCKER_VOLUME_NAME:/data" mongo:7 mongodump $CONNECTION_STRING -o /data
 
 docker run --rm -v "$DOCKER_VOLUME_NAME:/data" -v "$(pwd)/data:/host_data" busybox sh -c "cp -r /data/* /host_data"
 

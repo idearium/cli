@@ -36,25 +36,9 @@ const connectionStringWithHost = ({ auth, host, name, params }) => {
     return [...cmd, '--host', host, '-d', name].join(' ');
 };
 
-const volumeName = ({ collection, env, name }) => {
-    const parts = ['mongodump_data', name, env];
-
-    if (collection) {
-        parts.push(collection);
-    }
-
-    return parts.join('_');
-};
-
-// loadConfig('mongo')
-//     .then((mongo) => {
-//         const db = mongo[`${env}`];
-//         const toDb = mongo[to] || mongo.local;
-
 (async () => {
-    const [, , env, to, localIp, scriptDir, collection] = process.argv;
+    const [, , env, to, localIp, collection] = process.argv;
     const details = await loadConfig(`mongo`);
-    // console.log('details', { env, to, localIp, scriptDir, collection });
 
     const fromDb = details[env];
     const toDb = details[to] || details.local;
@@ -66,25 +50,13 @@ const volumeName = ({ collection, env, name }) => {
             ? `--nsInclude '${fromDb.name}.*' --nsFrom '${fromDb.name}.*' --nsTo '${toDb.name}.*'`
             : `--nsInclude '${fromDb.name}.${collection}' --nsFrom '${fromDb.name}.*' --nsTo '${toDb.name}.*'`;
 
-    // This is now isToDbLocal.
-    // const addHost =
-    //     toDb.host === details.local.host
-    //         ? ` --add-host ${toDb.host}:$(c hosts get -nl ${toDb.host})`
-    //         : '';
-
-    // -it -v $SCRIPT_DIR/data/$FROM_DB:/data/$FROM_DB ${addHost} --rm${networkOption()} mongo:7 mongorestore --noIndexRestore --drop ${
-    //     toDbConnection.host
-    //         ? connectionStringWithHost(toDbConnection)
-    //         : connectionStringWithAddress(toDbConnection)
-    // } ${collectionArg} data/
-
     const args = [
         '-it',
         '--rm',
         '--network',
         'host',
         '-v',
-        `${scriptDir}/data/${fromDb.name}:/data/${fromDb.name}`,
+        `${process.cwd()}/data/${fromDb.name}:/data/${fromDb.name}`,
     ];
 
     if (toDb.host === details.local.host) {
