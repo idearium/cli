@@ -21,7 +21,7 @@ const connectionStringWithAddress = ({
         cmd.push(params);
     }
 
-    return [...cmd, '--uri', `${url.href}/${name}`].join(' ');
+    return [...cmd, `${url.href}/${name}`].join(' ');
 };
 
 const connectionStringWithHost = ({ auth, host, name, params }) => {
