@@ -14,7 +14,7 @@ usage() {
     printf "\tImport all or a specific collection from a Mongo database download to another environment.\n"
     printf "\tIf you don't provide a collection, all will be imported.\n\n"
     printf "\tOptions:\n\n"
-    printf "\t-h, --help  Display this help message\n\n"
+    printf "\t-h, --help Display this help message\n\n"
     printf "\t-t, --to <env> The import destination (defaults to local)."
 }
 

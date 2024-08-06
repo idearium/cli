@@ -73,7 +73,7 @@ const connectionStringWithHost = ({ auth, host, name, params }) => {
             ? connectionStringWithHost(toDbConnection)
             : connectionStringWithAddress(toDbConnection),
         collectionArg,
-        `data/${toDb.name}`
+        `data/${fromDb.name}`
     );
 
     console.log(
