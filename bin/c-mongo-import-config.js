@@ -33,7 +33,7 @@ const connectionStringWithHost = ({ auth, host, name, params }) => {
         cmd.push(params);
     }
 
-    return [...cmd, '--host', host, '-d', name].join(' ');
+    return [...cmd, '--host', host].join(' ');
 };
 
 (async () => {
@@ -47,8 +47,8 @@ const connectionStringWithHost = ({ auth, host, name, params }) => {
 
     const collectionArg =
         collection === ''
-            ? `--nsInclude '${fromDb.name}.*' --nsFrom '${fromDb.name}.*' --nsTo '${toDb.name}.*'`
-            : `--nsInclude '${fromDb.name}.${collection}' --nsFrom '${fromDb.name}.*' --nsTo '${toDb.name}.*'`;
+            ? `--nsInclude ${fromDb.name}.* --nsFrom '${fromDb.name}.*' --nsTo '${toDb.name}.*'`
+            : `--nsInclude ${fromDb.name}.${collection} --nsFrom '${fromDb.name}.*' --nsTo '${toDb.name}.*'`;
 
     const args = [
         '-it',
@@ -73,7 +73,7 @@ const connectionStringWithHost = ({ auth, host, name, params }) => {
             ? connectionStringWithHost(toDbConnection)
             : connectionStringWithAddress(toDbConnection),
         collectionArg,
-        `data/${fromDb.name}`
+        'data/'
     );
 
     console.log(

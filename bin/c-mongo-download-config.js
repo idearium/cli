@@ -49,7 +49,13 @@ const volumeName = ({ collection, env, name }) => {
 (async () => {
     const [, , env, collection] = process.argv;
     const details = await loadConfig(`mongo.${env}`);
-    const connection = connectionParts(details);
+    const params = [...(details.params || [])];
+
+    if (collection) {
+        params.push(`-c=${collection}`);
+    }
+
+    const connection = connectionParts({ ...details, params });
     const dockerVolumeName = volumeName({
         collection,
         env,
