@@ -31,5 +31,6 @@ ENV=$1
 CONFIG=$(node "$SCRIPT_DIR/c-mongo-connect-config.js" "$ENV")
 
 CONNECTION_STRING=$(echo $CONFIG | jq -r '.connectionString')
+VOLUMES=$(echo $CONFIG | jq -r '.volumes | join(" ") // ""')
 
-docker run -it --rm --network host -v $SCRIPT_DIR/data/mongo:/home/mongodb/ mongo:7 mongosh $CONNECTION_STRING
+docker run -it --rm --network host -v $SCRIPT_DIR/data/mongo:/home/mongodb/ $VOLUMES mongo:7 mongosh $CONNECTION_STRING

@@ -67,9 +67,11 @@ const volumeName = ({ collection, env, name }) => {
 
     console.log(
         JSON.stringify({
+            connection,
+            connectionString,
             dbName: details.name,
             dockerVolumeName,
-            connectionString,
+            volumes: connection.volumes,
         })
     );
 })();

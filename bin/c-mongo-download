@@ -40,12 +40,13 @@ CONFIG=$(node "$SCRIPT_DIR/c-mongo-download-config.js" "$ENV" "$COLLECTION")
 DOCKER_VOLUME_NAME=$(echo $CONFIG | jq -r '.dockerVolumeName')
 OUTPUT_PATH="/data/$(echo $CONFIG | jq -r '.dbName')"
 CONNECTION_STRING=$(echo $CONFIG | jq -r '.connectionString')
+VOLUMES=$(echo $CONFIG | jq -r '.volumes | join(" ") // ""')
 
 docker volume create "$DOCKER_VOLUME_NAME" >/dev/null 2>&1
 
 docker run --rm -v "$DOCKER_VOLUME_NAME:/data" busybox sh -c "mkdir -p $OUTPUT_PATH && chmod -R 777 /data"
 
-docker run --rm -v "$DOCKER_VOLUME_NAME:/data" mongo:7 mongodump $CONNECTION_STRING -o /data
+docker run --rm -v "$DOCKER_VOLUME_NAME:/data" $VOLUMES mongo:7 mongodump $CONNECTION_STRING -o /data
 
 docker run --rm -v "$DOCKER_VOLUME_NAME:/data" -v "$(pwd)/data:/host_data" busybox sh -c "cp -r /data/* /host_data"
 

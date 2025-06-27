@@ -49,6 +49,7 @@ const connectionStringWithHost = ({ auth, host, name, params }) => {
     console.log(
         JSON.stringify({
             connectionString,
+            volumes: connection.volumes,
         })
     );
 })();
