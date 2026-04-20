@@ -4,6 +4,12 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v5.2.1 - 2026-04-21
+
+### Changed
+
+-   Support for linux dev machines.
+
 ## v5.2.0 - 2026-04-21
 
 ### Added
