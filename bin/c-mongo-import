@@ -72,4 +72,5 @@ CONFIG=$(node "$SCRIPT_DIR/c-mongo-import-config.js" "$ENV" "$DESTINATION" "$(c 
 ARGS=$(echo $CONFIG | jq -r '.args')
 IFS=' ' read -r -a ARGS_ARRAY <<< "$ARGS"
 
+echo "${ARGS_ARRAY[@]}"
 docker run "${ARGS_ARRAY[@]}"
