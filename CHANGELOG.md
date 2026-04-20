@@ -4,6 +4,16 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+## v6.0.0 - 2026-04-21
+
+### Removed
+
+-   Removed support for Yarn.
+
+### Changed
+
+-   Re-release of v5.2.0 and v5.2.1 with a breaking change version number.
+
 ## v5.2.1 - 2026-04-21
 
 ### Changed

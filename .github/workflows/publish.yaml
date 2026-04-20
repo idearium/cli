@@ -6,8 +6,28 @@ on:
             - 'v*'
 
 jobs:
+    environment:
+        name: Setup environment
+        outputs:
+            CI_ENV: ${{ steps.environment.outputs.CI_ENV }}
+        permissions: {}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Setup beta environment
+              if: startsWith(github.ref, 'refs/tags') && contains(github.ref_name, 'beta')
+              run: echo "CI_ENV=beta" >> $GITHUB_ENV
+
+            - name: Setup production environment
+              if: startsWith(github.ref, 'refs/tags') && !contains(github.ref_name, 'beta')
+              run: echo "CI_ENV=production" >> $GITHUB_ENV
+
+            - name: Store environment
+              id: environment
+              run: echo "CI_ENV=${{ env.CI_ENV }}" >> $GITHUB_OUTPUT
+
     publish:
         name: Publish
+        needs: [environment]
         runs-on: ubuntu-latest
         environment: Publish
         permissions:
@@ -26,8 +46,8 @@ jobs:
 
             - name: Publish (beta)
               if: needs.environment.outputs.CI_ENV == 'beta'
-              run: npm publish --tag beta --access restricted
+              run: npm publish --tag beta --provenance
 
             - name: Publish (production)
               if: needs.environment.outputs.CI_ENV == 'production'
-              run: npm publish --access restricted
+              run: npm publish --provenance
