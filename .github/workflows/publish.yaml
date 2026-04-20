@@ -6,13 +6,8 @@ on:
             - 'v*'
 
 jobs:
-    environment:
-        name: Setup environment
-        uses: idearium/actions/.github/workflows/environment.yaml@v3
-
     publish:
         name: Publish
-        needs: environment
         runs-on: ubuntu-latest
         environment: Publish
         permissions:
