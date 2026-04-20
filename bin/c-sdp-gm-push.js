@@ -24,5 +24,5 @@ loadConfig('section').then((submodules) => {
         );
     }
 
-    exec(`yarn c sdp gm cmd -s ${submodule} push developer-pop`);
+    exec(`npx c sdp gm cmd -s ${submodule} push developer-pop`);
 });

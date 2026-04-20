@@ -34,4 +34,4 @@ if (!env('IMAGE')) {
 const [, image] = env('IMAGE').split('/');
 const [name, tag] = image.split(':');
 
-exec(`yarn c kc build ${name}${formatBuildArgs(buildArgs)} -t ${tag}`);
+exec(`npx c kc build ${name}${formatBuildArgs(buildArgs)} -t ${tag}`);

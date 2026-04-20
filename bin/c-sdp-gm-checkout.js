@@ -40,20 +40,20 @@ loadConfig('section').then((submodules) => {
     return import('execa')
         .then(({ execa }) =>
             execa(
-                `yarn c sdp gm cmd -s ${submodule} rev-parse --verify ${branch}`,
+                `npx c sdp gm cmd -s ${submodule} rev-parse --verify ${branch}`,
                 { shell: true }
             )
         )
         .then(({ code, stderr, stdout }) => {
             if (!code && !stderr.length && stdout.length) {
                 return exec(
-                    `yarn c sdp gm cmd -s ${submodule} checkout ${branch}`
+                    `npx c sdp gm cmd -s ${submodule} checkout ${branch}`
                 );
             }
 
             if (!code && stderr.length && create) {
                 return exec(
-                    `yarn c sdp gm cmd -s ${submodule} checkout -b ${branch}`
+                    `npx c sdp gm cmd -s ${submodule} checkout -b ${branch}`
                 );
             }
 
