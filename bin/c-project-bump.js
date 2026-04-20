@@ -5,7 +5,6 @@ const { resolve: pathResolve } = require('path');
 const { loadConfig, reportError } = require('./lib/c');
 const semver = require('semver');
 const chalk = require('chalk');
-const clipboardy = require('clipboardy');
 const fs = require('fs');
 const fsPromises = require('fs/promises');
 const path = require('path');
@@ -176,11 +175,6 @@ loadConfig('npm.locations')
         });
     })
     .then(() => {
-        console.log(
-            `\nCopied ${chalk.cyan.bold(newVersion)} to your clipboard.`
-        );
-
-        // Copy new version to the clipboard.
-        clipboardy.write(newVersion);
+        console.log(`\nThe new version is ${chalk.cyan.bold(newVersion)}.`);
     })
     .catch((err) => reportError(err, false, true));

@@ -1,14 +1,13 @@
+#!/usr/bin/env -S node
+
 'use strict';
 
 const program = require('commander');
 const { missingCommand } = require('./lib/c');
 
-// The basic program, which uses sub-commands.
 program
-    .command(
-        'proxy <location> [cmd...]',
-        'Run a Yarn command against an NPM location.'
-    )
+    .command('get', 'Get your dev computer name.')
+    .command('set <dev-name>', 'Set your dev computer name.')
     .parse(process.argv);
 
 missingCommand(program);

@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --trace-warnings
+#!/usr/bin/env -S node
 'use strict';
 
 const program = require('commander');

@@ -15,7 +15,7 @@ program
 
 import('execa').then(({ execa }) => {
     return execa(
-        `yarn c sdp service -n section-shared git-daemon-developer-pop --url`,
+        `npx c sdp service -n section-shared git-daemon-developer-pop --url`,
         {
             shell: true,
         }

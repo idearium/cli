@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -e;
+
+SCRIPT_DIR=$(dirname "$0")
+
+report_error() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+usage() {
+    printf "\n\tUsage: c mongo connect <environment>\n\n"
+    printf "\tConnect to a mongodb instance.\n"
+    printf "\tOptions:\n\n"
+    printf "\t-h, --help  Display this help message\n\n"
+}
+
+if [ "$#" -lt 1 ]; then
+    usage
+    exit 1
+fi
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    usage
+    exit 0
+fi
+
+ENV=$1
+
+CONFIG=$(node "$SCRIPT_DIR/c-mongo-connect-config.js" "$ENV")
+
+CONNECTION_STRING=$(echo $CONFIG | jq -r '.connectionString')
+VOLUMES=$(echo $CONFIG | jq -r '.volumes | join(" ") // ""')
+
+docker run -it --rm --network host -v $SCRIPT_DIR/data/mongo:/home/mongodb/ $VOLUMES mongo:7 mongosh $CONNECTION_STRING

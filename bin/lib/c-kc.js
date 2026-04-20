@@ -3,7 +3,7 @@
 const fs = require('fs');
 const { copy, ensureDir } = require('fs-extra');
 const { join, resolve: resolvePath } = require('path');
-const Mustache = require('Mustache');
+const Mustache = require('mustache');
 const { promisify } = require('util');
 
 const { constants } = fs;

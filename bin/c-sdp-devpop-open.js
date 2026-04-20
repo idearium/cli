@@ -2,4 +2,4 @@
 
 const { exec } = require('shelljs');
 
-exec('yarn c sdp service -n section-shared developer-pop');
+exec('npx c sdp service -n section-shared developer-pop');
