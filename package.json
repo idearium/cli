@@ -48,7 +48,7 @@
         "sudo-prompt": "8.2.0"
     },
     "devDependencies": {
-        "@idearium/eslint-config": "4.0.0",
+        "@idearium/eslint-config": "6.0.0",
         "eslint-config-prettier": "8.5.0",
         "eslint-plugin-prettier": "4.2.1",
         "husky": "8.0.1",
