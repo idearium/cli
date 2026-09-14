@@ -269,6 +269,27 @@ You'll then need to supply all of the values that the template file requires. Yo
 
 The `c kc apply` will automatically provide the values for `namespace`, `prefix` and `tag`. If you'd like to provide something else, simply write a function that returns an object with `label` and `value`. Then use the value of `label` within a template placeholder (i.e. `{{a}}`) and it will be updated with the `value` (i.e. `{{b}}`).
 
+##### Secret templates
+
+Any template (`.yaml.tmpl`) can contain [1Password secret references](https://www.1password.dev/connect/knowledge-base/secrets-references/) (i.e. `op://vault/item/section/field`). When a template contains at least one reference, the cli will resolve them with the 1Password cli (`op inject`) before the template is rendered, so references are never interfered with by template placeholders. This requires the 1Password cli to be installed and signed in (`op signin`). Templates without secret references never invoke `op`.
+
+This makes it possible to commit a template containing secret references, and have the compiled manifest (within `.compiled`, which should be gitignored) contain the actual secrets, ready to be deployed to Kubernetes.
+
+For a service of `type: secret`, author the template with `stringData` instead of `data`:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+    name: site
+    namespace: ras-rsc-local
+type: Opaque
+stringData:
+    ALGOLIA_SEARCH_API_KEY: op://ras-rsc/site/LOCAL/ALGOLIA_SEARCH_API_KEY
+```
+
+When the template is compiled, each `stringData` value will be base64 encoded and written to the compiled manifest as `data`, just as Kubernetes expects. `stringData` values must be single-line, and shouldn't be quoted or contain inline comments.
+
 ### MongoDB configuration
 
 The Idearium cli supports a MongoDB configuration. The MongoDB configuration can be used to access local and remote databases.

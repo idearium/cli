@@ -4,6 +4,10 @@ This file is a history of the changes made to @idearium/cli.
 
 ## Unreleased
 
+### Added
+
+-   Support for 1Password secret references (`op://`) within Kubernetes manifest templates. References are resolved with `op inject` (only when present) before templates are rendered, and `type: secret` services can use `stringData`, which is base64 encoded into `data` within the compiled manifest.
+
 ## v6.0.0 - 2026-04-21
 
 ### Removed
