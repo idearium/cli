@@ -28,6 +28,10 @@ program
         'Get the name of a pod for a Kubernetes location.'
     )
     .command('secret', 'Base64 encode a string, ready for a Kubernetes secret.')
+    .command(
+        'secrets-clean',
+        'Remove compiled secret manifests, so plaintext secrets do not linger on disk.'
+    )
     .command('start', 'Deploy all Kubernetes locations.')
     .command(
         'stop',

@@ -290,6 +290,8 @@ stringData:
 
 When the template is compiled, each `stringData` value will be base64 encoded and written to the compiled manifest as `data`, just as Kubernetes expects. `stringData` values must be single-line, and shouldn't be quoted or contain inline comments.
 
+Compiled secret manifests contain plaintext secrets, so they are treated as sensitive: they're written with `0600` permissions, and removed once they've been applied to Kubernetes. `c kc start` and `c kc apply` remove them after applying, and `c skaffold dev` removes them (via `c kc secrets-clean`) when it exits. `c kc manifests` intentionally leaves them in place, as its compiled output is its purpose. This only applies to the local environment; other environments are unaffected.
+
 ### MongoDB configuration
 
 The Idearium cli supports a MongoDB configuration. The MongoDB configuration can be used to access local and remote databases.

@@ -11,8 +11,10 @@ const { execFile } = require('child_process');
 const { constants } = fs;
 
 const access = promisify(fs.access);
+const chmod = promisify(fs.chmod);
 const execFileAsync = promisify(execFile);
 const readFile = promisify(fs.readFile);
+const unlink = promisify(fs.unlink);
 const writeFile = promisify(fs.writeFile);
 
 /**
@@ -237,14 +239,64 @@ const renderServicesTemplates = async (path = '', services = []) => {
         }
 
         let rendered = Mustache.render(content, service.locals);
+        const destinationFile = `${destinationPath}.yaml`;
 
         if (service.type === 'secret') {
             rendered = encodeSecretStringData(rendered);
         }
 
         await ensureDir(destinationFolder);
-        await writeFile(`${destinationPath}.yaml`, rendered, 'utf8');
+        await writeFile(destinationFile, rendered, {
+            encoding: 'utf8',
+            mode: service.type === 'secret' ? 0o600 : 0o644,
+        });
+
+        if (service.type === 'secret') {
+            // writeFile's mode only applies at creation; chmod catches files
+            // left over from a previous run with looser permissions.
+            await chmod(destinationFile, 0o600);
+        }
     });
+};
+
+/**
+ * Remove compiled secret manifests, so that plaintext secrets don't linger on
+ * disk after they've been applied to Kubernetes. Only acts on the local
+ * environment; other environments are out of scope.
+ * @param {Object} options
+ * @param {String} options.env The current project environment.
+ * @param {String} options.path The path to a bunch of Kubernetes manifests.
+ * @param {Array} options.services An array of Kubernetes location services.
+ * @returns {Promise<Array>} The paths of the secret files that were removed.
+ */
+const removeCompiledSecrets = async ({ env, path = '', services = [] }) => {
+    if (env !== 'local') {
+        return [];
+    }
+
+    const removed = [];
+
+    await asyncForEach(services, async (service) => {
+        if (service.type !== 'secret') {
+            return;
+        }
+
+        const destinationFolder = join(
+            resolvePath(process.cwd(), path),
+            '.compiled'
+        );
+        const destinationFile = join(destinationFolder, `${service.path}.yaml`);
+
+        try {
+            await unlink(destinationFile);
+            removed.push(destinationFile);
+        } catch (e) {
+            // Do nothing.
+            // It just means there was no compiled secret to remove.
+        }
+    });
+
+    return removed;
 };
 
 /**
@@ -307,6 +359,7 @@ module.exports = {
     flagBuildArgs,
     formatBuildArgs,
     renderServicesTemplates,
+    removeCompiledSecrets,
     setLocalsForServices,
     validateBuildArgs,
 };
