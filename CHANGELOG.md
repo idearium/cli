@@ -6,7 +6,11 @@ This file is a history of the changes made to @idearium/cli.
 
 ### Added
 
--   Support for 1Password secret references (`op://`) within Kubernetes manifest templates. References are resolved with `op inject` (only when present) before templates are rendered, and `type: secret` services can use `stringData`, which is base64 encoded into `data` within the compiled manifest.
+-   Support for 1Password secret references (`op://`) within Kubernetes manifest templates. References are resolved with `op inject` (only when present) before templates are rendered, and `type: secret` services can use `stringData`, which is base64 encoded into `data` within the compiled manifest. When references are present, the 1Password cli is authenticated up front (`op whoami`), halting with a friendly signin message otherwise.
+
+### Changed
+
+-   `c skaffold dev` now halts when manifest compilation fails, rather than continuing into skaffold with stale compiled manifests.
 
 ## v6.0.0 - 2026-04-21
 

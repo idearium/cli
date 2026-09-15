@@ -271,7 +271,7 @@ The `c kc apply` will automatically provide the values for `namespace`, `prefix`
 
 ##### Secret templates
 
-Any template (`.yaml.tmpl`) can contain [1Password secret references](https://www.1password.dev/connect/knowledge-base/secrets-references/) (i.e. `op://vault/item/section/field`). When a template contains at least one reference, the cli will resolve them with the 1Password cli (`op inject`) before the template is rendered, so references are never interfered with by template placeholders. This requires the 1Password cli to be installed and signed in (`op signin`). Templates without secret references never invoke `op`.
+Any template (`.yaml.tmpl`) can contain [1Password secret references](https://www.1password.dev/connect/knowledge-base/secrets-references/) (i.e. `op://vault/item/section/field`). When a template contains at least one reference, the cli will first ensure the 1Password cli is installed and authenticated (via `op whoami`), halting with a friendly message if not (`eval $(op signin)`). It will then resolve the references with the 1Password cli (`op inject`) before the template is rendered, so references are never interfered with by template placeholders. Templates without secret references never invoke `op`.
 
 This makes it possible to commit a template containing secret references, and have the compiled manifest (within `.compiled`, which should be gitignored) contain the actual secrets, ready to be deployed to Kubernetes.
 

@@ -157,6 +157,32 @@ const formatBuildArgs = (args) => {
  * @param {String} content The content of a template file, containing secret references.
  * @returns {Promise<String>} The content with all secret references resolved to their actual values.
  */
+/**
+ * Ensure the 1Password cli is installed and an authenticated session is
+ * available, before any op command is attempted. The check is memoized: it
+ * runs at most once per cli invocation.
+ * @returns {Promise<void>} Rejects with a friendly error when the cli is missing or not signed in.
+ */
+let opAuthenticated = null;
+
+const ensureOpAuthenticated = () => {
+    if (!opAuthenticated) {
+        opAuthenticated = execFileAsync('op', ['whoami']).catch((e) => {
+            if (e.code === 'ENOENT') {
+                throw new Error(
+                    'The 1Password cli (op) is not installed. Install it to resolve secret references within templates.'
+                );
+            }
+
+            throw new Error(
+                'Not signed in to the 1Password cli. Run `eval $(op signin)` in this shell and try again.'
+            );
+        });
+    }
+
+    return opAuthenticated;
+};
+
 const injectSecretReferences = async (content) => {
     const tempFolder = await mkdtemp(join(tmpdir(), 'c-kc-'));
     const inPath = join(tempFolder, 'inject.yaml.tmpl');
@@ -199,11 +225,13 @@ const renderServicesTemplates = async (path = '', services = []) => {
         // Secret references are resolved before the template is rendered, so
         // that Mustache never has the opportunity to interfere with them.
         if (containsSecretReferences(content)) {
+            await ensureOpAuthenticated();
+
             try {
                 content = await injectSecretReferences(content);
             } catch (e) {
                 throw new Error(
-                    `Could not inject 1Password secret references: ${e.message}. Please ensure the 1Password cli is installed and you are signed in (op signin).`
+                    `Could not inject 1Password secret references: ${e.message}. Please ensure the 1Password cli is installed and you are signed in (eval $(op signin)).`
                 );
             }
         }
