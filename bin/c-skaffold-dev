@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-trap 'npx c kc secrets-clean' EXIT
+trap 'npx c kc secrets-clean -q' EXIT
 
 npx c kc manifests
 DOCKER_SCAN_SUGGEST=false skaffold dev

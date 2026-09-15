@@ -14,6 +14,7 @@ program
     .description(
         'This command will remove any compiled secret manifests, so that plaintext secrets do not linger on disk. It only applies to the local environment.'
     )
+    .option('-q', 'Do not print the removed files.')
     .parse(process.argv);
 
 return Promise.all([loadState(), loadConfig()])
@@ -34,6 +35,10 @@ return Promise.all([loadState(), loadConfig()])
     })
     .then(async ([removal, env]) => {
         const removed = await removal;
+
+        if (program.Q) {
+            return;
+        }
 
         if (removed.length === 0) {
             // eslint-disable-next-line no-console
