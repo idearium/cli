@@ -152,6 +152,41 @@ const formatBuildArgs = (args) => {
     return '';
 };
 
+const formatBuildSecrets = (secrets) => {
+    if (Array.isArray(secrets)) {
+        return secrets.length > 0 ? `${leftSpace(secrets.join(' '))}` : '';
+    }
+
+    if (typeof secrets === 'object' && secrets !== null) {
+        const keys = Object.keys(secrets);
+
+        if (keys.length) {
+            return `${leftSpace(
+                keys
+                    .map((key) => {
+                        const secretId = key.toLowerCase().replace(/-/g, '_');
+                        const secretValue =
+                            typeof secrets[key] === 'function'
+                                ? secrets[key]()
+                                : secrets[key];
+
+                        // If secretValue is provided, use it as env var name, otherwise use the key
+                        const envVarName =
+                            typeof secretValue === 'string' &&
+                            secretValue.startsWith('$')
+                                ? secretValue.slice(1)
+                                : key;
+
+                        return `--secret id=${secretId},env=${envVarName}`;
+                    })
+                    .join(' ')
+            )}`;
+        }
+    }
+
+    return '';
+};
+
 /**
  * Ensure the 1Password cli is installed and an authenticated session is
  * available, before any op command is attempted. The check is memoized: it
@@ -364,6 +399,7 @@ module.exports = {
     ensureServiceFilesExist,
     flagBuildArgs,
     formatBuildArgs,
+    formatBuildSecrets,
     renderServicesTemplates,
     removeCompiledSecrets,
     setLocalsForServices,

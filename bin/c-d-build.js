@@ -8,6 +8,7 @@ const { loadConfig, newline, reportError } = require('./lib/c');
 const {
     flagBuildArgs,
     formatBuildArgs,
+    formatBuildSecrets,
     validateBuildArgs,
 } = require('./lib/c-kc');
 
@@ -72,9 +73,34 @@ return loadConfig('docker.locations').then((locations) => {
     const tag = opts.tag ? opts.tag : 'latest';
     const name = opts.name ? opts.name : location;
 
-    let cmd = `DOCKER_SCAN_SUGGEST=false docker build -t ${name}:${tag}${formatBuildArgs(
+    // Extract and set environment variables for build secrets
+    const buildSecrets = dockerLocation.buildSecrets || {};
+    const secretEnvVars = {};
+
+    if (typeof buildSecrets === 'object' && buildSecrets !== null) {
+        Object.keys(buildSecrets).forEach((key) => {
+            const secretValue =
+                typeof buildSecrets[key] === 'function'
+                    ? buildSecrets[key]()
+                    : buildSecrets[key];
+
+            if (secretValue) {
+                // Trim any whitespace/newlines from the secret value
+                secretEnvVars[key] = String(secretValue).trim();
+            }
+        });
+    }
+
+    // Set environment variables in process.env for the docker build
+    Object.keys(secretEnvVars).forEach((key) => {
+        process.env[key] = secretEnvVars[key];
+    });
+
+    let cmd = `DOCKER_BUILDKIT=1 DOCKER_SCAN_SUGGEST=false docker build -t ${name}:${tag}${formatBuildArgs(
         dockerLocation.buildArgs
-    )}${formatBuildArgs(buildArgs)} -f ${file}`;
+    )}${formatBuildSecrets(dockerLocation.buildSecrets)}${formatBuildArgs(
+        buildArgs
+    )} -f ${file}`;
 
     if (useTar) {
         cmd = `tar -chz -C ${locationPath} . | ${cmd} -`;
@@ -84,13 +110,17 @@ return loadConfig('docker.locations').then((locations) => {
         cmd = `${cmd} ${locationPath}`;
     }
 
-    exec(cmd, { silent: program.R }, (err, stdout, stderr) => {
-        if (err !== 0) {
-            return reportError(stderr, false, true);
-        }
+    exec(
+        cmd,
+        { silent: program.R, env: { ...process.env } },
+        (err, stdout, stderr) => {
+            if (err !== 0) {
+                return reportError(stderr, false, true);
+            }
 
-        if (program.R) {
-            process.stdout.write(`${tag}${newline(opts.name)}`);
+            if (program.R) {
+                process.stdout.write(`${tag}${newline(opts.name)}`);
+            }
         }
-    });
+    );
 });
