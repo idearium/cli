@@ -1,15 +1,20 @@
 'use strict';
 
 const fs = require('fs');
-const { copy, ensureDir } = require('fs-extra');
+const { copy, ensureDir, mkdtemp, remove } = require('fs-extra');
+const { tmpdir } = require('os');
 const { join, resolve: resolvePath } = require('path');
 const Mustache = require('mustache');
 const { promisify } = require('util');
+const { execFile } = require('child_process');
 
 const { constants } = fs;
 
 const access = promisify(fs.access);
+const chmod = promisify(fs.chmod);
+const execFileAsync = promisify(execFile);
 const readFile = promisify(fs.readFile);
+const unlink = promisify(fs.unlink);
 const writeFile = promisify(fs.writeFile);
 
 /**
@@ -56,7 +61,69 @@ const ensureServiceFilesExist = async (path = '', services = []) => {
     });
 };
 
+/**
+ * Check if a template's content contains 1Password secret references.
+ * @param {String} content The content of a template file.
+ * @returns {Boolean} True if the content contains secret references.
+ */
+const containsSecretReferences = (content) => content.includes('op://');
+
+/**
+ * Convert a stringData block (single-line values only) into a data block, with each value base64 encoded.
+ * @param {String} content A rendered Kubernetes Secret manifest.
+ * @returns {String} The manifest with stringData converted to base64 encoded data.
+ */
+const encodeSecretStringData = (content) => {
+    const lines = content.split('\n');
+    const output = [];
+    let inStringData = false;
+
+    lines.forEach((line) => {
+        const stringData = /^(\s*)stringData:\s*$/.exec(line);
+
+        if (stringData) {
+            inStringData = true;
+            output.push(`${stringData[1]}data:`);
+
+            return;
+        }
+
+        const field = /^(\s+)([^:\s]+):\s*(.*)$/.exec(line);
+
+        if (inStringData && field) {
+            output.push(
+                `${field[1]}${field[2]}: ${Buffer.from(
+                    field[3].trim()
+                ).toString('base64')}`
+            );
+
+            return;
+        }
+
+        if (inStringData) {
+            inStringData = false;
+        }
+
+        output.push(line);
+    });
+
+    return output.join('\n');
+};
+
 const flagBuildArgs = (args = []) => args.map((arg) => `--build-arg ${arg}`);
+
+/**
+ * Pad a string with a left space, if the string has a length.
+ * @param {String} str A string to pad with a left space.
+ * @return {String} A string left-padded with a space.
+ */
+const leftSpace = (str) => {
+    if (str && typeof str === 'string') {
+        return ` ${str}`;
+    }
+
+    return str;
+};
 
 const formatBuildArgs = (args) => {
     if (Array.isArray(args)) {
@@ -86,16 +153,60 @@ const formatBuildArgs = (args) => {
 };
 
 /**
- * Pad a string with a left space, if the string has a length.
- * @param {String} str A string to pad with a left space.
- * @return {String} A string left-padded with a space.
+ * Ensure the 1Password cli is installed and an authenticated session is
+ * available, before any op command is attempted. The check is memoized: it
+ * runs at most once per cli invocation.
+ * @returns {Promise<void>} Rejects with a friendly error when the cli is missing or not signed in.
  */
-const leftSpace = (str) => {
-    if (str && typeof str === 'string') {
-        return ` ${str}`;
+let opAuthenticated = null;
+
+const ensureOpAuthenticated = () => {
+    if (!opAuthenticated) {
+        opAuthenticated = execFileAsync('op', ['whoami']).catch((e) => {
+            if (e.code === 'ENOENT') {
+                throw new Error(
+                    'The 1Password cli (op) is not installed. Install it to resolve secret references within templates.'
+                );
+            }
+
+            throw new Error(
+                'Not signed in to the 1Password cli. Run `eval $(op signin)` in this shell and try again.'
+            );
+        });
     }
 
-    return str;
+    return opAuthenticated;
+};
+
+/**
+ * Resolve any 1Password secret references within template content using the op cli.
+ * Uses file mode (rather than a stdin pipe) because the op cli can miss data
+ * written to a stdin pipe before it starts reading.
+ * @param {String} content The content of a template file, containing secret references.
+ * @returns {Promise<String>} The content with all secret references resolved to their actual values.
+ */
+const injectSecretReferences = async (content) => {
+    await ensureOpAuthenticated();
+
+    const tempFolder = await mkdtemp(join(tmpdir(), 'c-kc-'));
+    const inPath = join(tempFolder, 'inject.yaml.tmpl');
+    const outPath = join(tempFolder, 'inject.yaml');
+
+    try {
+        await writeFile(inPath, content, { mode: 0o600 });
+
+        await execFileAsync('op', [
+            'inject',
+            '--in-file',
+            inPath,
+            '--out-file',
+            outPath,
+        ]);
+
+        return await readFile(outPath, 'utf-8');
+    } finally {
+        await remove(tempFolder);
+    }
 };
 
 const renderServicesTemplates = async (path = '', services = []) => {
@@ -105,20 +216,93 @@ const renderServicesTemplates = async (path = '', services = []) => {
         const destinationFolder = join(sourceFolder, '.compiled');
         const destinationPath = join(destinationFolder, service.path);
 
-        try {
-            const content = await readFile(`${sourcePath}.yaml.tmpl`, 'utf-8');
+        let content;
 
-            await ensureDir(destinationFolder);
-            await writeFile(
-                `${destinationPath}.yaml`,
-                Mustache.render(content, service.locals),
-                'utf8'
-            );
+        try {
+            content = await readFile(`${sourcePath}.yaml.tmpl`, 'utf-8');
         } catch (e) {
             // Do nothing.
-            // It just means we don't have a templ file to render.
+            // It just means we don't have a template file to render.
+            return;
+        }
+
+        // The template is rendered before secret references are resolved, so
+        // that secret values never have the opportunity to interfere with the
+        // template engine (i.e. a value containing curly braces). This is why
+        // references must be bare (not {{ }} wrapped): placeholders are gone
+        // by the time the references are resolved.
+        let rendered = Mustache.render(content, service.locals);
+        const destinationFile = `${destinationPath}.yaml`;
+
+        if (containsSecretReferences(rendered)) {
+            try {
+                rendered = await injectSecretReferences(rendered);
+            } catch (e) {
+                throw new Error(
+                    `Could not inject 1Password secret references: ${e.message}. Please ensure the 1Password cli is installed and you are signed in (eval $(op signin)).`
+                );
+            }
+        }
+
+        if (service.type === 'secret') {
+            rendered = encodeSecretStringData(rendered);
+        }
+
+        await ensureDir(destinationFolder);
+        await writeFile(destinationFile, rendered, {
+            encoding: 'utf8',
+            mode: service.type === 'secret' ? 0o600 : 0o644,
+        });
+
+        if (service.type === 'secret') {
+            // writeFile's mode only applies at creation; chmod catches files
+            // left over from a previous run with looser permissions.
+            await chmod(destinationFile, 0o600);
         }
     });
+};
+
+/**
+ * Remove compiled secret manifests, so that plaintext secrets don't linger on
+ * disk after they've been applied to Kubernetes. Only acts on the local
+ * environment; other environments are out of scope.
+ * @param {Object} options
+ * @param {String} options.env The current project environment.
+ * @param {String} options.path The path to a bunch of Kubernetes manifests.
+ * @param {Array} options.services An array of Kubernetes location services.
+ * @returns {Promise<Array>} The paths of the secret files that were removed.
+ */
+const removeCompiledSecrets = async ({ env, path = '', services = [] }) => {
+    if (env !== 'local') {
+        return [];
+    }
+
+    const removed = [];
+
+    await asyncForEach(services, async (service) => {
+        if (service.type !== 'secret') {
+            return;
+        }
+
+        const destinationFolder = join(
+            resolvePath(process.cwd(), path),
+            '.compiled'
+        );
+        const destinationFile = join(destinationFolder, `${service.path}.yaml`);
+
+        try {
+            await unlink(destinationFile);
+            removed.push(destinationFile);
+        } catch (e) {
+            // Any error other than a missing file should be surfaced: failing
+            // to remove a compiled secret leaves plaintext on disk.
+            if (e.code !== 'ENOENT') {
+                throw e;
+            }
+        }
+    });
+
+    return removed;
 };
 
 /**
@@ -181,6 +365,7 @@ module.exports = {
     flagBuildArgs,
     formatBuildArgs,
     renderServicesTemplates,
+    removeCompiledSecrets,
     setLocalsForServices,
     validateBuildArgs,
 };

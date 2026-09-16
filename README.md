@@ -269,6 +269,29 @@ You'll then need to supply all of the values that the template file requires. Yo
 
 The `c kc apply` will automatically provide the values for `namespace`, `prefix` and `tag`. If you'd like to provide something else, simply write a function that returns an object with `label` and `value`. Then use the value of `label` within a template placeholder (i.e. `{{a}}`) and it will be updated with the `value` (i.e. `{{b}}`).
 
+##### Secret templates
+
+Any template (`.yaml.tmpl`) can contain [1Password secret references](https://www.1password.dev/connect/knowledge-base/secrets-references/) (i.e. `op://vault/item/section/field`). The template is rendered (placeholders) first, and then any references are resolved with the 1Password cli (`op inject`) - only when present. Rendering first means secret values never flow through the template engine (a value containing curly braces could otherwise be mangled). As a consequence, references must be **bare** (i.e. `op://vault/item/section/field`, not wrapped in `{{ }}`): placeholders are gone by the time references are resolved, and a wrapped reference would be blanked as an unknown placeholder. When references are present, the cli first ensures the 1Password cli is installed and authenticated (via `op whoami`), halting with a friendly message if not (`eval $(op signin)`). Templates without secret references never invoke `op`.
+
+This makes it possible to commit a template containing secret references, and have the compiled manifest (within `.compiled`, which should be gitignored) contain the actual secrets, ready to be deployed to Kubernetes.
+
+For a service of `type: secret`, author the template with `stringData` instead of `data`:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+    name: site
+    namespace: ras-rsc-local
+type: Opaque
+stringData:
+    ALGOLIA_SEARCH_API_KEY: op://ras-rsc/site/LOCAL/ALGOLIA_SEARCH_API_KEY
+```
+
+When the template is compiled, each `stringData` value will be base64 encoded and written to the compiled manifest as `data`, just as Kubernetes expects. `stringData` values must be single-line, and shouldn't be quoted or contain inline comments.
+
+Compiled secret manifests contain plaintext secrets, so they are treated as sensitive: they're written with `0600` permissions, and removed once they've been applied to Kubernetes. `c kc start` and `c kc apply` remove them after applying, and `c skaffold dev` removes them (via `c kc secrets-clean`) when it exits. `c kc manifests` intentionally leaves them in place, as its compiled output is its purpose. This only applies to the local environment; other environments are unaffected.
+
 ### MongoDB configuration
 
 The Idearium cli supports a MongoDB configuration. The MongoDB configuration can be used to access local and remote databases.

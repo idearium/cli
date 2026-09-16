@@ -14,6 +14,7 @@ const {
 const { formatProjectPrefix } = require('./lib/c-project');
 const {
     ensureServiceFilesExist,
+    removeCompiledSecrets,
     renderServicesTemplates,
     setLocalsForServices,
 } = require('./lib/c-kc');
@@ -57,11 +58,11 @@ return Promise.all([loadState(), loadConfig()])
                     return reject(e);
                 }
 
-                return resolve([services, path]);
+                return resolve([services, path, state]);
             })
     )
     .then(
-        ([services, path]) =>
+        ([services, path, state]) =>
             new Promise(async (resolve, reject) => {
                 try {
                     await ensureServiceFilesExist(path, services);
@@ -69,11 +70,11 @@ return Promise.all([loadState(), loadConfig()])
                     reject(e);
                 }
 
-                return resolve([services, path]);
+                return resolve([services, path, state]);
             })
     )
     .then(
-        ([services, path]) =>
+        ([services, path, state]) =>
             new Promise(async (resolve, reject) => {
                 try {
                     await renderServicesTemplates(path, services);
@@ -81,11 +82,11 @@ return Promise.all([loadState(), loadConfig()])
                     reject(e);
                 }
 
-                return resolve([services, path]);
+                return resolve([services, path, state]);
             })
     )
     .then(
-        ([services, path]) =>
+        ([services, path, state]) =>
             new Promise((resolve, reject) => {
                 const [namespace] = services
                     .filter((service) => service.type === 'namespace')
@@ -116,7 +117,11 @@ return Promise.all([loadState(), loadConfig()])
                     )}`
                 );
 
-                return resolve();
+                return removeCompiledSecrets({
+                    env: state.env,
+                    path,
+                    services,
+                }).then(resolve);
             })
     )
     .catch((err) => {
