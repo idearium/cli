@@ -224,22 +224,25 @@ const renderServicesTemplates = async (path = '', services = []) => {
             return;
         }
 
-        // Secret references are resolved before the template is rendered, so
-        // that Mustache never has the opportunity to interfere with them.
-        if (containsSecretReferences(content)) {
+        // The template is rendered before secret references are resolved, so
+        // that secret values never have the opportunity to interfere with the
+        // template engine (i.e. a value containing curly braces). This is why
+        // references must be bare (not {{ }} wrapped): placeholders are gone
+        // by the time the references are resolved.
+        let rendered = Mustache.render(content, service.locals);
+        const destinationFile = `${destinationPath}.yaml`;
+
+        if (containsSecretReferences(rendered)) {
             await ensureOpAuthenticated();
 
             try {
-                content = await injectSecretReferences(content);
+                rendered = await injectSecretReferences(rendered);
             } catch (e) {
                 throw new Error(
                     `Could not inject 1Password secret references: ${e.message}. Please ensure the 1Password cli is installed and you are signed in (eval $(op signin)).`
                 );
             }
         }
-
-        let rendered = Mustache.render(content, service.locals);
-        const destinationFile = `${destinationPath}.yaml`;
 
         if (service.type === 'secret') {
             rendered = encodeSecretStringData(rendered);
