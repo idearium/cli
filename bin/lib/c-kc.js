@@ -153,13 +153,6 @@ const formatBuildArgs = (args) => {
 };
 
 /**
- * Resolve any 1Password secret references within template content using the op cli.
- * Uses file mode (rather than a stdin pipe) because the op cli can miss data
- * written to a stdin pipe before it starts reading.
- * @param {String} content The content of a template file, containing secret references.
- * @returns {Promise<String>} The content with all secret references resolved to their actual values.
- */
-/**
  * Ensure the 1Password cli is installed and an authenticated session is
  * available, before any op command is attempted. The check is memoized: it
  * runs at most once per cli invocation.
@@ -185,7 +178,16 @@ const ensureOpAuthenticated = () => {
     return opAuthenticated;
 };
 
+/**
+ * Resolve any 1Password secret references within template content using the op cli.
+ * Uses file mode (rather than a stdin pipe) because the op cli can miss data
+ * written to a stdin pipe before it starts reading.
+ * @param {String} content The content of a template file, containing secret references.
+ * @returns {Promise<String>} The content with all secret references resolved to their actual values.
+ */
 const injectSecretReferences = async (content) => {
+    await ensureOpAuthenticated();
+
     const tempFolder = await mkdtemp(join(tmpdir(), 'c-kc-'));
     const inPath = join(tempFolder, 'inject.yaml.tmpl');
     const outPath = join(tempFolder, 'inject.yaml');
@@ -233,8 +235,6 @@ const renderServicesTemplates = async (path = '', services = []) => {
         const destinationFile = `${destinationPath}.yaml`;
 
         if (containsSecretReferences(rendered)) {
-            await ensureOpAuthenticated();
-
             try {
                 rendered = await injectSecretReferences(rendered);
             } catch (e) {
@@ -294,8 +294,11 @@ const removeCompiledSecrets = async ({ env, path = '', services = [] }) => {
             await unlink(destinationFile);
             removed.push(destinationFile);
         } catch (e) {
-            // Do nothing.
-            // It just means there was no compiled secret to remove.
+            // Any error other than a missing file should be surfaced: failing
+            // to remove a compiled secret leaves plaintext on disk.
+            if (e.code !== 'ENOENT') {
+                throw e;
+            }
         }
     });
 
