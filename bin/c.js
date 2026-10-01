@@ -18,8 +18,13 @@ program
     .command('mk <command>', 'Shortcuts to control Minikube.')
     .command('mongo <command>', 'Shortcuts to help with the database.')
     .command('npm <command>', 'Shortcuts to help with NPM.')
+    .command('op <command>', 'Shortcuts to manage 1Password secret values.')
     .command('project <command>', 'Shortcuts to help with project management.')
     .command('sdp <command>', "Shortcuts to help with Section's devpop.")
+    .command(
+        'secrets <command>',
+        'Shortcuts to manage project secrets across their stores.'
+    )
     .command('skaffold <command>', 'Shortcuts to help with Skaffold.')
     .command('ts <command>', 'Shortcuts to help with Tailscale.')
     .command(

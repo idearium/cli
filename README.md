@@ -37,7 +37,9 @@ The following is a summary of the top level commands.
 -   `c mk` is for everything Minikube.
 -   `c mongo` is for MongoDB connections.
 -   `c npm` is for everything NPM.
+-   `c op` manages 1Password secret values for the secrets contract.
 -   `c project` is for project management.
+-   `c secrets` manages project secrets across their stores (1Password, GSM, Kubernetes).
 
 Be aware that `kubectl` uses a global configuration, but the `c kc` command supercedes those where possible and ensures kubectl runs in the context of the project you're within.
 
@@ -271,6 +273,8 @@ The `c kc apply` will automatically provide the values for `namespace`, `prefix`
 
 ##### Secret templates
 
+> With a secrets contract in `c.js` (see [Secrets configuration](#secrets-configuration) below), secret-shaped templates are generated automatically — you don't commit them. This section applies to repositories without a contract.
+
 Any template (`.yaml.tmpl`) can contain [1Password secret references](https://www.1password.dev/connect/knowledge-base/secrets-references/) (i.e. `op://vault/item/section/field`). The template is rendered (placeholders) first, and then any references are resolved with the 1Password cli (`op inject`) - only when present. Rendering first means secret values never flow through the template engine (a value containing curly braces could otherwise be mangled). As a consequence, references must be **bare** (i.e. `op://vault/item/section/field`, not wrapped in `{{ }}`): placeholders are gone by the time references are resolved, and a wrapped reference would be blanked as an unknown placeholder. When references are present, the cli first ensures the 1Password cli is installed and authenticated (via `op whoami`), halting with a friendly message if not (`eval $(op signin)`). Templates without secret references never invoke `op`.
 
 This makes it possible to commit a template containing secret references, and have the compiled manifest (within `.compiled`, which should be gitignored) contain the actual secrets, ready to be deployed to Kubernetes.
@@ -291,6 +295,58 @@ stringData:
 When the template is compiled, each `stringData` value will be base64 encoded and written to the compiled manifest as `data`, just as Kubernetes expects. `stringData` values must be single-line, and shouldn't be quoted or contain inline comments.
 
 Compiled secret manifests contain plaintext secrets, so they are treated as sensitive: they're written with `0600` permissions, and removed once they've been applied to Kubernetes. `c kc start` and `c kc apply` remove them after applying, and `c skaffold dev` removes them (via `c kc secrets-clean`) when it exits. `c kc manifests` intentionally leaves them in place, as its compiled output is its purpose. This only applies to the local environment; other environments are unaffected.
+
+### Secrets configuration
+
+The `secrets` block of `c.js` is the secrets contract: the single source of truth for every secret-shaped manifest and value reference. With a contract present, the cli generates SecretProviderClasses, SecretSyncs and the secret-sync ServiceAccount for deployed environments, and local Secrets (1Password references) for the local environment, whenever manifests are compiled (`c kc manifests`, `c kc apply`, `c kc start`). A committed manifest file that the contract also generates is a hard error - the contract is the one true source. Without a contract, nothing changes.
+
+```js
+secrets: {
+    dev: {
+        opItem: '{dev-item-id}', // {org}-{repo}/dev
+        consumers: {
+            'site-build': { keys: ['FONTAWESOME_AUTH_TOKEN'] },
+        },
+    },
+    services: {
+        site: {
+            opItem: '{item-id}',
+            keys: ['CACHE_URL', 'RAS_API_KEY'], // owned
+            sharedKeys: ['IMGIX_TOKEN'], // borrowed
+        },
+        'prismic-published-workflow': {
+            sharedKeys: ['prismic-published-algolia.BASIC_AUTH'], // dotted owner.KEY
+        },
+    },
+    shared: {
+        // keys whose GSM ids carry no service segment
+        // (org-repo-env-key); opItem points at the item storing the
+        // values, usually a reference - never auto-created.
+        opItem: 'services.site',
+        keys: ['IMGIX_TOKEN'],
+    },
+},
+```
+
+Rules (enforced at load):
+
+-   `opItem` values are 1Password item ids or `services.<name>`/`dev` references (one hop - each id appears exactly once). Services resolve (or create) their item lazily by title; the `shared` block never auto-creates.
+-   A bare `sharedKeys` name resolves to its unique owner across `services` and `shared`; dotted `'owner.KEY'` disambiguates.
+-   GSM secret ids derive as `{org}-{repo}-{env}[-{service}]-{key}` - no literal ids anywhere.
+-   Region comes from `gcloud.region`; project from `project.gcpProjectId`.
+
+Commands (values are only ever displayed as truncated hashes; `--plaintext` requires a terminal and is blocked in agent/CI contexts unless forced):
+
+-   `c secrets init` - draft a contract from existing declarations (requires a warm 1Password session; no-op when a contract exists). Binds `shared.opItem` by comparing value hashes and removes value-verified legacy duplicates.
+-   `c secrets add <service> <env> <KEY>` - add a key end to end (1Password, GSM, c.js). Never touches the cluster.
+-   `c secrets push <service> <env> <KEY>` - push the 1Password value to GSM, verified by hash readback.
+-   `c secrets get <service> <env> <KEY>` / `c op get` - value summaries (hash, reference, length).
+-   `c op set <service> <env> <KEY>` - upsert a value from stdin (or `--generate`).
+-   `c secrets verify <env>` - reconcile structure + 1Password/GSM/Kubernetes hashes, stale 1Password fields (`op:EXTRA`) and deployed-functions drift (`STALE`).
+-   `c secrets ls <env>` - the environment's contract-derived GSM inventory.
+-   `c secrets consumers <secretId>` - everything referencing a GSM secret id. Gate every deletion on this.
+
+Commands that need 1Password, gcloud or kubectl fail fast with friendly re-authentication instructions when their credentials have expired.
 
 ### MongoDB configuration
 
