@@ -1069,6 +1069,7 @@ module.exports = {
     opCreateItem,
     opFieldExists,
     opFindItemByTitle,
+    opItemFields,
     opRead,
     opSession,
     opReadSha,

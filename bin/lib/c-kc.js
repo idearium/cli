@@ -53,11 +53,19 @@ const ensureServiceFilesExist = async (path = '', services = []) => {
                 await ensureDir(destinationFolder);
                 await copy(`${sourcePath}.yaml`, `${destinationPath}.yaml`);
             } catch (err) {
-                throw new Error(
-                    new Error(
-                        `Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`
-                    )
-                );
+                try {
+                    // Contract-generated manifests have no committed source
+                    // file - their compiled output already exists.
+                    await access(`${destinationPath}.yaml`, constants.R_OK);
+
+                    return;
+                } catch (generatedErr) {
+                    throw new Error(
+                        new Error(
+                            `Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`
+                        )
+                    );
+                }
             }
         }
     });
