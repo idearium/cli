@@ -1070,6 +1070,7 @@ module.exports = {
     opFieldExists,
     opFindItemByTitle,
     opRead,
+    opSession,
     opReadSha,
     opUpsertField,
     quoteIfNeeded,

@@ -2,6 +2,8 @@
 
 const fs = require('fs');
 const { copy, ensureDir, mkdtemp, remove } = require('fs-extra');
+
+const { opSession } = require('./c-secrets-io');
 const { tmpdir } = require('os');
 const { join, resolve: resolvePath } = require('path');
 const Mustache = require('mustache');
@@ -160,9 +162,28 @@ const formatBuildArgs = (args) => {
  */
 let opAuthenticated = null;
 
+/**
+ * The op environment: the op-session alias' session (or an exported
+ * OP_SESSION_idearium) wired in, falling back to the process environment
+ * when no session file exists (the cli may still be authenticated some
+ * other way).
+ * @returns {Object} The environment for op invocations.
+ */
+const opEnvironment = () => {
+    try {
+        return Object.assign({}, process.env, {
+            OP_SESSION_idearium: opSession(),
+        });
+    } catch (e) {
+        return process.env;
+    }
+};
+
 const ensureOpAuthenticated = () => {
     if (!opAuthenticated) {
-        opAuthenticated = execFileAsync('op', ['whoami']).catch((e) => {
+        opAuthenticated = execFileAsync('op', ['whoami'], {
+            env: opEnvironment(),
+        }).catch((e) => {
             if (e.code === 'ENOENT') {
                 throw new Error(
                     'The 1Password cli (op) is not installed. Install it to resolve secret references within templates.'
@@ -195,13 +216,11 @@ const injectSecretReferences = async (content) => {
     try {
         await writeFile(inPath, content, { mode: 0o600 });
 
-        await execFileAsync('op', [
-            'inject',
-            '--in-file',
-            inPath,
-            '--out-file',
-            outPath,
-        ]);
+        await execFileAsync(
+            'op',
+            ['inject', '--in-file', inPath, '--out-file', outPath],
+            { env: opEnvironment() }
+        );
 
         return await readFile(outPath, 'utf-8');
     } finally {
@@ -361,9 +380,11 @@ const validateBuildArgs = (args = []) =>
     args.filter((arg) => arg.split('=').length == 2);
 
 module.exports = {
+    encodeSecretStringData,
     ensureServiceFilesExist,
     flagBuildArgs,
     formatBuildArgs,
+    injectSecretReferences,
     renderServicesTemplates,
     removeCompiledSecrets,
     setLocalsForServices,

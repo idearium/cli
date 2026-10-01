@@ -2,6 +2,15 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## v6.2.0 - 2026-09-30
+
+### Added
+
+-   The secrets contract: a `secrets` block in `c.js` (services, a sibling `shared` block for keys whose GSM ids carry no service segment, and `dev` build-time consumers) that becomes the single source of truth for secret-shaped manifests. With a contract present, `c kc manifests|apply|start` generate SecretProviderClasses, SecretSyncs, the secret-sync ServiceAccount (deployed environments) and local Secrets (1Password references); a conflicting committed file is a hard error. Without a contract, manifest behaviour is unchanged.
+-   `c op get|set` and `c secrets get|push|add|verify|ls|consumers|init`. Values are only ever displayed as truncated hashes (`--plaintext` is terminal-gated and agent-blocked with a discouraged `--force`); writes flow through stdin pipes; `push` verifies its GSM readback by hash; `add` is ordered, idempotent and rollback-safe across c.js, 1Password and GSM and never touches the cluster; `consumers` gates deletions; `init` drafts a contract from existing declarations (warm 1Password session required), binding `shared.opItem` and removing legacy duplicates by comparing value hashes.
+-   `opItem` references (`services.<name>`/`dev`, one hop) so each 1Password item id appears exactly once in the contract. Services resolve (or create) their item lazily by title; the `shared` block never auto-creates.
+-   Friendly credential pre-flights: commands that need 1Password, gcloud or kubectl fail fast with actionable re-authentication errors instead of raw tool output.
+
 ## v6.1.0 - 2026-09-16
 
 ### Added
