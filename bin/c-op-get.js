@@ -72,14 +72,18 @@ return loadConfig()
                       key,
                   });
 
-        // Unbound services resolve their item lazily (reads never create);
-        // the shared block resolves too but is never auto-created.
+        // Unbound services resolve their item lazily, and reads never
+        // create; the shared block resolves too but is never auto-created.
         const itemTitle = resolved.owner
             ? `${contract.organisation}-${contract.name}/${resolved.owner.name}`
             : `${contract.organisation}-${contract.name}/${name}`;
 
         const item = resolved.owner
-            ? resolveOwnerItem({ owner: resolved.owner, title: itemTitle }).id
+            ? resolveOwnerItem({
+                  create: false,
+                  owner: resolved.owner,
+                  title: itemTitle,
+              }).id
             : resolveOpItem({ create: false, title: itemTitle }).id;
 
         const ref =

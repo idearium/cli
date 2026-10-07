@@ -742,15 +742,18 @@ const resolveOpItem = ({ create, noCreateMessage, opItem, title }) => {
 };
 
 /**
- * Resolve the target item for an owning entry: services resolve-or-create;
- * the shared block only ever resolves (where a shared value lives is the
+ * Resolve the target item for an owning entry: services resolve-or-create
+ * (write paths - read paths pass create false and resolve only); the
+ * shared block only ever resolves (where a shared value lives is the
  * author's decision, never the tool's).
  * @param {Object} options
+ * @param {Boolean} [options.create=true] Whether a service item may be
+ * created. The shared block never creates regardless.
  * @param {Object} options.owner The owning service or shared entry.
  * @param {String} options.title The item title.
  * @returns {Object} { created, id, persisted }.
  */
-const resolveOwnerItem = ({ owner, title }) =>
+const resolveOwnerItem = ({ create = true, owner, title }) =>
     owner && owner.name === 'shared'
         ? resolveOpItem({
               create: false,
@@ -759,7 +762,7 @@ const resolveOwnerItem = ({ owner, title }) =>
               opItem: owner.opItem,
               title,
           })
-        : resolveOpItem({ create: true, opItem: owner && owner.opItem, title });
+        : resolveOpItem({ create, opItem: owner && owner.opItem, title });
 
 /**
  * The c.js file's path in the project directory.
