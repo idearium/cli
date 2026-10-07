@@ -16,6 +16,10 @@ program
         'session',
         'Sign in to 1Password and store the session token for every c command.'
     )
+    .command(
+        'cmd [command...]',
+        'Run a 1Password cli command with the c-managed session.'
+    )
     .description(
         'Manage 1Password secret values for the secrets contract in c.js.'
     )
