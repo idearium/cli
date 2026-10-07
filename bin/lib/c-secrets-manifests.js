@@ -105,8 +105,23 @@ const renderSecretSyncServiceAccount = ({ namespace }) =>
  * @param {String} options.service The service name.
  * @returns {String} The manifest content (with op:// references).
  */
-const renderLocalSecret = ({ entries, namespace, service }) =>
-    [
+const renderLocalSecret = ({ entries, namespace, service }) => {
+    // An unbound owner resolves no op:// reference: rendering would embed
+    // a literal null as the secret value, so fail the generation instead.
+    const unbound = entries.find((resolved) => !resolved.opRef);
+
+    if (unbound) {
+        const remedy =
+            unbound.owner && unbound.owner.name === 'shared'
+                ? 'set shared.opItem in c.js (the item that stores the shared values)'
+                : `run \`c op set ${service} local ${unbound.key}\` (it binds the service's item)`;
+
+        throw new Error(
+            `Cannot render the local Secret for service '${service}': key '${unbound.key}' has no op:// reference (its owner is unbound) - ${remedy}, then re-run.`
+        );
+    }
+
+    return [
         'apiVersion: v1',
         'kind: Secret',
         'metadata:',
@@ -123,6 +138,7 @@ const renderLocalSecret = ({ entries, namespace, service }) =>
         )
         .concat([''])
         .join('\n');
+};
 
 /**
  * Generate every secret-shaped manifest declared by the contract for the
