@@ -128,10 +128,6 @@ const validateEntry = ({ entry, hasGsm, name }) => {
     };
 
     if (hasGsm) {
-        // Internal only: services derive service-segmented GSM ids; the
-        // shared entry is the only segment-less owner.
-        validated.gsmSegment = true;
-
         if (isNonEmptyString({ value: entry.opItem })) {
             validated.opItem = entry.opItem;
         }
@@ -161,7 +157,6 @@ const validateShared = ({ rawShared }) => {
     });
 
     const shared = {
-        gsmSegment: false,
         keys: assertKeyArray({
             message: 'secrets.shared.keys',
             value: rawShared.keys,
@@ -456,16 +451,18 @@ const getSecretsContract = ({ config = {} }) => {
 };
 
 /**
- * Derive the GSM secret id for an owned key of a service.
+ * Derive the GSM secret id for an owned key: service-segmented, except
+ * for the shared entry whose ids carry no segment ('shared' is a
+ * reserved service name, so the name is authoritative).
  * @param {Object} options
  * @param {Object} options.contract The normalised contract.
  * @param {String} options.env The environment (local, beta, production...).
  * @param {String} options.key The environment-variable style key.
- * @param {Object} options.owner The owning service.
+ * @param {Object} options.owner The owning service or shared entry.
  * @returns {String} The GSM secret id.
  */
 const gsmId = ({ contract, env, key, owner }) =>
-    owner.gsmSegment === false
+    owner.name === 'shared'
         ? `${contract.organisation}-${contract.name}-${env}-${kebabCase({
               key,
           })}`

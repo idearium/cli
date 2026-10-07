@@ -138,6 +138,12 @@ return loadConfig()
                 );
             }
 
+            if (name === 'shared') {
+                throw new Error(
+                    "'shared' is reserved for the secrets.shared block - add the key there instead"
+                );
+            }
+
             binding = resolveOwnerItem({
                 owner: null,
                 title: `${contract.organisation}-${contract.name}/${name}`,
@@ -148,7 +154,7 @@ return loadConfig()
                 contract,
                 env,
                 key,
-                owner: { gsmSegment: true, name },
+                owner: { name },
             });
             isNewService = true;
             ownerName = name;

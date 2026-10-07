@@ -782,15 +782,10 @@ const draftContract = async ({ config }) => {
         indent,
         keys,
         opItem,
-        segmentless,
         serviceName,
         sharedKeys = [],
     }) => {
         lines.push(`${indent}${quoteIfNeeded({ name: serviceName })}: {`);
-
-        if (segmentless) {
-            lines.push(`${indent}    gsmSegment: false,`);
-        }
 
         // opItem only when already known (1Password scan or local template
         // refs) - unbound services resolve lazily on first use.
@@ -829,7 +824,6 @@ const draftContract = async ({ config }) => {
                 indent: '            ',
                 keys: services[service].keys,
                 opItem: services[service].opItem || nameHints[service] || null,
-                segmentless: false,
                 serviceName: service,
                 sharedKeys: services[service].sharedKeys,
             });
