@@ -10,6 +10,15 @@ This file is a history of the changes made to @idearium/cli.
 -   `c op get|set` and `c secrets get|push|add|verify|ls|consumers|init`. Values are only ever displayed as truncated hashes (`--plaintext` is terminal-gated and agent-blocked with a discouraged `--force`); writes flow through stdin pipes; `push` verifies its GSM readback by hash; `add` is ordered, idempotent and rollback-safe across c.js, 1Password and GSM and never touches the cluster; `consumers` gates deletions; `init` drafts a contract from existing declarations (warm 1Password session required), binding `shared.opItem` and removing legacy duplicates by comparing value hashes.
 -   `opItem` references (`services.<name>`/`dev`, one hop) so each 1Password item id appears exactly once in the contract. Services resolve (or create) their item lazily by title; the `shared` block never auto-creates.
 -   Friendly credential pre-flights: commands that need 1Password, gcloud or kubectl fail fast with actionable re-authentication errors instead of raw tool output.
+-   The cli owns the 1Password session lifecycle: `c op session` signs in and stores the raw session token at `~/.local/state/idearium/op-session` (`0600`, enforced on overwrite), and `c op cmd [command...]` runs any `op` command with that session passed via `--session` (exit code propagates). Every internal `op` invocation (`c op get|set`, `c secrets *`, `c kc` template injection) passes the session the same way, so no `OP_SESSION_<account>` env var name is guessed anywhere; an exported `OP_SESSION_idearium` still takes precedence for `eval $(op signin)` users.
+
+### Fixed
+
+-   c.js contract edits are anchored to `secrets.services` and verified after writing: `c op set` and `c secrets add` previously matched the first `name: {` block anywhere in `c.js`, silently editing a same-named docker location instead of the contract service. Every edit is now re-parsed from disk and rolled back when it does not land in the contract.
+-   Generating local Secret manifests for unbound owners (a service without an `opItem`, or an unbound `shared` block) embedded a literal `null` as the secret value; generation now fails with a remedy instead.
+-   `c op get` no longer creates 1Password items for unbound services (reads never create; write paths still resolve-or-create).
+-   A bare or invalid `--length`/`--type` on `c op set --generate` and `c secrets add --generate` failed with a raw crypto error (`NaN`); both now fail with usage hints.
+-   `c secrets verify` now compares each synced Kubernetes Secret's value hash against GSM (hashes were previously displayed with a hard-coded `ok`, so drifted values still reported `VERIFIED`).
 
 ## v6.1.0 - 2026-09-16
 
