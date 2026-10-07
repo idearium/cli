@@ -3,6 +3,24 @@
 const program = require('commander');
 const { missingCommand } = require('./lib/c');
 
+// The cmd passthrough needs the verbatim argv (bin/c.js forwards this
+// subtree raw): commander's git-style dispatch would re-parse the args
+// first, dropping -- and unknown options.
+if (process.argv[2] === 'cmd') {
+    const { spawn } = require('child_process');
+    const { join } = require('path');
+
+    spawn(
+        'node',
+        [join(__dirname, 'c-op-cmd.js')].concat(process.argv.slice(3)),
+        { stdio: 'inherit' }
+    ).on('exit', (code) => {
+        process.exitCode = code;
+    });
+
+    return;
+}
+
 program
     .command(
         'get <service> <env> <key>',

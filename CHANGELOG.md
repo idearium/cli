@@ -19,6 +19,7 @@ This file is a history of the changes made to @idearium/cli.
 -   `c op get` no longer creates 1Password items for unbound services (reads never create; write paths still resolve-or-create).
 -   A bare or invalid `--length`/`--type` on `c op set --generate` and `c secrets add --generate` failed with a raw crypto error (`NaN`); both now fail with usage hints.
 -   `c secrets verify` now compares each synced Kubernetes Secret's value hash against GSM (hashes were previously displayed with a hard-coded `ok`, so drifted values still reported `VERIFIED`).
+-   `c op cmd` and `c kc cmd` now dispatch with the verbatim argv: commander's git-style dispatch re-parsed subcommand args at every layer first, silently dropping `--` and unknown options (breaking e.g. `c op cmd run -- sh -c ...` and `c kc cmd` commands carrying kubectl flags).
 
 ## v6.1.0 - 2026-09-16
 

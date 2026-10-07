@@ -5,6 +5,34 @@
 const program = require('commander');
 const { missingCommand } = require('./lib/c');
 
+// Commander's git-style dispatch re-parses subcommand args at every layer
+// before spawning (dropping -- and unknown options, breaking passthroughs
+// like `c op cmd run -- sh -c ...` and `c kc cmd` commands carrying
+// kubectl flags), so the passthrough-owning subtrees are dispatched with
+// the verbatim argv instead - their own cmd guards carry it the rest of
+// the way down.
+const VERBATIM_DISPATCH = {
+    kc: 'c-kc.js',
+    op: 'c-op.js',
+};
+
+const verbatimChild = VERBATIM_DISPATCH[process.argv[2]];
+
+if (verbatimChild) {
+    const { spawn } = require('child_process');
+    const { join } = require('path');
+
+    spawn(
+        'node',
+        [join(__dirname, verbatimChild)].concat(process.argv.slice(3)),
+        { stdio: 'inherit' }
+    ).on('exit', (code) => {
+        process.exitCode = code;
+    });
+
+    return;
+}
+
 // The basic program, which uses sub-commands.
 program
     .command('d <command>', 'Shortcuts to control Docker.')
