@@ -13,7 +13,7 @@ const { draftContract } = require('./lib/c-secrets-init');
 
 program
     .description(
-        'Draft a secrets contract into c.js by scanning existing declarations (SecretProviderClasses, local secret templates, --set-secrets scripts, env.*.yaml references, docker build args and 1Password item names). Requires a warm 1Password session (the op-session alias) so item bindings resolve. The draft is a starting point: review ownership, opItems and sharedKeys, then verify. Exits without changes when a secrets contract already exists.'
+        'Draft a secrets contract into c.js by scanning existing declarations (SecretProviderClasses, local secret templates, --set-secrets scripts, env.*.yaml references, docker build args and 1Password item names). Requires a warm 1Password session (`c op session`) so item bindings resolve. The draft is a starting point: review ownership, opItems and sharedKeys, then verify. Exits without changes when a secrets contract already exists.'
     )
     .parse(process.argv);
 

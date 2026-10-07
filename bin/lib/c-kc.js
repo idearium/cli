@@ -171,27 +171,26 @@ const formatBuildArgs = (args) => {
 let opAuthenticated = null;
 
 /**
- * The op environment: the op-session alias' session (or an exported
- * OP_SESSION_idearium) wired in, falling back to the process environment
- * when no session file exists (the cli may still be authenticated some
+ * The leading op arguments: --session with the c-managed token (from
+ * `c op session` or an exported OP_SESSION_idearium), or none at all
+ * when no session exists (the cli may still be authenticated some
  * other way).
- * @returns {Object} The environment for op invocations.
+ * @returns {Array} The arguments to prepend to every op invocation.
  */
-const opEnvironment = () => {
+const opSessionArgs = () => {
     try {
-        return Object.assign({}, process.env, {
-            OP_SESSION_idearium: opSession(),
-        });
+        return ['--session', opSession()];
     } catch (e) {
-        return process.env;
+        return [];
     }
 };
 
 const ensureOpAuthenticated = () => {
     if (!opAuthenticated) {
-        opAuthenticated = execFileAsync('op', ['whoami'], {
-            env: opEnvironment(),
-        }).catch((e) => {
+        opAuthenticated = execFileAsync(
+            'op',
+            opSessionArgs().concat(['whoami'])
+        ).catch((e) => {
             if (e.code === 'ENOENT') {
                 throw new Error(
                     'The 1Password cli (op) is not installed. Install it to resolve secret references within templates.'
@@ -199,7 +198,7 @@ const ensureOpAuthenticated = () => {
             }
 
             throw new Error(
-                'Not signed in to the 1Password cli. Run `eval $(op signin)` in this shell and try again.'
+                'Not signed in to the 1Password cli. Run `c op session` and try again.'
             );
         });
     }
@@ -226,8 +225,13 @@ const injectSecretReferences = async (content) => {
 
         await execFileAsync(
             'op',
-            ['inject', '--in-file', inPath, '--out-file', outPath],
-            { env: opEnvironment() }
+            opSessionArgs().concat([
+                'inject',
+                '--in-file',
+                inPath,
+                '--out-file',
+                outPath,
+            ])
         );
 
         return await readFile(outPath, 'utf-8');

@@ -24,8 +24,8 @@ const sha12 = ({ value }) =>
     createHash('sha256').update(value).digest('hex').slice(0, 12);
 
 /**
- * Resolve the op session token from the environment or the op-session
- * alias' state file. Never print or log the return value.
+ * Resolve the op session token from the environment or `c op session`'s
+ * state file. Never print or log the return value.
  * @returns {String} The session token.
  */
 const opSession = () => {
@@ -37,7 +37,7 @@ const opSession = () => {
         return readFileSync(OP_SESSION_FILE, 'utf8').trim();
     } catch (e) {
         throw new Error(
-            'No 1Password session. Run the op-session alias (or export OP_SESSION_idearium), then retry.'
+            'No 1Password session. Run `c op session` (or export OP_SESSION_idearium), then retry.'
         );
     }
 };
@@ -52,11 +52,8 @@ const opSession = () => {
  */
 const runOp = ({ args, input }) => {
     try {
-        return execFileSync('op', args, {
+        return execFileSync('op', ['--session', opSession()].concat(args), {
             encoding: 'utf8',
-            env: Object.assign({}, process.env, {
-                OP_SESSION_idearium: opSession(),
-            }),
             input,
             stdio: ['pipe', 'pipe', 'pipe'],
         });
@@ -68,7 +65,7 @@ const runOp = ({ args, input }) => {
             stderr.includes('no active session found')
         ) {
             throw new Error(
-                'The 1Password session has expired. Run the op-session alias, then retry.'
+                'The 1Password session has expired. Run `c op session`, then retry.'
             );
         }
 
