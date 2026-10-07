@@ -129,6 +129,10 @@ const verifyEnv = ({ config, contract, env }) => {
         }
     });
 
+    // GSM value hashes per secret id, recorded in phase 1 and compared
+    // against the Kubernetes values in phase 2.
+    const gsmShas = {};
+
     // 1. GSM existence + op/GSM value hashes.
     return entries
         .reduce(
@@ -155,6 +159,8 @@ const verifyEnv = ({ config, contract, env }) => {
                                         const gsmSha = sha12({
                                             value: gsmValue,
                                         });
+
+                                        gsmShas[resolved.gsmId] = gsmSha;
 
                                         const opItem = opItemFor(
                                             resolved.owner
@@ -278,11 +284,27 @@ const verifyEnv = ({ config, contract, env }) => {
                                             'base64'
                                         );
 
-                                        report({
+                                        const k8sSha = sha12({
+                                            value: k8sValue,
+                                        });
+                                        const gsmSha = gsmShas[resolved.gsmId];
+
+                                        if (!gsmSha) {
+                                            return report({
+                                                message: `k8s ${name}/${resolved.key} ${k8sSha} (no GSM hash to compare - the GSM secret was missing above)`,
+                                                ok: false,
+                                            });
+                                        }
+
+                                        return report({
                                             message: `k8s ${name}/${
                                                 resolved.key
-                                            } ${sha12({ value: k8sValue })}`,
-                                            ok: true,
+                                            } ${k8sSha} gsm:${gsmSha}${
+                                                k8sSha === gsmSha
+                                                    ? ''
+                                                    : ' (value drift, or the SecretSync has not caught up yet)'
+                                            }`,
+                                            ok: k8sSha === gsmSha,
                                         });
                                     }),
                                 Promise.resolve()
