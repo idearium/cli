@@ -12,6 +12,10 @@ program
         'set <service> <env> <key>',
         'Upsert a secret value into 1Password from stdin (or --generate).'
     )
+    .command(
+        'session',
+        'Sign in to 1Password and store the session token for every c command.'
+    )
     .description(
         'Manage 1Password secret values for the secrets contract in c.js.'
     )

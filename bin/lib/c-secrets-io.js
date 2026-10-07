@@ -1050,6 +1050,7 @@ const gsmPushVerified = ({ contract, env, id, owner, value }) => {
 };
 
 module.exports = {
+    OP_SESSION_FILE,
     addKeyToServiceInCjs,
     assertGcloudAuth,
     assertKubectl,
