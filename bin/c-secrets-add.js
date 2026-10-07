@@ -3,7 +3,6 @@
 const print = (line) => process.stdout.write(`${line}\n`);
 
 const { readFileSync, writeFileSync } = require('fs');
-const { join } = require('path');
 
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
@@ -17,6 +16,7 @@ const {
     addKeyToServiceInCjs,
     assertGcloudAuth,
     assertOpSession,
+    cjsPath,
     generateValue,
     gsmDelete,
     gsmPushVerified,
@@ -58,8 +58,6 @@ const readStdin = () => {
 
     return readFileSync(0, 'utf8').replace(/\r?\n$/, '');
 };
-
-const cjsPath = () => join(process.cwd(), 'c.js');
 
 return loadConfig()
     .then((config) => {

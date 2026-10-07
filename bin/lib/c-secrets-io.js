@@ -762,10 +762,16 @@ const resolveOwnerItem = ({ owner, title }) =>
         : resolveOpItem({ create: true, opItem: owner && owner.opItem, title });
 
 /**
+ * The c.js file's path in the project directory.
+ * @returns {String} The absolute file path.
+ */
+const cjsPath = () => join(process.cwd(), 'c.js');
+
+/**
  * Read the c.js file's text from the project directory.
  * @returns {String} The file contents.
  */
-const readCjs = () => readFileSync(join(process.cwd(), 'c.js'), 'utf8');
+const readCjs = () => readFileSync(cjsPath(), 'utf8');
 
 /**
  * Write the c.js file's text back to the project directory.
@@ -773,7 +779,7 @@ const readCjs = () => readFileSync(join(process.cwd(), 'c.js'), 'utf8');
  * @param {String} options.text The new file contents.
  * @returns {Void}
  */
-const writeCjs = ({ text }) => writeFileSync(join(process.cwd(), 'c.js'), text);
+const writeCjs = ({ text }) => writeFileSync(cjsPath(), text);
 
 /**
  * Quote a service/key name for c.js: single quotes only when required.
@@ -785,9 +791,152 @@ const quoteIfNeeded = ({ name }) =>
     /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : `'${name}'`;
 
 /**
+ * Locate the secrets block in c.js text: only content between these
+ * boundaries belongs to the contract, as c.js may contain
+ * identically-named properties elsewhere (docker locations etc).
+ * @param {Object} options
+ * @param {String} options.text The c.js file contents.
+ * @returns {Object} { end, indent, start } with start just after the
+ * opening brace and end at the newline preceding the closing brace.
+ */
+const locateSecretsBlock = ({ text }) => {
+    const secretsMatch = text.match(/\n(\s*)secrets:\s*\{/);
+
+    if (!secretsMatch) {
+        throw new Error(
+            'Could not find secrets in c.js - add the contract manually.'
+        );
+    }
+
+    const [, indent] = secretsMatch;
+    const start = secretsMatch.index + secretsMatch[0].length;
+    const end = text.indexOf(`\n${indent}}`, start);
+
+    if (end === -1) {
+        throw new Error(
+            'Could not find the end of secrets in c.js - add the contract manually.'
+        );
+    }
+
+    return { end, indent, start };
+};
+
+/**
+ * Locate the secrets.services block in c.js text (scoped to secrets).
+ * @param {Object} options
+ * @param {String} options.text The c.js file contents.
+ * @returns {Object} { end, indent, start } with start just after the
+ * opening brace and end at the newline preceding the closing brace.
+ */
+const locateServicesBlock = ({ text }) => {
+    const secrets = locateSecretsBlock({ text });
+    const servicesMatch = text
+        .slice(secrets.start, secrets.end)
+        .match(/\n(\s*)services:\s*\{/);
+
+    if (!servicesMatch) {
+        throw new Error(
+            'Could not find secrets.services in c.js - add the service manually.'
+        );
+    }
+
+    const [, indent] = servicesMatch;
+    const start = secrets.start + servicesMatch.index + servicesMatch[0].length;
+    const end = text.indexOf(`\n${indent}}`, start);
+
+    if (end === -1) {
+        throw new Error(
+            'Could not find the end of secrets.services in c.js - add the service manually.'
+        );
+    }
+
+    return { end, indent, start };
+};
+
+/**
+ * Locate one service's block inside secrets.services: the first
+ * name-matching block found there wins, never a block elsewhere in c.js.
+ * @param {Object} options
+ * @param {String} options.name The service name.
+ * @param {String} options.text The c.js file contents.
+ * @returns {Object} { end, indent, start } with start at the newline
+ * beginning the service's line and end at the newline preceding its
+ * closing brace.
+ */
+const locateServiceBlock = ({ name, text }) => {
+    const services = locateServicesBlock({ text });
+    const serviceMatch = text
+        .slice(services.start, services.end)
+        .match(new RegExp(`\\n(\\s*)${quoteIfNeeded({ name })}:\\s*\\{`));
+
+    if (!serviceMatch) {
+        throw new Error(
+            `Could not find service '${name}' in secrets.services in c.js.`
+        );
+    }
+
+    const [, indent] = serviceMatch;
+    const start = services.start + serviceMatch.index;
+    const end = text.indexOf(`\n${indent}}`, start);
+
+    if (end === -1) {
+        throw new Error(`Could not find the end of service '${name}' in c.js.`);
+    }
+
+    return { end, indent, start };
+};
+
+/**
+ * The freshly parsed service entry, failing loudly when an edit did not
+ * land in secrets.services.
+ * @param {Object} options
+ * @param {Object} options.config The freshly required c.js configuration.
+ * @param {String} options.name The service name.
+ * @returns {Object} The parsed service entry.
+ */
+const expectService = ({ config, name }) => {
+    const service =
+        config.secrets &&
+        config.secrets.services &&
+        config.secrets.services[name];
+
+    if (!service) {
+        throw new Error(`secrets.services.${name} is missing after the edit`);
+    }
+
+    return service;
+};
+
+/**
+ * Re-parse c.js after an edit and verify the expectation against the
+ * parsed result, restoring the original text when it fails: an edit that
+ * misses its target block (or breaks the file) is never kept.
+ * @param {Object} options
+ * @param {String} options.backup The pre-edit file text.
+ * @param {Function} options.expect Receives the freshly parsed c.js
+ * configuration; throws when the edit did not land as intended.
+ * @returns {Void}
+ */
+const verifyCjsEdit = ({ backup, expect }) => {
+    delete require.cache[require.resolve(cjsPath())];
+
+    try {
+        expect(require(cjsPath()));
+    } catch (e) {
+        writeCjs({ text: backup });
+
+        delete require.cache[require.resolve(cjsPath())];
+
+        throw new Error(
+            `The c.js edit did not land as expected and was rolled back: ${e.message}`
+        );
+    }
+};
+
+/**
  * Register a new service in c.js's secrets contract (used by set/add when
  * the service doesn't exist yet). Inserts alphabetically into
- * secrets.services.
+ * secrets.services, then re-parses c.js to verify the edit landed.
  * @param {Object} options
  * @param {String} options.key The first key the service owns.
  * @param {String} options.name The service name.
@@ -796,13 +945,31 @@ const quoteIfNeeded = ({ name }) =>
  */
 const registerServiceInCjs = ({ key, name, opItem }) => {
     const text = readCjs();
+    const secrets = locateSecretsBlock({ text });
+
+    const verify = () =>
+        verifyCjsEdit({
+            backup: text,
+            expect: (config) => {
+                const service = expectService({ config, name });
+
+                if (!service.keys.includes(key) || service.opItem !== opItem) {
+                    throw new Error(
+                        `secrets.services.${name} does not carry the registered entry`
+                    );
+                }
+            },
+        });
 
     // The minimal scaffold's single-line empty map: expand it with the
     // first entry.
-    const emptyMatch = text.match(/\n(\s*)services:\s*\{\}/);
+    const emptyMatch = text
+        .slice(secrets.start, secrets.end)
+        .match(/\n(\s*)services:\s*\{\}/);
 
     if (emptyMatch) {
         const [, emptyIndent] = emptyMatch;
+        const emptyStart = secrets.start + emptyMatch.index;
 
         const expanded = [
             `${emptyIndent}services: {`,
@@ -813,37 +980,29 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
             `${emptyIndent}}`,
         ].join('\n');
 
-        writeCjs({ text: text.replace(emptyMatch[0], `\n${expanded}`) });
+        writeCjs({
+            text:
+                text.slice(0, emptyStart) +
+                `\n${expanded}` +
+                text.slice(emptyStart + emptyMatch[0].length),
+        });
 
-        return;
+        return verify();
     }
 
-    const servicesMatch = text.match(/\n(\s*)services:\s*\{/);
-
-    if (!servicesMatch) {
-        throw new Error(
-            'Could not find secrets.services in c.js - add the service manually.'
-        );
-    }
-
-    const [, indent] = servicesMatch;
-    const startIndex = servicesMatch.index + servicesMatch[0].length;
-    const closingIndex = text.indexOf(`\n${indent}}`, startIndex);
-
-    if (closingIndex === -1) {
-        throw new Error(
-            'Could not find the end of secrets.services in c.js - add the service manually.'
-        );
-    }
+    const services = locateServicesBlock({ text });
 
     // Walk the top-level entries to find the alphabetical insertion point.
-    let insertIndex = closingIndex;
-    const entryRegex = new RegExp(`^${indent}    ('?[^':\\n]+'?):`, 'gm');
-    entryRegex.lastIndex = startIndex;
+    let insertIndex = services.end;
+    const entryRegex = new RegExp(
+        `^${services.indent}    ('?[^':\\n]+'?):`,
+        'gm'
+    );
+    entryRegex.lastIndex = services.start;
 
     let match = entryRegex.exec(text);
 
-    while (match && match.index < closingIndex) {
+    while (match && match.index < services.end) {
         const entryName = match[1].replace(/^'|'$/g, '');
 
         if (entryName > name) {
@@ -855,10 +1014,10 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
     }
 
     const fullBlock = [
-        `${indent}    ${quoteIfNeeded({ name })}: {`,
-        `${indent}        keys: ['${key}'],`,
-        `${indent}        opItem: '${opItem}',`,
-        `${indent}    },`,
+        `${services.indent}    ${quoteIfNeeded({ name })}: {`,
+        `${services.indent}        keys: ['${key}'],`,
+        `${services.indent}        opItem: '${opItem}',`,
+        `${services.indent}    },`,
     ].join('\n');
 
     writeCjs({
@@ -866,11 +1025,15 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
             insertIndex
         )}`,
     });
+
+    return verify();
 };
 
 /**
  * Add a key to a service's keys array in c.js, preserving the array's
- * existing layout (single-line or multi-line).
+ * existing layout (single-line or multi-line). The service block is
+ * located inside secrets.services, and the edit is re-parsed to verify
+ * it landed.
  * @param {Object} options
  * @param {String} options.key The key to add.
  * @param {String} options.name The service name.
@@ -878,25 +1041,9 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
  */
 const addKeyToServiceInCjs = ({ key, name }) => {
     const text = readCjs();
+    const service = locateServiceBlock({ name, text });
 
-    const servicePattern = new RegExp(
-        `\\n(\\s*)${quoteIfNeeded({ name })}:\\s*\\{`
-    );
-    const serviceMatch = text.match(servicePattern);
-
-    if (!serviceMatch) {
-        throw new Error(`Could not find service '${name}' in c.js.`);
-    }
-
-    const [, indent] = serviceMatch;
-    const serviceStart = serviceMatch.index;
-    const serviceEnd = text.indexOf(`\n${indent}}`, serviceStart);
-
-    if (serviceEnd === -1) {
-        throw new Error(`Could not find the end of service '${name}' in c.js.`);
-    }
-
-    const serviceText = text.slice(serviceStart, serviceEnd);
+    const serviceText = text.slice(service.start, service.end);
 
     const keysMatch = serviceText.match(/keys:\s*\[([^\]]*)\]/);
 
@@ -923,23 +1070,36 @@ const addKeyToServiceInCjs = ({ key, name }) => {
 
     const rendered = multiline
         ? `keys: [\n${entries
-              .map((entry) => `${indent}    '${entry}',`)
-              .join('\n')}\n${indent}],`
+              .map((entry) => `${service.indent}    '${entry}',`)
+              .join('\n')}\n${service.indent}],`
         : `keys: [${entries.map((entry) => `'${entry}'`).join(', ')}]`;
 
     const newServiceText = serviceText.replace(keysMatch[0], rendered);
 
     writeCjs({
         text:
-            text.slice(0, serviceStart) +
+            text.slice(0, service.start) +
             newServiceText +
-            text.slice(serviceEnd),
+            text.slice(service.end),
+    });
+
+    verifyCjsEdit({
+        backup: text,
+        expect: (config) => {
+            if (!expectService({ config, name }).keys.includes(key)) {
+                throw new Error(
+                    `secrets.services.${name}.keys does not include '${key}' after the edit`
+                );
+            }
+        },
     });
 };
 
 /**
  * Bind a service's opItem in c.js (inserting the property when the service
- * block has none) - used to persist lazily resolved item ids.
+ * block has none) - used to persist lazily resolved item ids. The service
+ * block is located inside secrets.services, and the edit is re-parsed to
+ * verify it landed.
  * @param {Object} options
  * @param {String} options.name The service name.
  * @param {String} options.opItem The 1Password item id.
@@ -947,35 +1107,29 @@ const addKeyToServiceInCjs = ({ key, name }) => {
  */
 const setOpItemInCjs = ({ name, opItem }) => {
     const text = readCjs();
+    const service = locateServiceBlock({ name, text });
 
-    const servicePattern = new RegExp(
-        `\\n(\\s*)${quoteIfNeeded({ name })}:\\s*\\{`
-    );
-    const serviceMatch = text.match(servicePattern);
-
-    if (!serviceMatch) {
-        throw new Error(`Could not find service '${name}' in c.js.`);
-    }
-
-    const [, indent] = serviceMatch;
-    const serviceStart = serviceMatch.index;
-    const serviceEnd = text.indexOf(`\n${indent}}`, serviceStart);
-
-    if (serviceEnd === -1) {
-        throw new Error(`Could not find the end of service '${name}' in c.js.`);
-    }
-
-    const serviceText = text.slice(serviceStart, serviceEnd);
+    const serviceText = text.slice(service.start, service.end);
 
     if (/opItem:\s*'/.test(serviceText)) {
         return;
     }
 
     writeCjs({
-        text: `${text.slice(
-            0,
-            serviceEnd
-        )}\n${indent}    opItem: '${opItem}',${text.slice(serviceEnd)}`,
+        text: `${text.slice(0, service.end)}\n${
+            service.indent
+        }    opItem: '${opItem}',${text.slice(service.end)}`,
+    });
+
+    verifyCjsEdit({
+        backup: text,
+        expect: (config) => {
+            if (expectService({ config, name }).opItem !== opItem) {
+                throw new Error(
+                    `secrets.services.${name}.opItem does not carry the binding after the edit`
+                );
+            }
+        },
     });
 };
 
@@ -1052,6 +1206,7 @@ module.exports = {
     assertGcloudAuth,
     assertKubectl,
     assertOpSession,
+    cjsPath,
     gcfList,
     generateValue,
     guardPlaintext,
