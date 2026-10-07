@@ -227,6 +227,30 @@ const generateValue = ({ length = 32, type = 'hex' }) => {
 };
 
 /**
+ * Generate a random value from a parsed commander program's --generate
+ * flags, failing with a friendly error for malformed input (a bare -l
+ * parses to true then NaN; a bare -t parses to true).
+ * @param {Object} options
+ * @param {Object} options.program The parsed commander program.
+ * @returns {String} The generated value.
+ */
+const generateValueForProgram = ({ program }) => {
+    if (program.T === true) {
+        throw new Error(
+            '--type requires a value: hex, base64 or alphanumeric.'
+        );
+    }
+
+    const length = program.L === undefined ? 32 : parseInt(program.L, 10);
+
+    if (!Number.isInteger(length) || length < 1) {
+        throw new Error('--length must be a positive integer.');
+    }
+
+    return generateValue({ length, type: program.T });
+};
+
+/**
  * Map gcloud authentication failures to a friendly, actionable error.
  * @param {Object} options
  * @param {String} options.stderr The failed command's stderr.
@@ -1212,6 +1236,7 @@ module.exports = {
     cjsPath,
     gcfList,
     generateValue,
+    generateValueForProgram,
     guardPlaintext,
     gsmAddVersion,
     gsmCreate,

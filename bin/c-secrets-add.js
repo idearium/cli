@@ -17,7 +17,7 @@ const {
     assertGcloudAuth,
     assertOpSession,
     cjsPath,
-    generateValue,
+    generateValueForProgram,
     gsmDelete,
     gsmPushVerified,
     opUpsertField,
@@ -74,10 +74,7 @@ return loadConfig()
         assertKnownEnv({ config, env });
 
         const value = program.generate
-            ? generateValue({
-                  length: program.L ? parseInt(program.L, 10) : 32,
-                  type: program.T,
-              })
+            ? generateValueForProgram({ program })
             : readStdin();
 
         const backup = readFileSync(cjsPath(), 'utf8');

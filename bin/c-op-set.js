@@ -11,7 +11,7 @@ const {
 } = require('./lib/c-secrets');
 const {
     assertOpSession,
-    generateValue,
+    generateValueForProgram,
     opFieldExists,
     opUpsertField,
     registerServiceInCjs,
@@ -69,10 +69,7 @@ return loadConfig()
         assertKnownEnv({ config, env });
 
         const value = program.generate
-            ? generateValue({
-                  length: program.L ? parseInt(program.L, 10) : 32,
-                  type: program.T,
-              })
+            ? generateValueForProgram({ program })
             : readStdin();
 
         const title = (serviceName) =>
