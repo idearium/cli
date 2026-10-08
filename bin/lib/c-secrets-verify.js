@@ -28,6 +28,20 @@ const kubernetesEnv = ({ config, env }) =>
     getPropertyPath(config, `kubernetes.environments.${env}`) || null;
 
 /**
+ * The namespace an environment's manifests deploy into: a configured
+ * kubernetes.environments.<env>.namespace override wins, otherwise the
+ * project prefix - the same resolution the kc commands use.
+ * @param {Object} options
+ * @param {Object} options.config The full c.js configuration.
+ * @param {Object} options.contract The normalised contract.
+ * @param {String} options.env The environment.
+ * @returns {String} The namespace.
+ */
+const kubernetesNamespace = ({ config, contract, env }) =>
+    getPropertyPath(config, `kubernetes.environments.${env}.namespace`) ||
+    formatProjectPrefix(contract.organisation, contract.name, env, true, true);
+
+/**
  * The services the env's Kubernetes locations synchronise (those with a
  * secretsync location entry).
  * @param {Object} options
@@ -269,7 +283,7 @@ const verifyEnv = ({ config, contract, env }) => {
 
                     const value = data.values[`${env}/${resolved.key}`];
 
-                    if (value === undefined) {
+                    if (typeof value === 'undefined') {
                         report({
                             message: `${service.name}/${resolved.key} op:READ-ERROR field '${env}/${resolved.key}' not found in the '${resolved.owner.name}' item gsm:${gsmSha}`,
                             ok: false,
@@ -298,13 +312,11 @@ const verifyEnv = ({ config, contract, env }) => {
                     title: 'Kubernetes Secrets (synced services)',
                 });
 
-                const namespace = formatProjectPrefix(
-                    contract.organisation,
-                    contract.name,
+                const namespace = kubernetesNamespace({
+                    config,
+                    contract,
                     env,
-                    true,
-                    true
-                );
+                });
 
                 syncServiceNames({ config, env }).forEach((name) => {
                     const service = contract.services[name];
@@ -603,13 +615,7 @@ const findConsumers = ({ config, contract, secretId }) => {
         });
 
     const kenv = kubernetesEnv({ config, env });
-    const namespace = formatProjectPrefix(
-        contract.organisation,
-        contract.name,
-        env,
-        true,
-        true
-    );
+    const namespace = kubernetesNamespace({ config, contract, env });
 
     // 2 + 3. Live consumers (k8s SecretProviderClasses, functions).
     if (kenv && kenv.context) {
@@ -647,6 +653,7 @@ const findConsumers = ({ config, contract, secretId }) => {
 module.exports = {
     findConsumers,
     kubernetesEnv,
+    kubernetesNamespace,
     syncServiceNames,
     verifyEnv,
 };
