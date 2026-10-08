@@ -1136,8 +1136,11 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
 
     const services = locateServicesBlock({ text });
 
-    // Walk the top-level entries to find the alphabetical insertion point.
-    let insertIndex = services.end;
+    // Walk the top-level entries to find the alphabetical insertion
+    // point; the default (services.end + 1) appends at the start of the
+    // closing-brace line, so the join below lands on its own line either
+    // way.
+    let insertIndex = services.end + 1;
     const entryRegex = new RegExp(
         `^${services.indent}    ('?[^':\\n]+'?):`,
         'gm'
@@ -1164,10 +1167,16 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
         `${services.indent}    },`,
     ].join('\n');
 
+    let prefix = text.slice(0, insertIndex);
+
+    // A previous entry written without a trailing comma needs one
+    // before an inserted sibling parses.
+    if (prefix.endsWith('}\n')) {
+        prefix = `${prefix.slice(0, -1)},\n`;
+    }
+
     writeCjs({
-        text: `${text.slice(0, insertIndex)}${fullBlock}\n${text.slice(
-            insertIndex
-        )}`,
+        text: `${prefix}${fullBlock}\n${text.slice(insertIndex)}`,
     });
 
     return verify();
