@@ -7,13 +7,11 @@ const { serviceKeys } = require('./c-secrets');
 const {
     assertKubectl,
     gcfList,
-    gsmDescribe,
+    gsmList,
     gsmRead,
-    k8sReadKey,
-    k8sSecretKeys,
-    opFindItemByTitle,
-    opItemFields,
-    opReadSha,
+    k8sReadSecret,
+    opItemValues,
+    opListItems,
     sha12,
     spcList,
 } = require('./c-secrets-io');
@@ -61,23 +59,30 @@ const syncServiceNames = ({ config, env }) => {
  * Verify one environment: contract-derived GSM secrets exist, their values
  * hash-match 1Password, Kubernetes Secrets (for synced services) match
  * structure and hashes, and deployed Cloud Functions reference only
- * contract-derived secret ids. Values are compared by hash only.
+ * contract-derived secret ids that exist in GSM. Values are compared by
+ * hash only. Data is prefetched in bulk, then every check reports as it
+ * runs.
  * @param {Object} options
  * @param {Object} options.config The full c.js configuration.
  * @param {Object} options.contract The normalised contract.
  * @param {String} options.env The environment.
- * @returns {Promise} Resolves with { lines, ok }.
+ * @returns {Promise} Resolves with { ok, problems }.
  */
 const verifyEnv = ({ config, contract, env }) => {
-    const lines = [];
     const problems = [];
 
+    // Report as checks run: the pass takes a while, so progress beats
+    // buffering everything for the end.
     const report = ({ message, ok }) => {
-        lines.push(`${ok ? 'OK      ' : 'PROBLEM '} ${message}`);
+        process.stdout.write(`${ok ? 'OK      ' : 'PROBLEM '} ${message}\n`);
 
         if (!ok) {
             problems.push(message);
         }
+    };
+
+    const section = ({ detail, title }) => {
+        process.stdout.write(`\n== ${title} ==\n${detail}\n\n`);
     };
 
     const entries = Object.values(contract.services)
@@ -106,20 +111,6 @@ const verifyEnv = ({ config, contract, env }) => {
         });
     });
 
-    // Lazily resolved op items per owner (reads never create).
-    const opItems = {};
-    const opItemFor = (owner) => {
-        if (!(owner.name in opItems)) {
-            opItems[owner.name] = owner.opItem
-                ? owner.opItem
-                : opFindItemByTitle({
-                      title: `${contract.organisation}-${contract.name}/${owner.name}`,
-                  });
-        }
-
-        return opItems[owner.name];
-    };
-
     // Reverse mapping for readable storage notes: which entry owns an item.
     const itemOwners = {};
 
@@ -129,206 +120,294 @@ const verifyEnv = ({ config, contract, env }) => {
         }
     });
 
+    // Bulk prefetch, so the checks below run from local data: one item
+    // list resolves every owner's item id (reads never create), one item
+    // fetch per distinct item carries the values (phase 1) and labels
+    // (phase 3), one GSM list covers existence, and one secret fetch per
+    // synced service carries the cluster values (phase 2). GSM values
+    // have no batch-access API, so they read with bounded concurrency.
+    const itemByTitle = new Map(
+        opListItems().map((item) => [item.title, item.id])
+    );
+
+    const opItemFor = (owner) =>
+        owner.opItem ||
+        itemByTitle.get(
+            `${contract.organisation}-${contract.name}/${owner.name}`
+        ) ||
+        null;
+
+    const itemIds = new Set();
+
+    entries.forEach((entry) => {
+        const item = opItemFor(entry);
+
+        if (item) {
+            itemIds.add(item);
+        }
+    });
+
+    if (contract.dev) {
+        itemIds.add(contract.dev.opItem);
+    }
+
+    const opData = {};
+
+    itemIds.forEach((item) => {
+        try {
+            opData[item] = opItemValues({ item });
+        } catch (e) {
+            opData[item] = { error: e };
+        }
+    });
+
+    const resolvedKeys = entries.map((service) => ({
+        keys: serviceKeys({ contract, env, service }),
+        service,
+    }));
+
     // GSM value hashes per secret id, recorded in phase 1 and compared
     // against the Kubernetes values in phase 2.
     const gsmShas = {};
+    const gsmValues = {};
 
-    // 1. GSM existence + op/GSM value hashes.
-    return entries
-        .reduce(
-            (promise, service) =>
-                promise.then(() =>
-                    serviceKeys({ contract, env, service }).reduce(
-                        (keyPromise, resolved) =>
-                            keyPromise.then(() =>
-                                gsmDescribe({
-                                    id: resolved.gsmId,
-                                    project: contract.project,
-                                }).then((secret) => {
-                                    if (!secret) {
-                                        return report({
-                                            message: `${service.name}/${resolved.key} gsm ${resolved.gsmId} MISSING`,
-                                            ok: false,
-                                        });
-                                    }
+    // Run promise-returning work over items with bounded concurrency.
+    const pool = ({ items, limit, run }) => {
+        let index = 0;
 
-                                    return gsmRead({
-                                        id: resolved.gsmId,
-                                        project: contract.project,
-                                    }).then((gsmValue) => {
-                                        const gsmSha = sha12({
-                                            value: gsmValue,
-                                        });
+        const worker = () => {
+            if (index >= items.length) {
+                return Promise.resolve();
+            }
 
-                                        gsmShas[resolved.gsmId] = gsmSha;
+            const item = items[index++];
 
-                                        const opItem = opItemFor(
-                                            resolved.owner
-                                        );
+            return run(item).then(worker);
+        };
 
-                                        if (!opItem) {
-                                            return report({
-                                                message: `${service.name}/${resolved.key} op:UNBOUND (no 1Password item '${contract.organisation}-${contract.name}/${resolved.owner.name}') gsm:${gsmSha}`,
-                                                ok: false,
-                                            });
-                                        }
+        return Promise.all(
+            Array.from({ length: Math.min(limit, items.length) }, worker)
+        );
+    };
 
-                                        const storedIn = itemOwners[opItem]
-                                            ? ` (stored in the ${itemOwners[opItem]} item)`
-                                            : '';
+    return gsmList({ project: contract.project })
+        .then((existing) => {
+            const existingIds = new Set(existing);
 
-                                        try {
-                                            const opSha = opReadSha({
-                                                ref: `op://${contract.vault}/${opItem}/${env}/${resolved.key}`,
-                                            });
-
-                                            return report({
-                                                message: `${service.name}/${resolved.key} op:${opSha}${storedIn} gsm:${gsmSha}`,
-                                                ok: opSha === gsmSha,
-                                            });
-                                        } catch (e) {
-                                            return report({
-                                                message: `${service.name}/${
-                                                    resolved.key
-                                                } op:${
-                                                    resolved.opRef
-                                                } READ-ERROR ${e.message.slice(
-                                                    0,
-                                                    60
-                                                )} gsm:${gsmSha}`,
-                                                ok: false,
-                                            });
-                                        }
-                                    });
-                                })
-                            ),
-                        Promise.resolve()
-                    )
+            const toRead = [
+                ...new Set(
+                    resolvedKeys
+                        .flatMap(({ keys }) => keys.map((r) => r.gsmId))
+                        .filter((id) => existingIds.has(id))
                 ),
-            Promise.resolve()
-        )
-        .then(() => {
+            ];
+
+            return pool({
+                items: toRead,
+                limit: 6,
+                run: (id) =>
+                    gsmRead({ id, project: contract.project }).then((value) => {
+                        gsmValues[id] = value;
+                    }),
+            }).then(() => existingIds);
+        })
+        .then((existingIds) => {
+            // 1. GSM existence + op/GSM value hashes.
+            section({
+                detail: 'Every contract key exists in GSM and its value hash-matches 1Password.',
+                title: '1Password + GSM (contract secrets)',
+            });
+
+            resolvedKeys.forEach(({ service, keys }) =>
+                keys.forEach((resolved) => {
+                    if (!existingIds.has(resolved.gsmId)) {
+                        report({
+                            message: `${service.name}/${resolved.key} gsm ${resolved.gsmId} MISSING`,
+                            ok: false,
+                        });
+
+                        return;
+                    }
+
+                    const gsmSha = sha12({
+                        value: gsmValues[resolved.gsmId],
+                    });
+
+                    gsmShas[resolved.gsmId] = gsmSha;
+
+                    const opItem = opItemFor(resolved.owner);
+
+                    if (!opItem) {
+                        report({
+                            message: `${service.name}/${resolved.key} op:UNBOUND (no 1Password item '${contract.organisation}-${contract.name}/${resolved.owner.name}') gsm:${gsmSha}`,
+                            ok: false,
+                        });
+
+                        return;
+                    }
+
+                    const storedIn = itemOwners[opItem]
+                        ? ` (stored in the ${itemOwners[opItem]} item)`
+                        : '';
+
+                    const data = opData[opItem];
+
+                    if (!data || data.error) {
+                        report({
+                            message: `${service.name}/${
+                                resolved.key
+                            } op:READ-ERROR ${
+                                data && data.error
+                                    ? String(data.error.message).slice(0, 60)
+                                    : 'item not prefetched'
+                            } gsm:${gsmSha}`,
+                            ok: false,
+                        });
+
+                        return;
+                    }
+
+                    const value = data.values[`${env}/${resolved.key}`];
+
+                    if (value === undefined) {
+                        report({
+                            message: `${service.name}/${resolved.key} op:READ-ERROR field '${env}/${resolved.key}' not found in the '${resolved.owner.name}' item gsm:${gsmSha}`,
+                            ok: false,
+                        });
+
+                        return;
+                    }
+
+                    const opSha = sha12({
+                        value: Buffer.from(value, 'utf8'),
+                    });
+
+                    report({
+                        message: `${service.name}/${resolved.key} op:${opSha}${storedIn} gsm:${gsmSha}`,
+                        ok: opSha === gsmSha,
+                    });
+                })
+            );
+
             // 2. Kubernetes structure + hashes for synced services.
             const kenv = kubernetesEnv({ config, env });
 
-            if (!kenv) {
-                return null;
-            }
+            if (kenv) {
+                section({
+                    detail: 'Synced cluster Secrets carry exactly the contract keys, with values hash-matching GSM.',
+                    title: 'Kubernetes Secrets (synced services)',
+                });
 
-            const namespace = formatProjectPrefix(
-                contract.organisation,
-                contract.name,
-                env,
-                true,
-                true
-            );
+                const namespace = formatProjectPrefix(
+                    contract.organisation,
+                    contract.name,
+                    env,
+                    true,
+                    true
+                );
 
-            return syncServiceNames({ config, env }).reduce(
-                (promise, name) =>
-                    promise.then(() => {
-                        const service = contract.services[name];
+                syncServiceNames({ config, env }).forEach((name) => {
+                    const service = contract.services[name];
 
-                        if (!service) {
-                            return report({
-                                message: `k8s ${name}: secretsync location but no contract service`,
-                                ok: false,
-                            });
-                        }
-
-                        const expected = serviceKeys({
-                            contract,
-                            env,
-                            service,
+                    if (!service) {
+                        report({
+                            message: `k8s ${name}: secretsync location but no contract service`,
+                            ok: false,
                         });
 
-                        try {
-                            const liveKeys = k8sSecretKeys({
-                                context: kenv.context,
-                                namespace,
-                                secret: name,
-                            }).sort();
+                        return;
+                    }
 
-                            const expectedKeys = expected
-                                .map((resolved) => resolved.key)
-                                .sort();
+                    const expected = serviceKeys({
+                        contract,
+                        env,
+                        service,
+                    });
 
-                            const structureOk =
-                                JSON.stringify(liveKeys) ===
-                                JSON.stringify(expectedKeys);
+                    let secret;
 
+                    try {
+                        secret = k8sReadSecret({
+                            context: kenv.context,
+                            namespace,
+                            secret: name,
+                        });
+                    } catch (e) {
+                        report({
+                            message: `k8s ${name}: READ-ERROR ${e.message.slice(
+                                0,
+                                80
+                            )}`,
+                            ok: false,
+                        });
+
+                        return;
+                    }
+
+                    const liveKeys = [...secret.keys].sort();
+                    const expectedKeys = expected
+                        .map((resolved) => resolved.key)
+                        .sort();
+
+                    const structureOk =
+                        JSON.stringify(liveKeys) ===
+                        JSON.stringify(expectedKeys);
+
+                    report({
+                        message: `k8s ${name}: ${liveKeys.length} keys${
+                            structureOk
+                                ? ''
+                                : ` (expected ${
+                                      expectedKeys.length
+                                  }: ${expectedKeys.join(', ')})`
+                        }`,
+                        ok: structureOk,
+                    });
+
+                    if (!structureOk) {
+                        return;
+                    }
+
+                    expected.forEach((resolved) => {
+                        const k8sSha = sha12({
+                            value: secret.values[resolved.key],
+                        });
+                        const gsmSha = gsmShas[resolved.gsmId];
+
+                        if (!gsmSha) {
                             report({
-                                message: `k8s ${name}: ${liveKeys.length} keys${
-                                    structureOk
-                                        ? ''
-                                        : ` (expected ${
-                                              expectedKeys.length
-                                          }: ${expectedKeys.join(', ')})`
-                                }`,
-                                ok: structureOk,
-                            });
-
-                            if (!structureOk) {
-                                return null;
-                            }
-
-                            return expected.reduce(
-                                (keyPromise, resolved) =>
-                                    keyPromise.then(() => {
-                                        const k8sValue = Buffer.from(
-                                            k8sReadKey({
-                                                context: kenv.context,
-                                                key: resolved.key,
-                                                namespace,
-                                                secret: name,
-                                            }),
-                                            'base64'
-                                        );
-
-                                        const k8sSha = sha12({
-                                            value: k8sValue,
-                                        });
-                                        const gsmSha = gsmShas[resolved.gsmId];
-
-                                        if (!gsmSha) {
-                                            return report({
-                                                message: `k8s ${name}/${resolved.key} ${k8sSha} (no GSM hash to compare - the GSM secret was missing above)`,
-                                                ok: false,
-                                            });
-                                        }
-
-                                        return report({
-                                            message: `k8s ${name}/${
-                                                resolved.key
-                                            } ${k8sSha} gsm:${gsmSha}${
-                                                k8sSha === gsmSha
-                                                    ? ''
-                                                    : ' (value drift, or the SecretSync has not caught up yet)'
-                                            }`,
-                                            ok: k8sSha === gsmSha,
-                                        });
-                                    }),
-                                Promise.resolve()
-                            );
-                        } catch (e) {
-                            return report({
-                                message: `k8s ${name}: READ-ERROR ${e.message.slice(
-                                    0,
-                                    80
-                                )}`,
+                                message: `k8s ${name}/${resolved.key} ${k8sSha} (no GSM hash to compare - the GSM secret was missing above)`,
                                 ok: false,
                             });
+
+                            return;
                         }
-                    }),
-                Promise.resolve()
-            );
-        })
-        .then(() => {
+
+                        report({
+                            message: `k8s ${name}/${
+                                resolved.key
+                            } ${k8sSha} gsm:${gsmSha}${
+                                k8sSha === gsmSha
+                                    ? ''
+                                    : ' (value drift, or the SecretSync has not caught up yet)'
+                            }`,
+                            ok: k8sSha === gsmSha,
+                        });
+                    });
+                });
+            }
+
             // 3. Stale 1Password fields: fields present in known sections
             // (environment sections on service items, consumer sections on
             // the dev item) that the contract does not assign anywhere.
+            section({
+                detail: 'Fields in known item sections (per environment on service items, per consumer on the dev item) that the contract assigns nowhere.',
+                title: '1Password stale fields',
+            });
+
             const expected = new Set();
-            const note = (item, section, field) =>
-                `${item}|${section}|${field}`;
+            const note = (item, sectionName, field) =>
+                `${item}|${sectionName}|${field}`;
 
             entries.forEach((entry) => {
                 const item = opItemFor(entry);
@@ -370,47 +449,48 @@ const verifyEnv = ({ config, contract, env }) => {
                 });
             }
 
-            const scanned = [...itemsToScan].map((item) =>
-                Promise.resolve()
-                    .then(() => opItemFields({ item }))
-                    .then((fields) => ({ fields, item }))
-                    .catch(() => null)
-            );
+            itemsToScan.forEach((item) => {
+                const data = opData[item];
 
-            return Promise.all(scanned).then((results) => {
-                results.filter(Boolean).forEach(({ fields, item }) => {
-                    const ownerName = itemOwners[item] || 'dev';
-                    const isDevItem =
-                        contract.dev && contract.dev.opItem === item;
+                if (!data || data.error) {
+                    return;
+                }
 
-                    fields.forEach(({ field, section }) => {
-                        const knownSection = isDevItem
-                            ? consumerSections.has(section)
-                            : envs.includes(section);
+                const ownerName = itemOwners[item] || 'dev';
+                const isDevItem = contract.dev && contract.dev.opItem === item;
 
-                        if (
-                            knownSection &&
-                            !expected.has(note(item, section, field))
-                        ) {
-                            report({
-                                message: `op:EXTRA ${ownerName}/${section}/${field} (in 1Password but not the contract)`,
-                                ok: false,
-                            });
-                        }
-                    });
+                data.fields.forEach(({ field, section: fieldSection }) => {
+                    const knownSection = isDevItem
+                        ? consumerSections.has(fieldSection)
+                        : envs.includes(fieldSection);
+
+                    if (
+                        knownSection &&
+                        !expected.has(note(item, fieldSection, field))
+                    ) {
+                        report({
+                            message: `op:EXTRA ${ownerName}/${fieldSection}/${field} (in 1Password but not the contract)`,
+                            ok: false,
+                        });
+                    }
                 });
             });
-        })
-        .then(() =>
+
             // 4. Deployed-functions drift: every repo-prefixed secret id a
             // function references must be in the contract-derived set for
             // the env encoded in the id (function names don't carry the
-            // env - beta has an infix, production doesn't).
-            gcfList({
+            // env - beta has an infix, production doesn't), and must
+            // reference a GSM secret that exists.
+            return gcfList({
                 project: contract.project,
                 region: contract.region,
                 repoPrefix,
             }).then((functions) => {
+                section({
+                    detail: 'Secret bindings of each deployed function must match ids the c.js contract computes and reference GSM secrets that exist. STALE = an old id the contract no longer computes; MISSING = the referenced GSM secret is gone.',
+                    title: 'Deployed functions (secret references)',
+                });
+
                 functions.forEach((fn) => {
                     fn.secrets.forEach((id) => {
                         if (!id.startsWith(repoPrefix)) {
@@ -421,8 +501,23 @@ const verifyEnv = ({ config, contract, env }) => {
                             id.startsWith(`${repoPrefix}${candidate}-`)
                         );
 
-                        if (refEnv && derivedByEnv[refEnv].has(id)) {
-                            lines.push(`OK      function ${fn.name} -> ${id}`);
+                        const inContract =
+                            refEnv && derivedByEnv[refEnv].has(id);
+
+                        if (inContract) {
+                            if (existingIds.has(id)) {
+                                report({
+                                    message: `function ${fn.name} -> ${id}`,
+                                    ok: true,
+                                });
+
+                                return;
+                            }
+
+                            report({
+                                message: `MISSING  function ${fn.name} -> ${id} (contract id, but the GSM secret does not exist)`,
+                                ok: false,
+                            });
 
                             return;
                         }
@@ -430,19 +525,22 @@ const verifyEnv = ({ config, contract, env }) => {
                         report({
                             message: `STALE   function ${fn.name} -> ${id}${
                                 refEnv ? '' : ' (unknown env)'
-                            } (not in contract)`,
+                            } (not in contract${
+                                existingIds.has(id)
+                                    ? ''
+                                    : ', and the GSM secret no longer exists'
+                            })`,
                             ok: false,
                         });
                     });
                 });
 
                 return {
-                    lines,
                     ok: problems.length === 0,
                     problems,
                 };
-            })
-        );
+            });
+        });
 };
 
 /**

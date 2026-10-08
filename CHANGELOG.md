@@ -11,6 +11,7 @@ This file is a history of the changes made to @idearium/cli.
 -   `opItem` references (`services.<name>`/`dev`, one hop) so each 1Password item id appears exactly once in the contract. Services resolve (or create) their item lazily by title; the `shared` block never auto-creates.
 -   Friendly credential pre-flights: commands that need 1Password, gcloud or kubectl fail fast with actionable re-authentication errors instead of raw tool output.
 -   The cli owns the 1Password session lifecycle: `c op session` signs in and stores the raw session token at `~/.local/state/idearium/op-session` (`0600`, enforced on overwrite), and `c op cmd [command...]` runs any `op` command with that session passed via `--session` (exit code propagates). Every internal `op` invocation (`c op get|set`, `c secrets *`, `c kc` template injection) passes the session the same way, so no `OP_SESSION_<account>` env var name is guessed anywhere; an exported `OP_SESSION_idearium` still takes precedence for `eval $(op signin)` users.
+-   `c secrets verify` prints a headed section per check phase with output streaming as each check runs, prefetches its data in bulk (one 1Password item fetch per item, one GSM list, bounded-concurrency GSM reads, one kubectl fetch per secret), and reports function bindings referencing deleted GSM secrets (`MISSING`) alongside contract drift (`STALE`).
 
 ### Fixed
 

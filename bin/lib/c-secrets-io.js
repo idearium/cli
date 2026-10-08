@@ -107,6 +107,32 @@ const opItemFields = ({ item }) => {
 };
 
 /**
+ * Read a 1Password item's fields and values in one call (bulk reads - one
+ * op invocation per item instead of one per field).
+ * @param {Object} options
+ * @param {String} options.item The item id.
+ * @returns {Object} { fields: [{ field, section }], values } with values
+ * keyed 'section/field'.
+ */
+const opItemValues = ({ item }) => {
+    const raw = JSON.parse(
+        runOp({ args: ['item', 'get', item, '--format=json'] })
+    );
+
+    const fields = [];
+    const values = {};
+
+    (raw.fields || []).forEach((field) => {
+        const section = field.section ? field.section.label : null;
+
+        fields.push({ field: field.label, section });
+        values[`${section}/${field.label}`] = field.value;
+    });
+
+    return { fields, values };
+};
+
+/**
  * Check whether a section/field exists on an item.
  * @param {Object} options
  * @param {String} options.field The field label.
@@ -657,6 +683,31 @@ const k8sSecretKeys = ({ context, namespace, secret }) => {
 };
 
 /**
+ * Read a Kubernetes secret in one call: its keys and their decoded values
+ * (bulk reads - one kubectl invocation per secret instead of one per key).
+ * @param {Object} options
+ * @param {String} options.context The kubectl context.
+ * @param {String} options.namespace The namespace.
+ * @param {String} options.secret The Kubernetes secret name.
+ * @returns {Object} { keys, values } with values keyed and decoded.
+ */
+const k8sReadSecret = ({ context, namespace, secret }) => {
+    const raw = runKubectl({
+        args: ['-n', namespace, 'get', 'secret', secret, '-o', 'json'],
+        context,
+    });
+
+    const data = JSON.parse(raw).data || {};
+    const values = {};
+
+    Object.keys(data).forEach((key) => {
+        values[key] = Buffer.from(data[key], 'base64');
+    });
+
+    return { keys: Object.keys(values), values };
+};
+
+/**
  * List every SecretProviderClass in a namespace with the GSM ids their
  * parameters reference.
  * @param {Object} options
@@ -716,17 +767,23 @@ const assertOpSession = () => {
 };
 
 /**
+ * List the Team vault's 1Password items in one call (bulk title lookups -
+ * one item list instead of one per title).
+ * @returns {Array} The raw items (id, title, ...).
+ */
+const opListItems = () =>
+    JSON.parse(
+        runOp({ args: ['item', 'list', '--vault=Team', '--format=json'] })
+    );
+
+/**
  * Find a 1Password item by exact title, returning its id (or null).
  * @param {Object} options
  * @param {String} options.title The item title.
  * @returns {String|null} The item id.
  */
 const opFindItemByTitle = ({ title }) => {
-    const raw = runOp({
-        args: ['item', 'list', '--vault=Team', '--format=json'],
-    });
-
-    const item = JSON.parse(raw).find((candidate) => candidate.title === title);
+    const item = opListItems().find((candidate) => candidate.title === title);
 
     return item ? item.id : null;
 };
@@ -1246,11 +1303,14 @@ module.exports = {
     gsmPushVerified,
     gsmRead,
     k8sReadKey,
+    k8sReadSecret,
     k8sSecretKeys,
     opCreateItem,
     opFieldExists,
     opFindItemByTitle,
     opItemFields,
+    opItemValues,
+    opListItems,
     opRead,
     opSession,
     opReadSha,

@@ -48,9 +48,7 @@ return loadConfig()
 
         return verifyEnv({ config, contract, env });
     })
-    .then(({ lines, ok, problems }) => {
-        lines.forEach((line) => print(line));
-
+    .then(({ ok, problems }) => {
         if (ok) {
             return print('\nVERIFIED');
         }
