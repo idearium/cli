@@ -267,7 +267,10 @@ const generateValueForProgram = ({ program }) => {
         );
     }
 
-    const length = program.L === undefined ? 32 : parseInt(program.L, 10);
+    // A bare -l parses to true; an absent one leaves L undefined, so the
+    // destructuring default supplies 32.
+    const { L = 32 } = program;
+    const length = parseInt(L, 10);
 
     if (!Number.isInteger(length) || length < 1) {
         throw new Error('--length must be a positive integer.');
@@ -971,6 +974,40 @@ const locateServiceBlock = ({ name, text }) => {
 };
 
 /**
+ * Locate the secrets.shared block in c.js text (scoped to secrets, a
+ * sibling of services - never a block elsewhere in c.js).
+ * @param {Object} options
+ * @param {String} options.text The c.js file contents.
+ * @returns {Object} { end, indent, start } with start at the newline
+ * beginning the block's line and end at the newline preceding its
+ * closing brace.
+ */
+const locateSharedBlock = ({ text }) => {
+    const secrets = locateSecretsBlock({ text });
+    const sharedMatch = text
+        .slice(secrets.start, secrets.end)
+        .match(/\n(\s*)shared:\s*\{/);
+
+    if (!sharedMatch) {
+        throw new Error(
+            'Could not find secrets.shared in c.js - add the block manually.'
+        );
+    }
+
+    const [, indent] = sharedMatch;
+    const start = secrets.start + sharedMatch.index;
+    const end = text.indexOf(`\n${indent}}`, start);
+
+    if (end === -1) {
+        throw new Error(
+            'Could not find the end of secrets.shared in c.js - add the block manually.'
+        );
+    }
+
+    return { end, indent, start };
+};
+
+/**
  * The freshly parsed service entry, failing loudly when an edit did not
  * land in secrets.services.
  * @param {Object} options
@@ -989,6 +1026,29 @@ const expectService = ({ config, name }) => {
     }
 
     return service;
+};
+
+/**
+ * The freshly parsed service or shared entry ('shared' addresses the
+ * shared block, a sibling of services), failing loudly when an edit did
+ * not land in the secrets block.
+ * @param {Object} options
+ * @param {Object} options.config The freshly required c.js configuration.
+ * @param {String} options.name The service name, or 'shared'.
+ * @returns {Object} The parsed entry.
+ */
+const expectEntry = ({ config, name }) => {
+    if (name === 'shared') {
+        const shared = config.secrets && config.secrets.shared;
+
+        if (!shared) {
+            throw new Error('secrets.shared is missing after the edit');
+        }
+
+        return shared;
+    }
+
+    return expectService({ config, name });
 };
 
 /**
@@ -1114,27 +1174,28 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
 };
 
 /**
- * Add a key to a service's keys array in c.js, preserving the array's
- * existing layout (single-line or multi-line). The service block is
- * located inside secrets.services, and the edit is re-parsed to verify
- * it landed.
+ * Add a key to an entry's keys array in c.js (a service, or the shared
+ * block), preserving the array's existing layout (single-line or
+ * multi-line). The entry's block is located inside the secrets block,
+ * and the edit is re-parsed to verify it landed.
  * @param {Object} options
  * @param {String} options.key The key to add.
- * @param {String} options.name The service name.
+ * @param {String} options.name The service name, or 'shared'.
  * @returns {Void}
  */
-const addKeyToServiceInCjs = ({ key, name }) => {
+const addKeyToEntryInCjs = ({ key, name }) => {
     const text = readCjs();
-    const service = locateServiceBlock({ name, text });
+    const block =
+        name === 'shared'
+            ? locateSharedBlock({ text })
+            : locateServiceBlock({ name, text });
 
-    const serviceText = text.slice(service.start, service.end);
+    const blockText = text.slice(block.start, block.end);
 
-    const keysMatch = serviceText.match(/keys:\s*\[([^\]]*)\]/);
+    const keysMatch = blockText.match(/keys:\s*\[([^\]]*)\]/);
 
     if (!keysMatch) {
-        throw new Error(
-            `Could not find a keys array for service '${name}' in c.js.`
-        );
+        throw new Error(`Could not find a keys array for '${name}' in c.js.`);
     }
 
     const entries = keysMatch[1]
@@ -1154,25 +1215,22 @@ const addKeyToServiceInCjs = ({ key, name }) => {
 
     const rendered = multiline
         ? `keys: [\n${entries
-              .map((entry) => `${service.indent}    '${entry}',`)
-              .join('\n')}\n${service.indent}],`
+              .map((entry) => `${block.indent}    '${entry}',`)
+              .join('\n')}\n${block.indent}],`
         : `keys: [${entries.map((entry) => `'${entry}'`).join(', ')}]`;
 
-    const newServiceText = serviceText.replace(keysMatch[0], rendered);
+    const newBlockText = blockText.replace(keysMatch[0], rendered);
 
     writeCjs({
-        text:
-            text.slice(0, service.start) +
-            newServiceText +
-            text.slice(service.end),
+        text: text.slice(0, block.start) + newBlockText + text.slice(block.end),
     });
 
     verifyCjsEdit({
         backup: text,
         expect: (config) => {
-            if (!expectService({ config, name }).keys.includes(key)) {
+            if (!expectEntry({ config, name }).keys.includes(key)) {
                 throw new Error(
-                    `secrets.services.${name}.keys does not include '${key}' after the edit`
+                    `secrets entry '${name}' does not include '${key}' in keys after the edit`
                 );
             }
         },
@@ -1180,37 +1238,40 @@ const addKeyToServiceInCjs = ({ key, name }) => {
 };
 
 /**
- * Bind a service's opItem in c.js (inserting the property when the service
- * block has none) - used to persist lazily resolved item ids. The service
- * block is located inside secrets.services, and the edit is re-parsed to
- * verify it landed.
+ * Bind an entry's opItem in c.js (inserting the property when the block
+ * has none) - used to persist lazily resolved item ids. The entry is a
+ * service or the shared block, and the edit is re-parsed to verify it
+ * landed.
  * @param {Object} options
- * @param {String} options.name The service name.
+ * @param {String} options.name The service name, or 'shared'.
  * @param {String} options.opItem The 1Password item id.
  * @returns {Void}
  */
 const setOpItemInCjs = ({ name, opItem }) => {
     const text = readCjs();
-    const service = locateServiceBlock({ name, text });
+    const block =
+        name === 'shared'
+            ? locateSharedBlock({ text })
+            : locateServiceBlock({ name, text });
 
-    const serviceText = text.slice(service.start, service.end);
+    const blockText = text.slice(block.start, block.end);
 
-    if (/opItem:\s*'/.test(serviceText)) {
+    if (/opItem:\s*'/.test(blockText)) {
         return;
     }
 
     writeCjs({
-        text: `${text.slice(0, service.end)}\n${
-            service.indent
-        }    opItem: '${opItem}',${text.slice(service.end)}`,
+        text: `${text.slice(0, block.end)}\n${
+            block.indent
+        }    opItem: '${opItem}',${text.slice(block.end)}`,
     });
 
     verifyCjsEdit({
         backup: text,
         expect: (config) => {
-            if (expectService({ config, name }).opItem !== opItem) {
+            if (expectEntry({ config, name }).opItem !== opItem) {
                 throw new Error(
-                    `secrets.services.${name}.opItem does not carry the binding after the edit`
+                    `secrets entry '${name}' does not carry the opItem binding after the edit`
                 );
             }
         },
@@ -1286,7 +1347,7 @@ const gsmPushVerified = ({ contract, env, id, owner, value }) => {
 
 module.exports = {
     OP_SESSION_FILE,
-    addKeyToServiceInCjs,
+    addKeyToEntryInCjs,
     assertGcloudAuth,
     assertKubectl,
     assertOpSession,

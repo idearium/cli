@@ -13,7 +13,7 @@ const {
     resolveIdentity,
 } = require('./lib/c-secrets');
 const {
-    addKeyToServiceInCjs,
+    addKeyToEntryInCjs,
     assertGcloudAuth,
     assertOpSession,
     cjsPath,
@@ -187,7 +187,7 @@ return loadConfig()
                 }
 
                 if (!isNewService && !borrowedKey) {
-                    addKeyToServiceInCjs({ key, name });
+                    addKeyToEntryInCjs({ key, name });
                 }
 
                 delete require.cache[require.resolve(cjsPath())];
