@@ -29,7 +29,7 @@ program
     )
     .option('-l [length]', 'Value length for --generate.')
     .description(
-        'Upsert a secret value into 1Password. Pipe the value via stdin, or use --generate. New keys are added to the service item; unbound services resolve (or create) their item automatically and register into c.js.'
+        'Upsert a secret value into 1Password for a key the contract knows (owned or borrowed). Pipe the value via stdin, or use --generate. Unbound services resolve (or create) their item automatically and register into c.js.'
     )
     .parse(process.argv);
 
@@ -95,32 +95,39 @@ return loadConfig()
         let ref;
         let section;
 
-        // Resolve the destination: an existing entry (the key's owner), a
-        // new key on an existing entry, or a brand new service. Unbound
-        // services resolve (or create) their item and persist the binding.
+        // Resolve the destination: the key's owner (an existing entry,
+        // owned or borrowed), or a brand new service. Unbound services
+        // resolve (or create) their item and persist the binding.
         try {
             const identity = resolveIdentity({ contract, env, name });
 
-            const owner =
+            const entry =
                 identity.kind === 'service'
-                    ? identity.service.keys.includes(key)
-                        ? identity.service
-                        : (
-                              identity.service.sharedKeys.find(
-                                  (shared) => shared.key === key
-                              ) || {}
-                          ).owner
-                    : null;
+                    ? identity.service
+                    : identity.consumer;
+
+            const borrowed = entry.sharedKeys.find(
+                (shared) => shared.key === key
+            );
+
+            const owned = entry.keys.includes(key);
+
+            // The contract is the source of truth: a key no entry owns
+            // or borrows would write an orphan field (verify's
+            // op:EXTRA), so stop at the door with the remedy.
+            if (!owned && !borrowed) {
+                const remedy =
+                    identity.kind === 'service'
+                        ? `declare it with \`c secrets add ${name} ${env} ${key}\``
+                        : "add it to the consumer's keys in c.js first";
+
+                throw new Error(
+                    `'${key}' is neither owned nor borrowed by '${name}' - fix the typo, or ${remedy}.`
+                );
+            }
 
             if (identity.kind === 'consumer') {
-                const borrowed = identity.consumer.sharedKeys.find(
-                    (shared) => shared.key === key
-                );
-
-                const ownsKey =
-                    identity.consumer.keys.includes(key) || !borrowed;
-
-                const binding = ownsKey
+                const binding = owned
                     ? {
                           created: false,
                           id: contract.dev.opItem,
@@ -131,22 +138,26 @@ return loadConfig()
                           title: title(borrowed.owner.name),
                       });
 
-                if (binding.persisted) {
+                // Only borrowed keys resolve (or persist) an owner's
+                // item; owned keys already live in the dev item.
+                if (borrowed && binding.persisted) {
                     setOpItemInCjs({
                         name: borrowed.owner.name,
                         opItem: binding.id,
                     });
+
+                    reportBinding({
+                        binding,
+                        serviceName: borrowed.owner.name,
+                    });
                 }
 
-                reportBinding({
-                    binding,
-                    serviceName: borrowed.owner.name,
-                });
-
                 item = binding.id;
-                section = ownsKey ? identity.consumer.name : 'local';
-            } else {
-                const target = owner || identity.service;
+                section = owned ? identity.consumer.name : 'local';
+            }
+
+            if (identity.kind === 'service') {
+                const target = owned ? identity.service : borrowed.owner;
                 const serviceName = target.name;
                 const binding = resolveOwnerItem({
                     owner: target,
