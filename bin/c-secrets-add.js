@@ -81,6 +81,7 @@ return loadConfig()
 
         let id;
         let binding = { created: false, id: null, persisted: false };
+        let borrowedKey = false;
         let isNewService = false;
         let item;
         let ownerName;
@@ -101,6 +102,7 @@ return loadConfig()
             const borrowed = service.sharedKeys.find(
                 (shared) => shared.key === key
             );
+            borrowedKey = Boolean(borrowed);
             const known = service.keys.includes(key) || borrowed;
 
             ownerName = (borrowed || {}).owner
@@ -176,11 +178,15 @@ return loadConfig()
                 created ? 'created' : 'version added to'
             } ${id} op:${sourceSha} gsm:${readbackSha} VERIFIED`;
 
-            // Step 3: c.js - register, then re-load and re-validate.
+            // Step 3: c.js - register (a new service, or a new owned key;
+            // a borrowed key is already declared by its owner), then
+            // re-load and re-validate.
             try {
                 if (isNewService) {
                     registerServiceInCjs({ key, name, opItem: item });
-                } else {
+                }
+
+                if (!isNewService && !borrowedKey) {
                     addKeyToServiceInCjs({ key, name });
                 }
 
@@ -249,11 +255,18 @@ return loadConfig()
                       binding.persisted ? `; item bound into c.js` : ''
                   }`;
 
-            return print(
-                `${opSummary}; ${gsmSummary}; c.js ${
-                    isNewService ? 'service' : 'key'
-                } registered`
-            );
+            let cjsSummary = 'c.js key registered';
+
+            if (isNewService) {
+                cjsSummary = 'c.js service registered';
+            }
+
+            if (borrowedKey) {
+                cjsSummary =
+                    'borrowed key - the owner already declares it in c.js';
+            }
+
+            return print(`${opSummary}; ${gsmSummary}; ${cjsSummary}`);
         });
     })
     .catch((e) => reportError(e, false, true));
