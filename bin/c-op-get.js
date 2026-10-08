@@ -16,7 +16,6 @@ const {
     assertOpSession,
     guardPlaintext,
     opRead,
-    resolveOpItem,
     resolveOwnerItem,
     sha12,
 } = require('./lib/c-secrets-io');
@@ -72,19 +71,17 @@ return loadConfig()
                       key,
                   });
 
-        // Unbound services resolve their item lazily, and reads never
-        // create; the shared block resolves too but is never auto-created.
-        const itemTitle = resolved.owner
-            ? `${contract.organisation}-${contract.name}/${resolved.owner.name}`
-            : `${contract.organisation}-${contract.name}/${name}`;
-
-        const item = resolved.owner
-            ? resolveOwnerItem({
+        // The resolved key usually carries its item already (a bound
+        // owner, or the dev item for consumer-owned keys); only unbound
+        // owners resolve lazily by title, and reads never create (the
+        // shared block is never auto-created either).
+        const item = resolved.opItem
+            ? resolved.opItem
+            : resolveOwnerItem({
                   create: false,
                   owner: resolved.owner,
-                  title: itemTitle,
-              }).id
-            : resolveOpItem({ create: false, title: itemTitle }).id;
+                  title: `${contract.organisation}-${contract.name}/${resolved.owner.name}`,
+              }).id;
 
         const ref =
             resolved.opRef ||
