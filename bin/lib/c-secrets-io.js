@@ -147,8 +147,10 @@ const opFieldExists = ({ field, item, section }) =>
     );
 
 /**
- * Upsert a field on a 1Password item. The value transits argv (the op cli
- * demands it for assignments) - the same trust domain as typing the value.
+ * Upsert a field on a 1Password item by piping a JSON item template via
+ * stdin (`op item edit` reads the template from piped input): the value
+ * never transits argv, where it would be visible to other processes on
+ * the machine.
  * @param {Object} options
  * @param {String} options.field The field label.
  * @param {String} options.item The item id.
@@ -157,14 +159,43 @@ const opFieldExists = ({ field, item, section }) =>
  * @returns {Void}
  */
 const opUpsertField = ({ field, item, section, value }) => {
+    const raw = JSON.parse(
+        runOp({ args: ['item', 'get', item, '--format=json'] })
+    );
+
+    const fields = raw.fields || [];
+
+    const sectionLabel = (candidate) =>
+        candidate.section ? candidate.section.label : null;
+
+    const target = fields.find(
+        (candidate) =>
+            candidate.label === field && sectionLabel(candidate) === section
+    );
+
+    if (target) {
+        target.value = value;
+    }
+
+    if (!target) {
+        // A new field mirrors a sibling of its section so sections stay
+        // internally consistent; concealed is the safe default for
+        // secrets.
+        const sibling = fields.find(
+            (candidate) => sectionLabel(candidate) === section
+        );
+
+        fields.push({
+            fieldType: (sibling || {}).fieldType || 'CONCEALED',
+            label: field,
+            section: { label: section },
+            value,
+        });
+    }
+
     runOp({
-        args: [
-            'item',
-            'edit',
-            item,
-            `${section}.${field}=${value}`,
-            '--format=json',
-        ],
+        args: ['item', 'edit', item, '--format=json'],
+        input: JSON.stringify(raw),
     });
 };
 
