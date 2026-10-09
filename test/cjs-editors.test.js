@@ -9,8 +9,11 @@
 //
 // Run with: npm test
 
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
+import { expect, it } from 'vitest';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+const require = createRequire(import.meta.url);
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -19,7 +22,7 @@ const prettier = require('prettier');
 const io = require('../bin/lib/c-secrets-io.js');
 const { getSecretsContract } = require('../bin/lib/c-secrets.js');
 
-const REPO_ROOT = path.resolve(__dirname, '..');
+const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PRETTIER_OPTIONS = Object.assign(
     { endOfLine: 'lf', parser: 'babel' },
     JSON.parse(
@@ -76,7 +79,7 @@ const writeCjs = (text) =>
 
 // Run a test body inside a temp directory holding the fixture c.js.
 const withFixture = (name, cjsText, body) =>
-    test(name, () => {
+    it(name, () => {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cjs-editors-'));
         const previousCwd = process.cwd();
 
@@ -224,21 +227,20 @@ KEY_STYLES.forEach((style) => {
 
             const config = loadCjs();
 
-            assert.deepEqual(
-                config.secrets.services.site.keys,
+            expect(config.secrets.services.site.keys).toStrictEqual(
                 style.existingSiteKeys.concat('RAS_API_KEY')
             );
-            assert.equal(config.docker.locations.site.buildArgs.TOKEN, 'nope');
+            expect(config.docker.locations.site.buildArgs.TOKEN).toBe('nope');
 
             const text = readCjs();
 
-            assert.ok(
-                text.includes(style.expectedSiteBlock),
+            expect(
+                text,
                 'the keys block must render in the entry\u2019s own style'
-            );
+            ).toContain(style.expectedSiteBlock);
 
             if (style.canonical) {
-                assert.equal(isPrettierClean(text), true);
+                expect(isPrettierClean(text)).toBe(true);
             }
 
             // Idempotent: a second identical run changes nothing.
@@ -246,7 +248,7 @@ KEY_STYLES.forEach((style) => {
 
             io.addKeyToEntryInCjs({ key: 'RAS_API_KEY', name: 'site' });
 
-            assert.equal(readCjs(), afterFirst);
+            expect(readCjs()).toBe(afterFirst);
         }
     );
 
@@ -258,15 +260,14 @@ KEY_STYLES.forEach((style) => {
 
             const config = loadCjs();
 
-            assert.deepEqual(
-                config.secrets.shared.keys,
+            expect(config.secrets.shared.keys).toStrictEqual(
                 style.existingSharedKeys.concat('API_TOKEN').sort()
             );
 
-            assert.ok(
-                readCjs().includes(style.expectedSharedBlock),
+            expect(
+                readCjs(),
                 'the shared keys block must render in the entry\u2019s own style'
-            );
+            ).toContain(style.expectedSharedBlock);
         }
     );
 });
@@ -292,12 +293,12 @@ ${closing()}`,
         const config = loadCjs();
         const text = readCjs();
 
-        assert.deepEqual(config.secrets.services.site.keys, [
+        expect(config.secrets.services.site.keys).toStrictEqual([
             'CACHE_URL',
             'RAS_API_KEY',
         ]);
-        assert.match(text, /\/\/ the site's owned keys/);
-        assert.match(text, /\/\/ cache connection details/);
+        expect(text).toMatch(/\/\/ the site's owned keys/);
+        expect(text).toMatch(/\/\/ cache connection details/);
     }
 );
 
@@ -320,15 +321,13 @@ ${closing()}`,
 
         const config = loadCjs();
 
-        assert.deepEqual(
-            config.secrets.services['prismic-published-workflow'].keys,
-            ['BASIC_AUTH']
-        );
-        assert.deepEqual(
-            config.secrets.services['prismic-published-workflow'].sharedKeys,
-            ['IMGIX_TOKEN']
-        );
-        assert.equal(isPrettierClean(readCjs()), true);
+        expect(
+            config.secrets.services['prismic-published-workflow'].keys
+        ).toStrictEqual(['BASIC_AUTH']);
+        expect(
+            config.secrets.services['prismic-published-workflow'].sharedKeys
+        ).toStrictEqual(['IMGIX_TOKEN']);
+        expect(isPrettierClean(readCjs())).toBe(true);
     }
 );
 
@@ -340,11 +339,11 @@ withFixture(
 
         const config = loadCjs();
 
-        assert.deepEqual(config.secrets.services.site.keys, [
+        expect(config.secrets.services.site.keys).toStrictEqual([
             'CACHE_URL',
             'RAS_API_KEY',
         ]);
-        assert.equal(isCrlf(readCjs()), true, 'no mixed line endings');
+        expect(isCrlf(readCjs()), 'no mixed line endings').toBe(true);
     }
 );
 
@@ -354,12 +353,11 @@ withFixture(
     () => {
         io.addKeyToEntryInCjs({ key: 'RAS_API_KEY', name: 'site' });
 
-        const contract = getSecretsContract({ config: loadCjs() });
-        const { site } = contract.services;
+        const { site } = getSecretsContract({ config: loadCjs() }).services;
 
-        assert.equal(site.name, 'site');
-        assert.deepEqual(site.keys, ['CACHE_URL', 'RAS_API_KEY']);
-        assert.equal(site.opItem, 'aaaa');
+        expect(site.name).toBe('site');
+        expect(site.keys).toStrictEqual(['CACHE_URL', 'RAS_API_KEY']);
+        expect(site.opItem).toBe('aaaa');
     }
 );
 
@@ -377,8 +375,8 @@ ${closing()}`,
     () => {
         io.setOpItemInCjs({ name: 'site', opItem: 'bbbb' });
 
-        assert.equal(loadCjs().secrets.services.site.opItem, 'bbbb');
-        assert.equal(isPrettierClean(readCjs()), true);
+        expect(loadCjs().secrets.services.site.opItem).toBe('bbbb');
+        expect(isPrettierClean(readCjs())).toBe(true);
     }
 );
 
@@ -399,8 +397,8 @@ ${closing()}`,
 
         const config = loadCjs();
 
-        assert.equal(config.secrets.shared.opItem, 'services.site');
-        assert.equal(config.secrets.services.site.opItem, 'aaaa');
+        expect(config.secrets.shared.opItem).toBe('services.site');
+        expect(config.secrets.services.site.opItem).toBe('aaaa');
     }
 );
 
@@ -421,8 +419,8 @@ ${closing()}`,
 
         io.setOpItemInCjs({ name: 'site', opItem: 'zzzz' });
 
-        assert.equal(readCjs(), before);
-        assert.equal(loadCjs().secrets.services.site.opItem, 'aaaa');
+        expect(readCjs()).toBe(before);
+        expect(loadCjs().secrets.services.site.opItem).toBe('aaaa');
     }
 );
 
@@ -440,8 +438,8 @@ ${closing()}`.replace(/\n/g, '\r\n'),
     () => {
         io.setOpItemInCjs({ name: 'site', opItem: 'bbbb' });
 
-        assert.equal(loadCjs().secrets.services.site.opItem, 'bbbb');
-        assert.equal(isCrlf(readCjs()), true, 'no mixed line endings');
+        expect(loadCjs().secrets.services.site.opItem).toBe('bbbb');
+        expect(isCrlf(readCjs()), 'no mixed line endings').toBe(true);
     }
 );
 
@@ -462,10 +460,13 @@ ${closing()}`,
 
         const config = loadCjs();
 
-        assert.deepEqual(Object.keys(config.secrets.services), ['api', 'site']);
-        assert.deepEqual(config.secrets.services.api.keys, ['TOKEN']);
-        assert.equal(config.secrets.services.api.opItem, 'cccc');
-        assert.equal(isPrettierClean(readCjs()), true);
+        expect(Object.keys(config.secrets.services)).toStrictEqual([
+            'api',
+            'site',
+        ]);
+        expect(config.secrets.services.api.keys).toStrictEqual(['TOKEN']);
+        expect(config.secrets.services.api.opItem).toBe('cccc');
+        expect(isPrettierClean(readCjs())).toBe(true);
     }
 );
 
@@ -486,10 +487,13 @@ ${closing()}`,
 
         const config = loadCjs();
 
-        assert.deepEqual(Object.keys(config.secrets.services), ['site', 'www']);
-        assert.deepEqual(config.secrets.services.www.keys, ['TOKEN']);
-        assert.equal(config.secrets.services.www.opItem, 'dddd');
-        assert.equal(isPrettierClean(readCjs()), true);
+        expect(Object.keys(config.secrets.services)).toStrictEqual([
+            'site',
+            'www',
+        ]);
+        expect(config.secrets.services.www.keys).toStrictEqual(['TOKEN']);
+        expect(config.secrets.services.www.opItem).toBe('dddd');
+        expect(isPrettierClean(readCjs())).toBe(true);
     }
 );
 
@@ -509,12 +513,12 @@ ${closing()}`,
 
         const config = loadCjs();
 
-        assert.deepEqual(Object.keys(config.secrets.services), [
+        expect(Object.keys(config.secrets.services)).toStrictEqual([
             'api',
             'prismic-published-workflow',
         ]);
-        assert.deepEqual(config.secrets.services.api.keys, ['TOKEN']);
-        assert.equal(config.secrets.services.api.opItem, 'cccc');
+        expect(config.secrets.services.api.keys).toStrictEqual(['TOKEN']);
+        expect(config.secrets.services.api.opItem).toBe('cccc');
     }
 );
 
@@ -530,9 +534,9 @@ ${closing()}`,
 
         const config = loadCjs();
 
-        assert.deepEqual(config.secrets.services.api.keys, ['TOKEN']);
-        assert.equal(config.secrets.services.api.opItem, 'cccc');
-        assert.equal(isPrettierClean(readCjs()), true);
+        expect(config.secrets.services.api.keys).toStrictEqual(['TOKEN']);
+        expect(config.secrets.services.api.opItem).toBe('cccc');
+        expect(isPrettierClean(readCjs())).toBe(true);
     }
 );
 
@@ -548,7 +552,7 @@ ${closing()}`,
 
         const contract = getSecretsContract({ config: loadCjs() });
 
-        assert.deepEqual(contract.services.api.keys, ['TOKEN']);
-        assert.equal(contract.services.api.opItem, 'cccc');
+        expect(contract.services.api.keys).toStrictEqual(['TOKEN']);
+        expect(contract.services.api.opItem).toBe('cccc');
     }
 );
