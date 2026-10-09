@@ -22,7 +22,7 @@ const {
     gsmPushVerified,
     opUpsertField,
     registerServiceInCjs,
-    resolveOwnerItem,
+    resolveOrCreateOwnerItem,
     setOpItemInCjs,
 } = require('./lib/c-secrets-io');
 
@@ -109,7 +109,7 @@ return loadConfig()
                 ? borrowed.owner.name
                 : service.name;
 
-            binding = resolveOwnerItem({
+            binding = resolveOrCreateOwnerItem({
                 owner: borrowed ? borrowed.owner : service,
                 title: `${contract.organisation}-${contract.name}/${ownerName}`,
             });
@@ -146,7 +146,7 @@ return loadConfig()
                 );
             }
 
-            binding = resolveOwnerItem({
+            binding = resolveOrCreateOwnerItem({
                 owner: null,
                 title: `${contract.organisation}-${contract.name}/${name}`,
             });

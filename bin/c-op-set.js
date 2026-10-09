@@ -15,7 +15,7 @@ const {
     opFieldExists,
     opUpsertField,
     registerServiceInCjs,
-    resolveOwnerItem,
+    resolveOrCreateOwnerItem,
     setOpItemInCjs,
     sha12,
 } = require('./lib/c-secrets-io');
@@ -133,7 +133,7 @@ return loadConfig()
                           id: contract.dev.opItem,
                           persisted: false,
                       }
-                    : resolveOwnerItem({
+                    : resolveOrCreateOwnerItem({
                           owner: borrowed.owner,
                           title: title(borrowed.owner.name),
                       });
@@ -159,7 +159,7 @@ return loadConfig()
             if (identity.kind === 'service') {
                 const target = owned ? identity.service : borrowed.owner;
                 const serviceName = target.name;
-                const binding = resolveOwnerItem({
+                const binding = resolveOrCreateOwnerItem({
                     owner: target,
                     title: title(serviceName),
                 });
@@ -194,7 +194,7 @@ return loadConfig()
                 );
             }
 
-            const binding = resolveOwnerItem({
+            const binding = resolveOrCreateOwnerItem({
                 owner: null,
                 title: title(name),
             });

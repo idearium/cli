@@ -78,7 +78,6 @@ return loadConfig()
         const item = resolved.opItem
             ? resolved.opItem
             : resolveOwnerItem({
-                  create: false,
                   owner: resolved.owner,
                   title: `${contract.organisation}-${contract.name}/${resolved.owner.name}`,
               }).id;

@@ -823,9 +823,9 @@ const opFindItemByTitle = ({ title }) => {
 };
 
 /**
- * Resolve a service's 1Password item: a bound opItem wins; otherwise look
- * the item up by title; otherwise create it (write paths only - read
- * paths pass create false and get a guidance error instead).
+ * Resolve a 1Password item: a bound opItem wins; otherwise look the item
+ * up by title; when creation is not allowed, fail with a guidance error
+ * instead (the shared block, which never creates, gets its own message).
  * @param {Object} options
  * @param {Boolean} options.create Whether an item may be created.
  * @param {String} [options.noCreateMessage] A specific error message when
@@ -857,27 +857,55 @@ const resolveOpItem = ({ create, noCreateMessage, opItem, title }) => {
 };
 
 /**
- * Resolve the target item for an owning entry: services resolve-or-create
- * (write paths - read paths pass create false and resolve only); the
- * shared block only ever resolves (where a shared value lives is the
- * author's decision, never the tool's).
+ * Resolve an owning entry's 1Password item without ever creating one: a
+ * bound opItem wins; otherwise the item is looked up by title, failing
+ * with a guidance error when it does not exist. Every read path uses
+ * this - 1Password is never mutated.
  * @param {Object} options
- * @param {Boolean} [options.create=true] Whether a service item may be
- * created. The shared block never creates regardless.
  * @param {Object} options.owner The owning service or shared entry.
- * @param {String} options.title The item title.
+ * @param {String} options.title The item title ({org}-{repo}/{service}).
+ * @returns {Object} { created, id, persisted } - persisted true when the
+ * binding should be written back into c.js.
+ */
+const resolveOwnerItem = ({ owner, title }) => {
+    if (owner && owner.name === 'shared') {
+        return resolveOpItem({
+            create: false,
+            noCreateMessage:
+                "The 'shared' block stores its values in a 1Password item you choose - set shared.opItem in c.js (often the item of a service that uses the key).",
+            opItem: owner.opItem,
+            title,
+        });
+    }
+
+    return resolveOpItem({
+        create: false,
+        opItem: owner && owner.opItem,
+        title,
+    });
+};
+
+/**
+ * Resolve an owning entry's 1Password item on a write path: services
+ * resolve (or create) their item; the shared block only ever resolves
+ * (where a shared value lives is the author's decision, never the
+ * tool's).
+ * @param {Object} options
+ * @param {Object} options.owner The owning service or shared entry.
+ * @param {String} options.title The item title ({org}-{repo}/{service}).
  * @returns {Object} { created, id, persisted }.
  */
-const resolveOwnerItem = ({ create = true, owner, title }) =>
-    owner && owner.name === 'shared'
-        ? resolveOpItem({
-              create: false,
-              noCreateMessage:
-                  "The 'shared' block stores its values in a 1Password item you choose - set shared.opItem in c.js (often the item of a service that uses the key).",
-              opItem: owner.opItem,
-              title,
-          })
-        : resolveOpItem({ create, opItem: owner && owner.opItem, title });
+const resolveOrCreateOwnerItem = ({ owner, title }) => {
+    if (owner && owner.name === 'shared') {
+        return resolveOwnerItem({ owner, title });
+    }
+
+    return resolveOpItem({
+        create: true,
+        opItem: owner && owner.opItem,
+        title,
+    });
+};
 
 /**
  * The c.js file's path in the project directory.
@@ -1418,7 +1446,7 @@ module.exports = {
     opUpsertField,
     quoteIfNeeded,
     registerServiceInCjs,
-    resolveOpItem,
+    resolveOrCreateOwnerItem,
     resolveOwnerItem,
     runKubectl,
     runOp,
