@@ -2,6 +2,7 @@
 
 const { execFileSync } = require('child_process');
 const { createHash, randomBytes } = require('crypto');
+const espree = require('espree');
 const https = require('https');
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
@@ -937,133 +938,189 @@ const quoteIfNeeded = ({ name }) =>
     /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : `'${name}'`;
 
 /**
- * Locate the secrets block in c.js text: only content between these
- * boundaries belongs to the contract, as c.js may contain
- * identically-named properties elsewhere (docker locations etc).
+ * Parse c.js text into an AST, returning the module.exports object.
+ * Positions come from the parser, not regexes, so formatting (quoted
+ * names, comments, single vs multi-line layouts) cannot mislocate an
+ * edit.
  * @param {Object} options
  * @param {String} options.text The c.js file contents.
- * @returns {Object} { end, indent, start } with start just after the
- * opening brace and end at the newline preceding the closing brace.
+ * @returns {Object} The module.exports ObjectExpression node.
  */
-const locateSecretsBlock = ({ text }) => {
-    const secretsMatch = text.match(/\n(\s*)secrets:\s*\{/);
+const parseCjs = ({ text }) => {
+    const ast = espree.parse(text, { ecmaVersion: 2020, range: true });
 
-    if (!secretsMatch) {
+    const assignment = ast.body.find(
+        (statement) =>
+            statement.type === 'ExpressionStatement' &&
+            statement.expression.type === 'AssignmentExpression' &&
+            statement.expression.left.type === 'MemberExpression' &&
+            statement.expression.left.object.name === 'module' &&
+            statement.expression.left.property.name === 'exports' &&
+            statement.expression.right.type === 'ObjectExpression'
+    );
+
+    if (!assignment) {
+        throw new Error(
+            'Could not find a module.exports object in c.js - add the contract manually.'
+        );
+    }
+
+    return assignment.expression.right;
+};
+
+/**
+ * Find a property of an ObjectExpression by name (quoted or unquoted).
+ * @param {Object} options
+ * @param {String} options.name The property name.
+ * @param {Object} options.object The ObjectExpression node.
+ * @returns {Object|undefined} The Property node, when present.
+ */
+const findProperty = ({ name, object }) =>
+    object.properties.find(
+        (property) =>
+            property.type === 'Property' &&
+            (property.key.name === name || property.key.value === name)
+    );
+
+/**
+ * The index of the start of the line containing the given index.
+ * @param {Object} options
+ * @param {Number} options.index A position within the text.
+ * @param {String} options.text The full text.
+ * @returns {Number} The line's start index.
+ */
+const lineStartIndex = ({ index, text }) => text.lastIndexOf('\n', index) + 1;
+
+/**
+ * The whitespace between the start of the line and the given index (the
+ * indentation of a node that starts its own line).
+ * @param {Object} options
+ * @param {Number} options.index A position within the text.
+ * @param {String} options.text The full text.
+ * @returns {String} The leading whitespace.
+ */
+const indentBefore = ({ index, text }) =>
+    text.slice(lineStartIndex({ index, text }), index);
+
+/**
+ * The file's dominant line ending, so insertions never mix endings.
+ * @param {Object} options
+ * @param {String} options.text The full text.
+ * @returns {String} '\r\n' or '\n'.
+ */
+const lineEndingOf = ({ text }) => (text.includes('\r\n') ? '\r\n' : '\n');
+
+/**
+ * The secrets contract's ObjectExpression within c.js: only properties of
+ * this node belong to the contract, as c.js may contain identically-named
+ * properties elsewhere (docker locations etc).
+ * @param {Object} options
+ * @param {String} options.text The c.js file contents.
+ * @returns {Object} The secrets ObjectExpression node.
+ */
+const secretsObject = ({ text }) => {
+    const root = parseCjs({ text });
+
+    const secrets = findProperty({ name: 'secrets', object: root });
+
+    if (!secrets || secrets.value.type !== 'ObjectExpression') {
         throw new Error(
             'Could not find secrets in c.js - add the contract manually.'
         );
     }
 
-    const [, indent] = secretsMatch;
-    const start = secretsMatch.index + secretsMatch[0].length;
-    const end = text.indexOf(`\n${indent}}`, start);
-
-    if (end === -1) {
-        throw new Error(
-            'Could not find the end of secrets in c.js - add the contract manually.'
-        );
-    }
-
-    return { end, indent, start };
+    return secrets.value;
 };
 
 /**
- * Locate the secrets.services block in c.js text (scoped to secrets).
+ * A service entry's Property node inside secrets.services, or the shared
+ * block's, failing with actionable messages when absent.
  * @param {Object} options
- * @param {String} options.text The c.js file contents.
- * @returns {Object} { end, indent, start } with start just after the
- * opening brace and end at the newline preceding the closing brace.
+ * @param {String} options.name The service name, or 'shared'.
+ * @param {Object} options.secrets The secrets ObjectExpression node.
+ * @returns {Object} The entry's Property node.
  */
-const locateServicesBlock = ({ text }) => {
-    const secrets = locateSecretsBlock({ text });
-    const servicesMatch = text
-        .slice(secrets.start, secrets.end)
-        .match(/\n(\s*)services:\s*\{/);
+const entryProperty = ({ name, secrets }) => {
+    if (name === 'shared') {
+        const shared = findProperty({ name: 'shared', object: secrets });
 
-    if (!servicesMatch) {
+        if (!shared) {
+            throw new Error(
+                'Could not find secrets.shared in c.js - add the block manually.'
+            );
+        }
+
+        return shared;
+    }
+
+    const services = findProperty({ name: 'services', object: secrets });
+
+    if (!services || services.value.type !== 'ObjectExpression') {
         throw new Error(
             'Could not find secrets.services in c.js - add the service manually.'
         );
     }
 
-    const [, indent] = servicesMatch;
-    const start = secrets.start + servicesMatch.index + servicesMatch[0].length;
-    const end = text.indexOf(`\n${indent}}`, start);
+    const service = findProperty({ name, object: services.value });
 
-    if (end === -1) {
-        throw new Error(
-            'Could not find the end of secrets.services in c.js - add the service manually.'
-        );
-    }
-
-    return { end, indent, start };
-};
-
-/**
- * Locate one service's block inside secrets.services: the first
- * name-matching block found there wins, never a block elsewhere in c.js.
- * @param {Object} options
- * @param {String} options.name The service name.
- * @param {String} options.text The c.js file contents.
- * @returns {Object} { end, indent, start } with start at the newline
- * beginning the service's line and end at the newline preceding its
- * closing brace.
- */
-const locateServiceBlock = ({ name, text }) => {
-    const services = locateServicesBlock({ text });
-    const serviceMatch = text
-        .slice(services.start, services.end)
-        .match(new RegExp(`\\n(\\s*)${quoteIfNeeded({ name })}:\\s*\\{`));
-
-    if (!serviceMatch) {
+    if (!service) {
         throw new Error(
             `Could not find service '${name}' in secrets.services in c.js.`
         );
     }
 
-    const [, indent] = serviceMatch;
-    const start = services.start + serviceMatch.index;
-    const end = text.indexOf(`\n${indent}}`, start);
-
-    if (end === -1) {
-        throw new Error(`Could not find the end of service '${name}' in c.js.`);
-    }
-
-    return { end, indent, start };
+    return service;
 };
 
 /**
- * Locate the secrets.shared block in c.js text (scoped to secrets, a
- * sibling of services - never a block elsewhere in c.js).
+ * Insert a rendered property (or multi-line block) into an object, right
+ * before its closing brace, matching the object's own layout: a closing
+ * brace on its own line gets the property on its own line at the
+ * properties' indentation (with the file's line ending), a one-line
+ * object stays one-line. A final property written without a trailing
+ * comma gets one so the sibling parses.
  * @param {Object} options
+ * @param {String} options.line The rendered property (may be multi-line).
+ * @param {Object} options.object The ObjectExpression node to insert into.
  * @param {String} options.text The c.js file contents.
- * @returns {Object} { end, indent, start } with start at the newline
- * beginning the block's line and end at the newline preceding its
- * closing brace.
+ * @returns {String} The edited text (not yet written).
  */
-const locateSharedBlock = ({ text }) => {
-    const secrets = locateSecretsBlock({ text });
-    const sharedMatch = text
-        .slice(secrets.start, secrets.end)
-        .match(/\n(\s*)shared:\s*\{/);
+const insertPropertyIntoObject = ({ line, object: obj, text }) => {
+    const closeIndex = obj.range[1] - 1;
+    const closingIndent = indentBefore({ index: closeIndex, text });
+    const braceOnOwnLine =
+        text.slice(obj.range[0], closeIndex).includes('\n') &&
+        /^\s*$/.test(closingIndent);
 
-    if (!sharedMatch) {
-        throw new Error(
-            'Could not find secrets.shared in c.js - add the block manually.'
-        );
+    if (!braceOnOwnLine) {
+        const separator = obj.properties.length > 0 ? ', ' : ' ';
+
+        return `${text.slice(0, closeIndex)}${separator}${line} ${text.slice(
+            closeIndex
+        )}`;
     }
 
-    const [, indent] = sharedMatch;
-    const start = secrets.start + sharedMatch.index;
-    const end = text.indexOf(`\n${indent}}`, start);
+    const lineEnding = lineEndingOf({ text });
+    const [firstProperty] = obj.properties;
+    const propertyIndent = firstProperty
+        ? indentBefore({ index: firstProperty.range[0], text })
+        : `${indentBefore({ index: obj.range[0], text })}    `;
 
-    if (end === -1) {
-        throw new Error(
-            'Could not find the end of secrets.shared in c.js - add the block manually.'
-        );
-    }
+    const lastProperty = obj.properties[obj.properties.length - 1];
+    const commaFix = text.slice(lastProperty.range[1], closeIndex).includes(',')
+        ? ''
+        : ',';
 
-    return { end, indent, start };
+    return (
+        text.slice(0, lastProperty.range[1]) +
+        commaFix +
+        text.slice(
+            lastProperty.range[1],
+            lineStartIndex({ index: closeIndex, text })
+        ) +
+        `${propertyIndent}${line}${lineEnding}${closingIndent}` +
+        text.slice(closeIndex)
+    );
 };
 
 /**
@@ -1148,7 +1205,16 @@ const verifyCjsEdit = ({ backup, expect }) => {
  */
 const registerServiceInCjs = ({ key, name, opItem }) => {
     const text = readCjs();
-    const secrets = locateSecretsBlock({ text });
+    const secrets = secretsObject({ text });
+    const services = findProperty({ name: 'services', object: secrets });
+
+    if (!services || services.value.type !== 'ObjectExpression') {
+        throw new Error(
+            'Could not find secrets.services in c.js - add the service manually.'
+        );
+    }
+
+    const servicesObjectNode = services.value;
 
     const verify = () =>
         verifyCjsEdit({
@@ -1164,78 +1230,60 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
             },
         });
 
-    // The minimal scaffold's single-line empty map: expand it with the
-    // first entry.
-    const emptyMatch = text
-        .slice(secrets.start, secrets.end)
-        .match(/\n(\s*)services:\s*\{\}/);
+    const lineEnding = lineEndingOf({ text });
+    const servicesIndent = indentBefore({ index: services.range[0], text });
+    const propertyIndent = `${servicesIndent}    `;
 
-    if (emptyMatch) {
-        const [, emptyIndent] = emptyMatch;
-        const emptyStart = secrets.start + emptyMatch.index;
+    const block = [
+        `${propertyIndent}${quoteIfNeeded({ name })}: {`,
+        `${propertyIndent}    keys: ['${key}'],`,
+        `${propertyIndent}    opItem: '${opItem}',`,
+        `${propertyIndent}},`,
+    ].join(lineEnding);
 
-        const expanded = [
-            `${emptyIndent}services: {`,
-            `${emptyIndent}    ${quoteIfNeeded({ name })}: {`,
-            `${emptyIndent}        keys: ['${key}'],`,
-            `${emptyIndent}        opItem: '${opItem}',`,
-            `${emptyIndent}    },`,
-            `${emptyIndent}}`,
-        ].join('\n');
+    // The minimal scaffold's single-line empty map: expand it.
+    if (servicesObjectNode.properties.length === 0) {
+        const expanded = [`{`, `${block}`, `${servicesIndent}}`].join(
+            lineEnding
+        );
 
         writeCjs({
             text:
-                text.slice(0, emptyStart) +
-                `\n${expanded}` +
-                text.slice(emptyStart + emptyMatch[0].length),
+                text.slice(0, servicesObjectNode.range[0]) +
+                expanded +
+                text.slice(servicesObjectNode.range[1]),
         });
 
         return verify();
     }
 
-    const services = locateServicesBlock({ text });
-
-    // Walk the top-level entries to find the alphabetical insertion
-    // point; the default (services.end + 1) appends at the start of the
-    // closing-brace line, so the join below lands on its own line either
-    // way.
-    let insertIndex = services.end + 1;
-    const entryRegex = new RegExp(
-        `^${services.indent}    ('?[^':\\n]+'?):`,
-        'gm'
+    // Insert before the first service sorting after the new one.
+    const target = servicesObjectNode.properties.find(
+        (property) =>
+            property.type === 'Property' &&
+            (property.key.name || property.key.value) > name
     );
-    entryRegex.lastIndex = services.start;
 
-    let match = entryRegex.exec(text);
+    if (target) {
+        const insertIndex = lineStartIndex({ index: target.range[0], text });
 
-    while (match && match.index < services.end) {
-        const entryName = match[1].replace(/^'|'$/g, '');
+        writeCjs({
+            text:
+                text.slice(0, insertIndex) +
+                `${block}${lineEnding}` +
+                text.slice(insertIndex),
+        });
 
-        if (entryName > name) {
-            insertIndex = match.index;
-            break;
-        }
-
-        match = entryRegex.exec(text);
+        return verify();
     }
 
-    const fullBlock = [
-        `${services.indent}    ${quoteIfNeeded({ name })}: {`,
-        `${services.indent}        keys: ['${key}'],`,
-        `${services.indent}        opItem: '${opItem}',`,
-        `${services.indent}    },`,
-    ].join('\n');
-
-    let prefix = text.slice(0, insertIndex);
-
-    // A previous entry written without a trailing comma needs one
-    // before an inserted sibling parses.
-    if (prefix.endsWith('}\n')) {
-        prefix = `${prefix.slice(0, -1)},\n`;
-    }
-
+    // Alphabetically last: append before the services closing brace.
     writeCjs({
-        text: `${prefix}${fullBlock}\n${text.slice(insertIndex)}`,
+        text: insertPropertyIntoObject({
+            line: block.trim(),
+            object: servicesObjectNode,
+            text,
+        }),
     });
 
     return verify();
@@ -1243,9 +1291,10 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
 
 /**
  * Add a key to an entry's keys array in c.js (a service, or the shared
- * block), preserving the array's existing layout (single-line or
- * multi-line). The entry's block is located inside the secrets block,
- * and the edit is re-parsed to verify it landed.
+ * block) with insertion-only edits: the new element is spliced in at its
+ * sorted position between existing elements, so the array's own layout,
+ * comments and trailing-comma style all survive. An entry without a keys
+ * array gets one. The edit is re-parsed to verify it landed.
  * @param {Object} options
  * @param {String} options.key The key to add.
  * @param {String} options.name The service name, or 'shared'.
@@ -1253,56 +1302,125 @@ const registerServiceInCjs = ({ key, name, opItem }) => {
  */
 const addKeyToEntryInCjs = ({ key, name }) => {
     const text = readCjs();
-    const block =
-        name === 'shared'
-            ? locateSharedBlock({ text })
-            : locateServiceBlock({ name, text });
+    const secrets = secretsObject({ text });
+    const entry = entryProperty({ name, secrets });
 
-    const blockText = text.slice(block.start, block.end);
-
-    const keysMatch = blockText.match(/keys:\s*\[([^\]]*)\]/);
-
-    if (!keysMatch) {
-        throw new Error(`Could not find a keys array for '${name}' in c.js.`);
+    if (entry.value.type !== 'ObjectExpression') {
+        throw new Error(
+            `Could not find a keys array for '${name}' in c.js - add '${key}' manually.`
+        );
     }
 
-    const entries = keysMatch[1]
-        .split(',')
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0)
-        .map((entry) => entry.replace(/^'|'$/g, ''));
+    const keysProperty = findProperty({ name: 'keys', object: entry.value });
 
-    if (entries.includes(key)) {
+    const verify = () =>
+        verifyCjsEdit({
+            backup: text,
+            expect: (config) => {
+                if (!expectEntry({ config, name }).keys.includes(key)) {
+                    throw new Error(
+                        `secrets entry '${name}' does not include '${key}' in keys after the edit`
+                    );
+                }
+            },
+        });
+
+    // No keys array yet: create one in the entry's own layout.
+    if (!keysProperty) {
+        writeCjs({
+            text: insertPropertyIntoObject({
+                line: `keys: ['${key}'],`,
+                object: entry.value,
+                text,
+            }),
+        });
+
+        return verify();
+    }
+
+    const array = keysProperty.value;
+
+    const editable =
+        array.type === 'ArrayExpression' &&
+        array.elements.every(
+            (element) =>
+                element &&
+                element.type === 'Literal' &&
+                typeof element.value === 'string'
+        );
+
+    if (!editable) {
+        throw new Error(
+            `Could not find a plain keys array for '${name}' in c.js - add '${key}' manually.`
+        );
+    }
+
+    if (array.elements.some((element) => element.value === key)) {
         return;
     }
 
-    entries.push(key);
-    entries.sort();
+    // An empty array renders its first element, keeping the bracket
+    // layout it was written with.
+    if (array.elements.length === 0) {
+        const propertyIndent = indentBefore({
+            index: keysProperty.range[0],
+            text,
+        });
+        const multiline = text
+            .slice(array.range[0], array.range[1])
+            .includes('\n');
 
-    const multiline = keysMatch[0].includes('\n');
+        const rendered = multiline
+            ? `[\n${propertyIndent}    '${key}',\n${propertyIndent}]`
+            : `['${key}']`;
 
-    const rendered = multiline
-        ? `keys: [\n${entries
-              .map((entry) => `${block.indent}    '${entry}',`)
-              .join('\n')}\n${block.indent}],`
-        : `keys: [${entries.map((entry) => `'${entry}'`).join(', ')}]`;
+        writeCjs({
+            text:
+                text.slice(0, array.range[0]) +
+                rendered +
+                text.slice(array.range[1]),
+        });
 
-    const newBlockText = blockText.replace(keysMatch[0], rendered);
+        return verify();
+    }
+
+    const lineEnding = lineEndingOf({ text });
+
+    // Insert before the first element sorting after the key, matching
+    // the existing element layout.
+    const target = array.elements.find((element) => element.value > key);
+
+    if (target) {
+        const targetIndent = indentBefore({ index: target.range[0], text });
+        const onOwnLine = /^\s*$/.test(targetIndent);
+        const separator = onOwnLine ? `${lineEnding}${targetIndent}` : ' ';
+
+        writeCjs({
+            text:
+                text.slice(0, target.range[0]) +
+                `'${key}',${separator}` +
+                text.slice(target.range[0]),
+        });
+
+        return verify();
+    }
+
+    // Alphabetically last: attach after the last element, which hands
+    // the new element the old last element's trailing separator.
+    const last = array.elements[array.elements.length - 1];
+    const gap = text.slice(last.range[1], array.range[1] - 1);
+    const separator = gap.includes('\n')
+        ? `${lineEnding}${indentBefore({ index: last.range[0], text })}`
+        : ' ';
 
     writeCjs({
-        text: text.slice(0, block.start) + newBlockText + text.slice(block.end),
+        text:
+            text.slice(0, last.range[1]) +
+            `,${separator}'${key}'` +
+            text.slice(last.range[1]),
     });
 
-    verifyCjsEdit({
-        backup: text,
-        expect: (config) => {
-            if (!expectEntry({ config, name }).keys.includes(key)) {
-                throw new Error(
-                    `secrets entry '${name}' does not include '${key}' in keys after the edit`
-                );
-            }
-        },
-    });
+    return verify();
 };
 
 /**
@@ -1317,21 +1435,25 @@ const addKeyToEntryInCjs = ({ key, name }) => {
  */
 const setOpItemInCjs = ({ name, opItem }) => {
     const text = readCjs();
-    const block =
-        name === 'shared'
-            ? locateSharedBlock({ text })
-            : locateServiceBlock({ name, text });
+    const secrets = secretsObject({ text });
+    const entry = entryProperty({ name, secrets });
 
-    const blockText = text.slice(block.start, block.end);
+    if (entry.value.type !== 'ObjectExpression') {
+        throw new Error(
+            `Could not find the entry '${name}' in c.js - set its opItem manually.`
+        );
+    }
 
-    if (/opItem:\s*'/.test(blockText)) {
+    if (findProperty({ name: 'opItem', object: entry.value })) {
         return;
     }
 
     writeCjs({
-        text: `${text.slice(0, block.end)}\n${
-            block.indent
-        }    opItem: '${opItem}',${text.slice(block.end)}`,
+        text: insertPropertyIntoObject({
+            line: `opItem: '${opItem}',`,
+            object: entry.value,
+            text,
+        }),
     });
 
     verifyCjsEdit({
