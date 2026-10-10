@@ -1,9 +1,6 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const { readFileSync, writeFileSync } = require('fs');
-
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
 const {
@@ -25,6 +22,8 @@ const {
     resolveOrCreateOwnerItem,
     setOpItemInCjs,
 } = require('./lib/c-secrets-io');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .arguments('<service> <env> <key>')

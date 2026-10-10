@@ -1,12 +1,12 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
 const { getSecretsContract } = require('./lib/c-secrets');
 const { assertGcloudAuth } = require('./lib/c-secrets-io');
 const { findConsumers } = require('./lib/c-secrets-verify');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .arguments('<secretId>')

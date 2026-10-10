@@ -348,6 +348,8 @@ Commands (values are only ever displayed as truncated hashes; `--plaintext` requ
 
 Commands that need 1Password, gcloud or kubectl fail fast with friendly re-authentication instructions when their credentials have expired.
 
+**A note on the 1Password session.** `c op session` stores the session token at `~/.local/state/idearium/op-session` (`0600`), and every `op` invocation the cli makes passes it via `--session` (as does `c op cmd`). That argument is visible in the local process list - the same exposure any `op --session` or `OP_SESSION_*` environment carries. It is machine-local and expires, and secret values themselves never appear in argv: they move via stdin pipes only.
+
 ### MongoDB configuration
 
 The Idearium cli supports a MongoDB configuration. The MongoDB configuration can be used to access local and remote databases.

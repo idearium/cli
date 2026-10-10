@@ -1,7 +1,5 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const { execFileSync } = require('child_process');
 const { chmodSync, mkdirSync, writeFileSync } = require('fs');
 const { dirname } = require('path');
@@ -9,6 +7,8 @@ const program = require('commander');
 
 const { reportError } = require('./lib/c');
 const { OP_SESSION_FILE } = require('./lib/c-secrets-io');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .description(

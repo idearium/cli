@@ -2,13 +2,13 @@
 
 const fs = require('fs');
 const { copy, ensureDir, mkdtemp, remove } = require('fs-extra');
-
-const { opSession } = require('./c-secrets-io');
 const { tmpdir } = require('os');
 const { join, resolve: resolvePath } = require('path');
 const Mustache = require('mustache');
 const { promisify } = require('util');
 const { execFile } = require('child_process');
+
+const { opSession } = require('./c-secrets-io');
 
 const { constants } = fs;
 

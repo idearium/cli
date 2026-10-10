@@ -1,7 +1,5 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
 const {
@@ -10,6 +8,8 @@ const {
     serviceKeys,
 } = require('./lib/c-secrets');
 const { assertGcloudAuth, gsmList } = require('./lib/c-secrets-io');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .arguments('<env>')

@@ -1,7 +1,5 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const program = require('commander');
 const { loadConfig, newline, reportError } = require('./lib/c');
 const {
@@ -19,6 +17,8 @@ const {
     resolveOwnerItem,
     sha12,
 } = require('./lib/c-secrets-io');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .arguments('<service> <env> <key>')

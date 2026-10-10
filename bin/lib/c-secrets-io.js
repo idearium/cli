@@ -1,15 +1,20 @@
 'use strict';
 
-const { execFileSync } = require('child_process');
+const { execFile, execFileSync } = require('child_process');
 const { createHash, randomBytes } = require('crypto');
 const espree = require('espree');
 const https = require('https');
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
 const { homedir } = require('os');
+const { promisify } = require('util');
 
 const VAULT = 'Team';
 const OP_SESSION_FILE = join(homedir(), '.local/state/idearium/op-session');
+
+// Ceiling for a single Google Secret Manager REST call: without it, a
+// stalled connection hangs the calling command indefinitely.
+const GSM_TIMEOUT_MS = 30000;
 
 // Environment variables whose presence indicates a non-interactive agent
 // context - plaintext output is hard-blocked while any is set.
@@ -82,15 +87,6 @@ const runOp = ({ args, input }) => {
  * @returns {String} The value.
  */
 const opRead = ({ ref }) => runOp({ args: ['read', '-n', ref] });
-
-/**
- * Hash a 1Password reference's value without exposing it.
- * @param {Object} options
- * @param {String} options.ref The op:// reference.
- * @returns {String} A truncated sha256.
- */
-const opReadSha = ({ ref }) =>
-    sha12({ value: Buffer.from(opRead({ ref }), 'utf8') });
 
 /**
  * List a 1Password item's fields (labels and sections only).
@@ -351,6 +347,58 @@ const runGcloud = ({ args }) => {
     }
 };
 
+const execFileAsync = promisify(execFile);
+
+/**
+ * Run gcloud asynchronously and resolve with its stdout, mapping
+ * authentication failures to the same friendly error as runGcloud.
+ * @param {Object} options
+ * @param {Array} options.args The gcloud arguments.
+ * @returns {Promise} Resolves with the command's stdout.
+ */
+const runGcloudAsync = ({ args }) =>
+    execFileAsync('gcloud', args, { encoding: 'utf8' }).then(
+        ({ stdout }) => stdout,
+        (e) => {
+            const friendly = gcloudAuthError({ stderr: String(e.stderr) });
+
+            throw friendly || e;
+        }
+    );
+
+/**
+ * Run promise-returning work over items with bounded concurrency,
+ * resolving with each item's result in input order.
+ * @param {Object} options
+ * @param {Array} options.items The items to process.
+ * @param {Number} options.limit The concurrency limit.
+ * @param {Function} options.run Called with an item; returns a Promise.
+ * @returns {Promise} Resolves with the array of results.
+ */
+const pool = ({ items, limit, run }) => {
+    const results = new Array(items.length);
+    let index = 0;
+
+    const worker = () => {
+        if (index >= items.length) {
+            return Promise.resolve();
+        }
+
+        const slot = index++;
+        const item = items[slot];
+
+        return Promise.resolve(run(item)).then((result) => {
+            results[slot] = result;
+
+            return worker();
+        });
+    };
+
+    return Promise.all(
+        Array.from({ length: Math.min(limit, items.length) }, worker)
+    ).then(() => results);
+};
+
 /**
  * Assert gcloud is authenticated (up front, before any work) for commands
  * that touch Google Cloud.
@@ -383,6 +431,7 @@ const gsmRequest = ({ body, method, path, project }) =>
                 host: 'secretmanager.googleapis.com',
                 method,
                 path: `/v1/projects/${project}${path}`,
+                timeout: GSM_TIMEOUT_MS,
             },
             (res) => {
                 let raw = '';
@@ -406,6 +455,18 @@ const gsmRequest = ({ body, method, path, project }) =>
                 });
             }
         );
+
+        // Without a destroy, the timeout event alone leaves the socket
+        // (and the command) hanging.
+        request.on('timeout', () => {
+            request.destroy(
+                new Error(
+                    `GSM ${method} ${path} timed out after ${
+                        GSM_TIMEOUT_MS / 1000
+                    }s - retry`
+                )
+            );
+        });
 
         request.on('error', reject);
 
@@ -548,8 +609,8 @@ const gsmList = ({ project }) => {
  * @param {String} options.repoPrefix The function-name prefix (org-repo-).
  * @returns {Promise} Resolves with [{ name, secrets: [secretId] }].
  */
-const gcfList = ({ project, region, repoPrefix }) => {
-    const names = runGcloud({
+const gcfList = ({ project, region, repoPrefix }) =>
+    runGcloudAsync({
         args: [
             'functions',
             'list',
@@ -558,34 +619,36 @@ const gcfList = ({ project, region, repoPrefix }) => {
             `--project=${project}`,
         ],
     })
-        .split('\n')
-        .map((name) => name.trim().split('/').pop())
-        .filter((name) => name.length > 0);
+        .then((raw) =>
+            raw
+                .split('\n')
+                .map((name) => name.trim().split('/').pop())
+                .filter((name) => name.length > 0)
+        )
+        .then((names) =>
+            pool({
+                items: names,
+                limit: 6,
+                run: (name) =>
+                    runGcloudAsync({
+                        args: [
+                            'functions',
+                            'describe',
+                            name,
+                            `--format=json`,
+                            `--project=${project}`,
+                            `--region=${region}`,
+                        ],
+                    }).then((raw) => {
+                        const secrets = (
+                            (JSON.parse(raw).serviceConfig || {})
+                                .secretEnvironmentVariables || []
+                        ).map((entry) => entry.secret);
 
-    return Promise.all(
-        names.map((name) => {
-            const shortName = name.split('/').pop();
-
-            const raw = runGcloud({
-                args: [
-                    'functions',
-                    'describe',
-                    shortName,
-                    `--format=json`,
-                    `--project=${project}`,
-                    `--region=${region}`,
-                ],
-            });
-
-            const secrets = (
-                (JSON.parse(raw).serviceConfig || {})
-                    .secretEnvironmentVariables || []
-            ).map((entry) => entry.secret);
-
-            return { name: shortName, secrets };
-        })
-    );
-};
+                        return { name, secrets };
+                    }),
+            })
+        );
 
 /**
  * Map kubectl failures to a friendly, actionable error.
@@ -675,46 +738,6 @@ const assertKubectl = ({ context }) => {
                 .slice(0, 120)})`
         );
     }
-};
-
-/**
- * Read one key of a Kubernetes secret.
- * @param {Object} options
- * @param {String} options.context The kubectl context.
- * @param {String} options.key The secret key.
- * @param {String} options.namespace The namespace.
- * @param {String} options.secret The Kubernetes secret name.
- * @returns {String} The base64-encoded value.
- */
-const k8sReadKey = ({ context, key, namespace, secret }) =>
-    runKubectl({
-        args: [
-            '-n',
-            namespace,
-            'get',
-            'secret',
-            secret,
-            '-o',
-            `jsonpath={.data.${key}}`,
-        ],
-        context,
-    }).trim();
-
-/**
- * List the keys of a Kubernetes secret.
- * @param {Object} options
- * @param {String} options.context The kubectl context.
- * @param {String} options.namespace The namespace.
- * @param {String} options.secret The Kubernetes secret name.
- * @returns {Array} The secret's keys.
- */
-const k8sSecretKeys = ({ context, namespace, secret }) => {
-    const raw = runKubectl({
-        args: ['-n', namespace, 'get', 'secret', secret, '-o', 'json'],
-        context,
-    });
-
-    return Object.keys(JSON.parse(raw).data || {});
 };
 
 /**
@@ -1553,9 +1576,7 @@ module.exports = {
     gsmList,
     gsmPushVerified,
     gsmRead,
-    k8sReadKey,
     k8sReadSecret,
-    k8sSecretKeys,
     opCreateItem,
     opFieldExists,
     opFindItemByTitle,
@@ -1564,8 +1585,8 @@ module.exports = {
     opListItems,
     opRead,
     opSession,
-    opReadSha,
     opUpsertField,
+    pool,
     quoteIfNeeded,
     registerServiceInCjs,
     resolveOrCreateOwnerItem,

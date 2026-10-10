@@ -12,6 +12,7 @@ const {
     k8sReadSecret,
     opItemValues,
     opListItems,
+    pool,
     sha12,
     spcList,
 } = require('./c-secrets-io');
@@ -185,25 +186,6 @@ const verifyEnv = ({ config, contract, env }) => {
     const gsmShas = {};
     const gsmValues = {};
 
-    // Run promise-returning work over items with bounded concurrency.
-    const pool = ({ items, limit, run }) => {
-        let index = 0;
-
-        const worker = () => {
-            if (index >= items.length) {
-                return Promise.resolve();
-            }
-
-            const item = items[index++];
-
-            return run(item).then(worker);
-        };
-
-        return Promise.all(
-            Array.from({ length: Math.min(limit, items.length) }, worker)
-        );
-    };
-
     return gsmList({ project: contract.project })
         .then((existing) => {
             const existingIds = new Set(existing);
@@ -323,7 +305,10 @@ const verifyEnv = ({ config, contract, env }) => {
 
                     if (!service) {
                         report({
-                            message: `k8s ${name}: secretsync location but no contract service`,
+                            message:
+                                name === 'shared'
+                                    ? "k8s shared: shared secrets are consumed through a service's sharedKeys - declare the secretsync on the consuming service instead"
+                                    : `k8s ${name}: secretsync location but no contract service`,
                             ok: false,
                         });
 

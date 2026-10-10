@@ -246,6 +246,15 @@ const generateSecretManifests = async ({
     });
 
     const entriesFor = ({ name }) => {
+        // 'shared' is reserved for the secrets.shared block, and shared
+        // secrets are consumed through a service's sharedKeys - there is
+        // no shared-shaped manifest to generate.
+        if (name === 'shared') {
+            throw new Error(
+                `The '${name}' location is shared-shaped, but shared secrets are consumed through a service's sharedKeys - declare the location on the consuming service instead.`
+            );
+        }
+
         const service = getService({ contract, name });
 
         return serviceKeys({ contract, env, service });

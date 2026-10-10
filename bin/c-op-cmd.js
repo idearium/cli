@@ -1,9 +1,8 @@
 'use strict';
 
-const { spawn } = require('child_process');
 const program = require('commander');
 
-const { reportError } = require('./lib/c');
+const { reportError, spawnWithExitCode } = require('./lib/c');
 const { assertOpSession, opSession } = require('./lib/c-secrets-io');
 
 program
@@ -19,10 +18,9 @@ try {
 
     // Array form (no shell) so values never round-trip through string
     // interpolation.
-    spawn('op', ['--session', opSession()].concat(program.rawArgs.slice(2)), {
-        stdio: 'inherit',
-    }).on('exit', (code) => {
-        process.exitCode = code;
+    spawnWithExitCode({
+        args: ['--session', opSession()].concat(program.rawArgs.slice(2)),
+        command: 'op',
     });
 } catch (e) {
     reportError(e, false, true);

@@ -3,7 +3,7 @@
 'use strict';
 
 const program = require('commander');
-const { missingCommand } = require('./lib/c');
+const { missingCommand, spawnWithExitCode } = require('./lib/c');
 
 // Commander's git-style dispatch re-parses subcommand args at every layer
 // before spawning (dropping -- and unknown options, breaking passthroughs
@@ -19,15 +19,11 @@ const VERBATIM_DISPATCH = {
 const verbatimChild = VERBATIM_DISPATCH[process.argv[2]];
 
 if (verbatimChild) {
-    const { spawn } = require('child_process');
     const { join } = require('path');
 
-    spawn(
-        'node',
-        [join(__dirname, verbatimChild)].concat(process.argv.slice(3)),
-        { stdio: 'inherit' }
-    ).on('exit', (code) => {
-        process.exitCode = code;
+    spawnWithExitCode({
+        args: [join(__dirname, verbatimChild)].concat(process.argv.slice(3)),
+        command: 'node',
     });
 
     return;

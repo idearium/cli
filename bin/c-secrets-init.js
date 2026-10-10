@@ -1,15 +1,14 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
-
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
 const { getSecretsContract } = require('./lib/c-secrets');
 const { assertGcloudAuth, assertOpSession } = require('./lib/c-secrets-io');
 const { draftContract } = require('./lib/c-secrets-init');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .description(

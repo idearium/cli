@@ -1,7 +1,5 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
 const { assertKnownEnv, getSecretsContract } = require('./lib/c-secrets');
@@ -11,6 +9,8 @@ const {
     assertOpSession,
 } = require('./lib/c-secrets-io');
 const { kubernetesEnv, verifyEnv } = require('./lib/c-secrets-verify');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .arguments('<env>')

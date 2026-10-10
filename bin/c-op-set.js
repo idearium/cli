@@ -1,7 +1,6 @@
 'use strict';
 
-const print = (line) => process.stdout.write(`${line}\n`);
-
+const { readFileSync } = require('fs');
 const program = require('commander');
 const { loadConfig, reportError } = require('./lib/c');
 const {
@@ -19,6 +18,8 @@ const {
     setOpItemInCjs,
     sha12,
 } = require('./lib/c-secrets-io');
+
+const print = (line) => process.stdout.write(`${line}\n`);
 
 program
     .arguments('<service> <env> <key>')
@@ -50,9 +51,7 @@ const readStdin = () => {
         );
     }
 
-    return require('fs')
-        .readFileSync(0, 'utf8')
-        .replace(/\r?\n$/, '');
+    return readFileSync(0, 'utf8').replace(/\r?\n$/, '');
 };
 
 return loadConfig()
