@@ -1,2 +1,4 @@
 .editorconfig
 .eslintrc
+test
+vitest.config.mjs
