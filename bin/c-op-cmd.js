@@ -16,11 +16,21 @@ try {
     // Fail fast with a friendly error before handing over to op.
     assertOpSession();
 
-    // Array form (no shell) so values never round-trip through string
-    // interpolation.
-    spawnWithExitCode({
-        args: ['--session', opSession()].concat(program.rawArgs.slice(2)),
-        command: 'op',
+    const opArgs = ['--session', opSession()].concat(program.rawArgs.slice(2));
+
+    // Programmatic callers pipe stdin from Node, whose pipe stdio is an
+    // AF_UNIX socket - op only detects input on real pipe(2) FIFOs. When
+    // stdin is not a terminal, bridge it through a shell pipe: cat reads
+    // the socket fine and writes into a genuine pipe op accepts. The
+    // command lives in the shell string and arguments pass verbatim
+    // through "$@", so no caller input is interpolated.
+    if (process.stdin.isTTY) {
+        return spawnWithExitCode({ args: opArgs, command: 'op' });
+    }
+
+    return spawnWithExitCode({
+        args: ['-c', 'cat | op "$@"', 'sh'].concat(opArgs),
+        command: 'sh',
     });
 } catch (e) {
     reportError(e, false, true);

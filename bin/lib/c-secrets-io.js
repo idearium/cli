@@ -51,14 +51,32 @@ const opSession = () => {
 /**
  * Run the op cli with the session wired in. Input/values pass via stdin or
  * in-memory buffers, never via printed output.
+ *
+ * Stdin-bearing calls route through a shell pipe: Node's pipe stdio hands
+ * children AF_UNIX sockets, not pipe(2) FIFOs, and op only detects piped
+ * input on real FIFOs - piped straight in, op reports `expected data on
+ * stdin but none found` or reads nothing. cat reads the socket fine and
+ * writes into a genuine pipe op accepts. The command lives in the shell
+ * string and arguments pass verbatim through "$@", so no value is ever
+ * interpolated into a command line.
  * @param {Object} options
  * @param {Array} options.args The op arguments.
  * @param {String} [options.input] Stdin to pipe into op.
  * @returns {String} The command's stdout.
  */
 const runOp = ({ args, input }) => {
+    const opArgs = ['--session', opSession()].concat(args);
+
+    const invocation =
+        typeof input === 'string'
+            ? {
+                  args: ['-c', 'cat | op "$@"', 'sh'].concat(opArgs),
+                  command: 'sh',
+              }
+            : { args: opArgs, command: 'op' };
+
     try {
-        return execFileSync('op', ['--session', opSession()].concat(args), {
+        return execFileSync(invocation.command, invocation.args, {
             encoding: 'utf8',
             input,
             stdio: ['pipe', 'pipe', 'pipe'],
