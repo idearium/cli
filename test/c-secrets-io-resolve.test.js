@@ -36,6 +36,14 @@ case "$*" in
     *"item create"*)
         echo '{"id":"created-item-id"}'
         ;;
+    *"boom"*)
+        echo 'boom said no' >&2
+        exit 1
+        ;;
+    *"expired"*)
+        echo 'not currently signed in' >&2
+        exit 1
+        ;;
     *)
         echo "fake op: unsupported invocation: $*" >&2
         exit 1
@@ -205,4 +213,42 @@ it('creates an item for a brand-new service (null owner)', () => {
     ).toStrictEqual({ created: true, id: 'created-item-id', persisted: true });
 
     expect(createdItems()).toBe(true);
+});
+
+it('sanitizes op failures so the session token never leaks', () => {
+    let message = 'did not throw';
+
+    try {
+        io.runOp({ args: ['boom'] });
+    } catch ({ message: thrown }) {
+        message = thrown;
+    }
+
+    expect(message).toContain('boom');
+    expect(message).toContain('boom said no');
+    expect(message).toContain('exit 1');
+    expect(message).not.toContain('faketoken');
+    expect(message).not.toContain('--session');
+});
+
+it('scrubs the session token from op stderr before failing', () => {
+    // The fake's catch-all echoes its full invocation (token included)
+    // to stderr - the built error must scrub it.
+    let message = 'did not throw';
+
+    try {
+        io.runOp({ args: ['definitely-not-a-command'] });
+    } catch ({ message: thrown }) {
+        message = thrown;
+    }
+
+    expect(message).not.toContain('faketoken');
+    expect(message).toContain('***');
+});
+
+it('maps session-expiry failures to the friendly message', () => {
+    expectThrowsWith(
+        () => io.runOp({ args: ['expired'] }),
+        'session has expired'
+    );
 });

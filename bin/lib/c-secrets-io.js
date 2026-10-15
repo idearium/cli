@@ -65,7 +65,8 @@ const opSession = () => {
  * @returns {String} The command's stdout.
  */
 const runOp = ({ args, input }) => {
-    const opArgs = ['--session', opSession()].concat(args);
+    const session = opSession();
+    const opArgs = ['--session', session].concat(args);
 
     const invocation =
         typeof input === 'string'
@@ -93,7 +94,20 @@ const runOp = ({ args, input }) => {
             );
         }
 
-        throw e;
+        // Never rethrow the raw error: its message embeds the full
+        // command line, session token included. Build the message from
+        // safe parts only - the op arguments (references, not values),
+        // the exit status, and op's own stderr (scrubbed of the token,
+        // in case op ever echoes its command line back).
+        const detail = stderr.trim().split(session).join('***');
+        const safeDetail =
+            detail ||
+            (e.code === 'ENOENT'
+                ? 'the op cli is not installed'
+                : e.signal || 'unknown error');
+        const status = Number.isInteger(e.status) ? ` (exit ${e.status})` : '';
+
+        throw new Error(`op ${args.join(' ')} failed${status}: ${safeDetail}`);
     }
 };
 
