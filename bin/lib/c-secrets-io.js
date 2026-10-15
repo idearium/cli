@@ -1157,9 +1157,24 @@ const insertPropertyIntoObject = ({ line, object: obj, text }) => {
 
     const lineEnding = lineEndingOf({ text });
     const [firstProperty] = obj.properties;
+    // An object's own line ends in 'name: {' - its indent is the line's
+    // leading whitespace, not the text before the brace.
+    const [objectIndent] = /^\s*/.exec(
+        text.slice(lineStartIndex({ index: obj.range[0], text }))
+    );
     const propertyIndent = firstProperty
         ? indentBefore({ index: firstProperty.range[0], text })
-        : `${indentBefore({ index: obj.range[0], text })}    `;
+        : `${objectIndent}    `;
+
+    // An empty object (even written across lines) takes its first
+    // property between the braces.
+    if (obj.properties.length === 0) {
+        return (
+            text.slice(0, obj.range[0] + 1) +
+            `${lineEnding}${propertyIndent}${line}${lineEnding}${closingIndent}` +
+            text.slice(closeIndex)
+        );
+    }
 
     const lastProperty = obj.properties[obj.properties.length - 1];
     const commaFix = text.slice(lastProperty.range[1], closeIndex).includes(',')

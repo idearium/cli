@@ -362,6 +362,50 @@ withFixture(
 );
 
 withFixture(
+    'addKeyToEntryInCjs handles a multi-line empty service block',
+    `${preamble()}        services: {
+            site: {
+            },
+        },
+        shared: {
+            keys: ['IMGIX_TOKEN'],
+        },
+${closing()}`,
+    () => {
+        io.addKeyToEntryInCjs({ key: 'RAS_API_KEY', name: 'site' });
+
+        expect(loadCjs().secrets.services.site.keys).toStrictEqual([
+            'RAS_API_KEY',
+        ]);
+        expect(readCjs()).toContain(`            site: {
+                keys: ['RAS_API_KEY'],
+            },`);
+        expect(isPrettierClean(readCjs())).toBe(true);
+    }
+);
+
+withFixture(
+    'setOpItemInCjs handles a multi-line empty service block',
+    `${preamble()}        services: {
+            site: {
+            },
+        },
+        shared: {
+            keys: ['IMGIX_TOKEN'],
+        },
+${closing()}`,
+    () => {
+        io.setOpItemInCjs({ name: 'site', opItem: 'bbbb' });
+
+        expect(loadCjs().secrets.services.site.opItem).toBe('bbbb');
+        expect(readCjs()).toContain(`            site: {
+                opItem: 'bbbb',
+            },`);
+        expect(isPrettierClean(readCjs())).toBe(true);
+    }
+);
+
+withFixture(
     'setOpItemInCjs binds an absent opItem',
     `${preamble()}        services: {
             site: {
