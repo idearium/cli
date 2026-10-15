@@ -208,7 +208,11 @@ const minimalNotes = ({ itemPrefix, opScan }) => {
 
     if (!opScan.names) {
         notes.push(`1Password scan skipped (${opScan.error}).`);
-    } else if (Object.keys(opScan.names).length === 0) {
+
+        return notes;
+    }
+
+    if (Object.keys(opScan.names).length === 0) {
         notes.push(`1Password scan found no '${itemPrefix}' items.`);
     }
 
@@ -520,6 +524,12 @@ const draftContract = async ({ config }) => {
     const lines = [];
     lines.push('    secrets: {');
 
+    if (!devItemFromArgs) {
+        notes.push(
+            'No dev consumers found in docker build args - add secrets.dev.consumers if build args need secrets.'
+        );
+    }
+
     if (devItemFromArgs) {
         lines.push('        dev: {');
         lines.push(`            opItem: ${quote(devItemFromArgs)},`);
@@ -539,10 +549,6 @@ const draftContract = async ({ config }) => {
             });
         lines.push('            },');
         lines.push('        },');
-    } else {
-        notes.push(
-            'No dev consumers found in docker build args - add secrets.dev.consumers if build args need secrets.'
-        );
     }
 
     // Value-verified legacy dedupe: a service-owned key that is also a
@@ -793,17 +799,20 @@ const draftContract = async ({ config }) => {
             lines.push(`${indent}    opItem: ${quote(opItem)},`);
         }
 
-        if (keys.length === 0) {
-            lines.push(`${indent}    keys: [],`);
-        } else {
-            lines.push(`${indent}    keys: [`);
+        // Keys render as a single empty array or one-per-line, matching
+        // the init style.
+        const keysLines =
+            keys.length === 0
+                ? [`${indent}    keys: [],`]
+                : [`${indent}    keys: [`]
+                      .concat(
+                          keys
+                              .sort()
+                              .map((key) => `${indent}        ${quote(key)},`)
+                      )
+                      .concat([`${indent}    ],`]);
 
-            keys.sort().forEach((key) => {
-                lines.push(`${indent}        ${quote(key)},`);
-            });
-
-            lines.push(`${indent}    ],`);
-        }
+        lines.push(...keysLines);
 
         if (sharedKeys.length > 0) {
             lines.push(
@@ -850,17 +859,15 @@ const draftContract = async ({ config }) => {
         const keyList = shared.keys.join(', ');
         const firstExample = shared.examples[shared.keys[0]];
 
-        if (shared.opItem) {
-            notes.push(
-                `Drafted 'shared' for keys whose GSM ids carry no service name: ${keyList} (ids like ${firstExample}). shared.opItem is set to the '${boundTo}' 1Password item, which already holds the value (matched by comparing value hashes across ${boundEnvs.join(
-                    ', '
-                )}) - nothing needs to move in 1Password. Every service that uses ${keyList} lists it under sharedKeys - not keys.`
-            );
-        } else {
-            notes.push(
-                `Drafted 'shared' for keys whose GSM ids carry no service name: ${keyList} (ids like ${firstExample}). Set shared.opItem to the 1Password item that holds the value - it is never created automatically. Every service that uses ${keyList} lists it under sharedKeys - not keys.`
-            );
-        }
+        const opItemNote = shared.opItem
+            ? `shared.opItem is set to the '${boundTo}' 1Password item, which already holds the value (matched by comparing value hashes across ${boundEnvs.join(
+                  ', '
+              )}) - nothing needs to move in 1Password.`
+            : 'Set shared.opItem to the 1Password item that holds the value - it is never created automatically.';
+
+        notes.push(
+            `Drafted 'shared' for keys whose GSM ids carry no service name: ${keyList} (ids like ${firstExample}). ${opItemNote} Every service that uses ${keyList} lists it under sharedKeys - not keys.`
+        );
 
         deduped.forEach(({ example, key, service }) => {
             notes.push(
@@ -960,7 +967,9 @@ const draftContract = async ({ config }) => {
         notes.push(
             `1Password scan skipped (${opScan.error}) - services without a file-derived opItem are left unbound; they resolve (or create) their 1Password item automatically on first use via \`c op set\` / \`c secrets add\`.`
         );
-    } else if (Object.keys(opScan.names).length === 0) {
+    }
+
+    if (opScan.names && Object.keys(opScan.names).length === 0) {
         notes.push(
             `1Password scan found no '${itemPrefix}' items - services without a file-derived opItem are left unbound; they resolve (or create) their 1Password item automatically on first use via \`c op set\` / \`c secrets add\`.`
         );

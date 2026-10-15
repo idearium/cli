@@ -40,6 +40,12 @@ return loadConfig()
             // regional resourceNames or the kubectl context).
             const gcloud = config.gcloud || {};
 
+            if (!gcloud.region && !draft.region) {
+                throw new Error(
+                    'Could not derive a region for this project (no regional resourceNames, no gke_ kubectl context) - add gcloud.region to c.js, then re-run.'
+                );
+            }
+
             if (!gcloud.region && draft.region) {
                 const gcloudMatch = text.match(/\n(\s*)gcloud:\s*\{/);
 
@@ -48,7 +54,9 @@ return loadConfig()
                         gcloudMatch[0],
                         `${gcloudMatch[0]}\n${gcloudMatch[1]}    region: '${draft.region}',`
                     );
-                } else {
+                }
+
+                if (!gcloudMatch) {
                     // No gcloud block at all: add one alongside the secrets
                     // block (projectId from the project configuration).
                     draft.blockText = [
@@ -59,10 +67,6 @@ return loadConfig()
                         draft.blockText,
                     ].join('\n');
                 }
-            } else if (!gcloud.region && !draft.region) {
-                throw new Error(
-                    'Could not derive a region for this project (no regional resourceNames, no gke_ kubectl context) - add gcloud.region to c.js, then re-run.'
-                );
             }
 
             // Insert the secrets block before the module's closing brace.

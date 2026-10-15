@@ -81,7 +81,9 @@ return loadConfig()
                         binding.id
                     })`
                 );
-            } else if (binding.persisted) {
+            }
+
+            if (!binding.created && binding.persisted) {
                 print(
                     `bound existing 1Password item ${title(serviceName)} (${
                         binding.id
