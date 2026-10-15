@@ -72,12 +72,23 @@ const assertKeyArray = ({ allowDotted, message, value }) => {
             throw new Error(`${message}: entries must be non-empty strings`);
         }
 
-        if (entry.includes('/') || entry.includes(' ')) {
-            throw new Error(`${message}: entries must not contain '/' or ' '`);
-        }
+        // Keys become GSM secret ids (via kebabCase) that may only hold
+        // letters, numbers, underscores and hyphens - anything else would
+        // corrupt the derived id and its REST path. Dots exist only in
+        // the dotted 'owner.KEY' sharedKeys form (owners are kebab-case
+        // service names).
+        const valid = allowDotted
+            ? /^[A-Za-z0-9_.-]+$/.test(entry)
+            : /^[A-Za-z0-9_-]+$/.test(entry);
 
-        if (entry.includes('.') && !allowDotted) {
-            throw new Error(`${message}: dotted entries are not valid here`);
+        if (!valid) {
+            const hint = entry.includes('.')
+                ? " - dots are only valid in the dotted 'owner.KEY' sharedKeys form"
+                : '';
+
+            throw new Error(
+                `${message}: entries must contain only letters, numbers, underscores and hyphens${hint}`
+            );
         }
     });
 
