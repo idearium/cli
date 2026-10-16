@@ -90,6 +90,19 @@ const assertKeyArray = ({ allowDotted, message, value }) => {
                 `${message}: entries must contain only letters, numbers, underscores and hyphens${hint}`
             );
         }
+
+        // The dotted form is exactly 'owner.KEY': a second dot would
+        // silently truncate on split (the tail is discarded), turning a
+        // typo like 'services.site.KEY' into something it never said.
+        if (
+            allowDotted &&
+            entry.includes('.') &&
+            entry.split('.').length !== 2
+        ) {
+            throw new Error(
+                `${message}: dotted entries must be the 'owner.KEY' form (exactly one dot)`
+            );
+        }
     });
 
     if (new Set(value).size !== value.length) {

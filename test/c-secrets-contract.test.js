@@ -89,6 +89,30 @@ it('rejects dots outside the dotted sharedKeys form', () => {
     ).toContain('dots are only valid');
 });
 
+it('rejects dotted sharedKeys with more than one dot', () => {
+    // A second dot would silently truncate on split - 'a.b.c' would mean
+    // owner 'a', key 'b'.
+    expect(
+        messageOf(() =>
+            contractWith({
+                services: { site: { keys: [], sharedKeys: ['a.b.c'] } },
+            })
+        )
+    ).toContain('exactly one dot');
+
+    // The likely real-world typo: mixing up the sharedKeys form with the
+    // opItem reference form.
+    expect(
+        messageOf(() =>
+            contractWith({
+                services: {
+                    site: { keys: [], sharedKeys: ['services.site.KEY'] },
+                },
+            })
+        )
+    ).toContain('exactly one dot');
+});
+
 it('accepts the dotted sharedKeys form for valid keys', () => {
     const contract = contractWith({
         services: {
