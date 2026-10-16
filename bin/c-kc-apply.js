@@ -1,4 +1,3 @@
-#!/usr/bin/env -S node
 'use strict';
 
 const program = require('commander');
@@ -18,6 +17,7 @@ const {
     renderServicesTemplates,
     setLocalsForServices,
 } = require('./lib/c-kc');
+const { generateSecretManifests } = require('./lib/c-secrets-manifests');
 
 program
     .arguments('<location>')
@@ -101,32 +101,31 @@ return Promise.all([loadConfig(), loadState()])
                     return reject(e);
                 }
 
-                return resolve([services, path, state]);
+                return resolve([services, path, state, config, namespace]);
             })
     )
-    .then(
-        ([services, path, state]) =>
-            new Promise(async (resolve, reject) => {
-                try {
-                    await ensureServiceFilesExist(path, services);
-                } catch (e) {
-                    reject(e);
-                }
-
-                return resolve([services, path, state]);
-            })
+    .then(([services, path, state, config, namespace]) =>
+        generateSecretManifests({
+            config,
+            env: state.env,
+            namespace,
+            path,
+            services,
+        }).then(() => [services, path, state])
     )
-    .then(
-        ([services, path, state]) =>
-            new Promise(async (resolve, reject) => {
-                try {
-                    await renderServicesTemplates(path, services);
-                } catch (e) {
-                    reject(e);
-                }
-
-                return resolve([services, path, state]);
-            })
+    .then(([services, path, state]) =>
+        ensureServiceFilesExist(path, services).then(() => [
+            services,
+            path,
+            state,
+        ])
+    )
+    .then(([services, path, state]) =>
+        renderServicesTemplates(path, services).then(() => [
+            services,
+            path,
+            state,
+        ])
     )
     .then(
         ([services, path, state]) =>

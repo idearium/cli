@@ -1,2 +1,5 @@
 .editorconfig
 .eslintrc
+.github
+test
+vitest.config.mjs
