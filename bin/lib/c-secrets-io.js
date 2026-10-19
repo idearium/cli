@@ -450,6 +450,42 @@ const assertGcloudAuth = () => {
  * @param {String} options.project The GCP project id.
  * @returns {Promise} Resolves with the parsed JSON response.
  */
+/**
+ * Parse a Google Secret Manager response body: friendly errors for the
+ * failure and unparseable-success cases, the parsed JSON otherwise.
+ * gsmRequest's response handler runs this inside a try/catch so a throw
+ * rejects the request promise instead of crashing the process inside an
+ * event handler.
+ * @param {Object} options
+ * @param {String} options.method The HTTP method (for error messages).
+ * @param {String} options.path The request path (for error messages).
+ * @param {String} options.raw The response body.
+ * @param {Number} options.statusCode The response status code.
+ * @returns {Object} The parsed JSON response ({} for an empty body).
+ */
+const parseGsmResponse = ({ method, path, raw, statusCode }) => {
+    if (statusCode >= 300) {
+        throw new Error(
+            `GSM ${method} ${path} failed (${statusCode}): ${raw.slice(0, 200)}`
+        );
+    }
+
+    if (!raw) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        throw new Error(
+            `GSM ${method} ${path} returned an unparseable response: ${raw.slice(
+                0,
+                200
+            )}`
+        );
+    }
+};
+
 const gsmRequest = ({ body, method, path, project }) =>
     new Promise((resolve, reject) => {
         const token = runGcloud({ args: ['auth', 'print-access-token'] });
@@ -476,17 +512,18 @@ const gsmRequest = ({ body, method, path, project }) =>
                 });
 
                 res.on('end', () => {
-                    if (res.statusCode >= 300) {
-                        return reject(
-                            new Error(
-                                `GSM ${method} ${path} failed (${
-                                    res.statusCode
-                                }): ${raw.slice(0, 200)}`
-                            )
+                    try {
+                        return resolve(
+                            parseGsmResponse({
+                                method,
+                                path,
+                                raw,
+                                statusCode: res.statusCode,
+                            })
                         );
+                    } catch (failure) {
+                        return reject(failure);
                     }
-
-                    return resolve(raw ? JSON.parse(raw) : {});
                 });
             }
         );
@@ -1644,6 +1681,7 @@ module.exports = {
     opRead,
     opSession,
     opUpsertField,
+    parseGsmResponse,
     pool,
     quoteIfNeeded,
     registerServiceInCjs,
