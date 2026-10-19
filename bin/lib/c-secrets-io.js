@@ -462,7 +462,10 @@ const gsmRequest = ({ body, method, path, project }) =>
                 },
                 host: 'secretmanager.googleapis.com',
                 method,
-                path: `/v1/projects/${project}${path}`,
+                // Every dynamic segment is encoded at its call site: key
+                // characters are validated at contract load, but org,
+                // repo, env and service names are user-authored.
+                path: `/v1/projects/${encodeURIComponent(project)}${path}`,
                 timeout: GSM_TIMEOUT_MS,
             },
             (res) => {
@@ -517,15 +520,17 @@ const gsmRequest = ({ body, method, path, project }) =>
  * @returns {Promise} Resolves with the secret resource, or null.
  */
 const gsmDescribe = ({ id, project }) =>
-    gsmRequest({ method: 'GET', path: `/secrets/${id}`, project }).catch(
-        (e) => {
-            if (e.message.includes('(404)')) {
-                return null;
-            }
-
-            throw e;
+    gsmRequest({
+        method: 'GET',
+        path: `/secrets/${encodeURIComponent(id)}`,
+        project,
+    }).catch((e) => {
+        if (e.message.includes('(404)')) {
+            return null;
         }
-    );
+
+        throw e;
+    });
 
 /**
  * Create a pinned-global GSM secret with the standard labels.
@@ -553,7 +558,7 @@ const gsmCreate = ({ env, id, managedBy, project, region, service }) =>
             },
         },
         method: 'POST',
-        path: `/secrets?secretId=${id}`,
+        path: `/secrets?secretId=${encodeURIComponent(id)}`,
         project,
     });
 
@@ -571,7 +576,7 @@ const gsmAddVersion = ({ id, project, value }) =>
             payload: { data: Buffer.from(value, 'utf8').toString('base64') },
         },
         method: 'POST',
-        path: `/secrets/${id}:addVersion`,
+        path: `/secrets/${encodeURIComponent(id)}:addVersion`,
         project,
     });
 
@@ -586,7 +591,7 @@ const gsmAddVersion = ({ id, project, value }) =>
 const gsmRead = ({ id, project }) =>
     gsmRequest({
         method: 'GET',
-        path: `/secrets/${id}/versions/latest:access`,
+        path: `/secrets/${encodeURIComponent(id)}/versions/latest:access`,
         project,
     }).then((res) => Buffer.from(res.payload.data, 'base64'));
 
@@ -599,7 +604,11 @@ const gsmRead = ({ id, project }) =>
  * @returns {Promise}
  */
 const gsmDelete = ({ id, project }) =>
-    gsmRequest({ method: 'DELETE', path: `/secrets/${id}`, project });
+    gsmRequest({
+        method: 'DELETE',
+        path: `/secrets/${encodeURIComponent(id)}`,
+        project,
+    });
 
 /**
  * List every GSM secret id in the project.
@@ -613,7 +622,9 @@ const gsmList = ({ project }) => {
     const page = (pageToken) =>
         gsmRequest({
             method: 'GET',
-            path: `/secrets${pageToken ? `?pageToken=${pageToken}` : ''}`,
+            path: `/secrets${
+                pageToken ? `?pageToken=${encodeURIComponent(pageToken)}` : ''
+            }`,
             project,
         }).then((res) => {
             (res.secrets || []).forEach((secret) => {
