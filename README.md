@@ -342,9 +342,9 @@ Commands (values are only ever displayed as truncated hashes; `--plaintext` requ
 -   `c secrets push <service> <env> <KEY>` - push the 1Password value to GSM, verified by hash readback.
 -   `c secrets get <service> <env> <KEY>` / `c op get` - value summaries (hash, reference, length).
 -   `c op set <service> <env> <KEY>` - upsert a value from stdin (or `--generate`).
--   `c secrets verify <env>` - reconcile structure + 1Password/GSM/Kubernetes hashes, stale 1Password fields (`op:EXTRA`) and deployed-functions drift (`STALE`).
+-   `c secrets verify <env>` - reconcile structure + 1Password/GSM/Kubernetes hashes, stale 1Password fields (`op:EXTRA`), deployed-functions drift (`STALE`, `MISSING`) and cross-env misbindings (`MISBOUND`).
 -   `c secrets ls <env>` - the environment's contract-derived GSM inventory.
--   `c secrets consumers <secretId>` - everything referencing a GSM secret id. Gate every deletion on this.
+-   `c secrets consumers <secretId>` - everything referencing a GSM secret id, with each consuming function's name-parsed env. Gate every deletion on this.
 
 Commands that need 1Password, gcloud or kubectl fail fast with friendly re-authentication instructions when their credentials have expired.
 

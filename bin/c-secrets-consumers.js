@@ -68,8 +68,12 @@ return loadConfig()
         if (functions.length === 0) {
             print('  (none)');
         }
-        functions.forEach(({ name }) => {
-            print(`  ${name}`);
+        functions.forEach(({ env: nameEnv, name }) => {
+            print(
+                `  ${name}${
+                    nameEnv ? ` (name env ${nameEnv})` : ' (no env in name)'
+                }`
+            );
         });
 
         print(

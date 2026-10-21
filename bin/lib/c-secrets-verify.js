@@ -71,12 +71,127 @@ const syncServiceNames = ({ config, env }) => {
 };
 
 /**
+ * The environment encoded in a repo resource name following the naming
+ * convention ({org}-{repo}-{env}-{name}), or null when the name carries
+ * no known env.
+ * @param {Object} options
+ * @param {Array} options.envs The known environment names.
+ * @param {String} options.name The resource name.
+ * @param {String} options.prefix The project prefix ({org}-{repo}-).
+ * @returns {String|null} The parsed environment.
+ */
+const parseNameEnv = ({ envs, name, prefix }) =>
+    envs.find((candidate) => name.startsWith(`${prefix}${candidate}-`)) || null;
+
+/**
+ * Findings for one deployed function's repo-prefixed secret references,
+ * against the contract-derived ids per env and the ids that exist in
+ * GSM. Pure - verifyEnv only prints these.
+ *
+ * One finding per repo-prefixed reference, plus at most one advisory per
+ * function. MISBOUND outranks everything else: an id whose env disagrees
+ * with the function's name env is cross-env contamination regardless of
+ * whether the id exists. A function whose name parses to no known env
+ * (repos without the naming convention) keeps id-only validation behind
+ * an advisory.
+ * @param {Object} options
+ * @param {Object} options.derivedByEnv Contract-derived ids per env (Set).
+ * @param {Array} options.envs The known environment names.
+ * @param {Object} options.existingIds GSM ids that exist (Set).
+ * @param {Object} options.fn The deployed function ({ name, secrets }).
+ * @param {String} options.repoPrefix The project prefix ({org}-{repo}-).
+ * @returns {Array} Findings: { advisory, message, ok }.
+ */
+const functionReferenceFindings = ({
+    derivedByEnv,
+    envs,
+    existingIds,
+    fn,
+    repoPrefix,
+}) => {
+    const nameEnv = parseNameEnv({
+        envs,
+        name: fn.name,
+        prefix: repoPrefix,
+    });
+
+    const findings = [];
+
+    if (!nameEnv) {
+        findings.push({
+            advisory: true,
+            message: `function ${fn.name}: no environment parsed from the name - validating references by secret id only`,
+            ok: true,
+        });
+    }
+
+    fn.secrets.forEach((id) => {
+        if (!id.startsWith(repoPrefix)) {
+            return;
+        }
+
+        const refEnv = parseNameEnv({
+            envs,
+            name: id,
+            prefix: repoPrefix,
+        });
+
+        if (nameEnv && refEnv && refEnv !== nameEnv) {
+            findings.push({
+                advisory: false,
+                message: `MISBOUND function ${fn.name} -> ${id} (name env ${nameEnv}, id env ${refEnv})`,
+                ok: false,
+            });
+
+            return;
+        }
+
+        const inContract = refEnv && derivedByEnv[refEnv].has(id);
+
+        if (inContract && existingIds.has(id)) {
+            findings.push({
+                advisory: false,
+                message: `function ${fn.name} -> ${id}`,
+                ok: true,
+            });
+
+            return;
+        }
+
+        if (inContract) {
+            findings.push({
+                advisory: false,
+                message: `MISSING  function ${fn.name} -> ${id} (contract id, but the GSM secret does not exist)`,
+                ok: false,
+            });
+
+            return;
+        }
+
+        findings.push({
+            advisory: false,
+            message: `STALE   function ${fn.name} -> ${id}${
+                refEnv ? '' : ' (unknown env)'
+            } (not in contract${
+                existingIds.has(id)
+                    ? ''
+                    : ', and the GSM secret no longer exists'
+            })`,
+            ok: false,
+        });
+    });
+
+    return findings;
+};
+
+/**
  * Verify one environment: contract-derived GSM secrets exist, their values
  * hash-match 1Password, Kubernetes Secrets (for synced services) match
  * structure and hashes, and deployed Cloud Functions reference only
- * contract-derived secret ids that exist in GSM. Values are compared by
- * hash only. Data is prefetched in bulk, then every check reports as it
- * runs.
+ * contract-derived secret ids that exist in GSM and belong to the
+ * function's own environment (where its name encodes one). Values are
+ * compared by hash only. Data is prefetched in bulk, then every check
+ * reports as it runs.
  * @param {Object} options
  * @param {Object} options.config The full c.js configuration.
  * @param {Object} options.contract The normalised contract.
@@ -475,62 +590,45 @@ const verifyEnv = ({ config, contract, env }) => {
 
             // 4. Deployed-functions drift: every repo-prefixed secret id a
             // function references must be in the contract-derived set for
-            // the env encoded in the id (function names don't carry the
-            // env - beta has an infix, production doesn't), and must
-            // reference a GSM secret that exists.
+            // the env encoded in the id and reference a GSM secret that
+            // exists. Where the naming convention carries the env in the
+            // function name ({org}-{repo}-{env}-{name}), the two envs must
+            // agree - a mismatch is cross-env contamination (MISBOUND).
+            // Names that parse to no known env (repos without the
+            // convention) validate by id only, behind an advisory. Output
+            // is grouped by function name so same-env functions read
+            // together.
             return gcfList({
                 project: contract.project,
                 region: contract.region,
                 repoPrefix,
             }).then((functions) => {
                 section({
-                    detail: 'Secret bindings of each deployed function must match ids the c.js contract computes and reference GSM secrets that exist. STALE = an old id the contract no longer computes; MISSING = the referenced GSM secret is gone.',
+                    detail: 'Secret bindings of each deployed function must match ids the c.js contract computes, reference GSM secrets that exist, and - where the function name encodes an environment - belong to that environment. STALE = an old id the contract no longer computes; MISSING = the referenced GSM secret is gone; MISBOUND = the env in the function name disagrees with the env in the id.',
                     title: 'Deployed functions (secret references)',
                 });
 
-                functions.forEach((fn) => {
-                    fn.secrets.forEach((id) => {
-                        if (!id.startsWith(repoPrefix)) {
-                            return;
-                        }
-
-                        const refEnv = envs.find((candidate) =>
-                            id.startsWith(`${repoPrefix}${candidate}-`)
-                        );
-
-                        const inContract =
-                            refEnv && derivedByEnv[refEnv].has(id);
-
-                        if (inContract) {
-                            if (existingIds.has(id)) {
-                                report({
-                                    message: `function ${fn.name} -> ${id}`,
-                                    ok: true,
-                                });
+                [...functions]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .forEach((fn) => {
+                        functionReferenceFindings({
+                            derivedByEnv,
+                            envs,
+                            existingIds,
+                            fn,
+                            repoPrefix,
+                        }).forEach((finding) => {
+                            if (finding.advisory) {
+                                process.stdout.write(
+                                    `WARN    ${finding.message}\n`
+                                );
 
                                 return;
                             }
 
-                            report({
-                                message: `MISSING  function ${fn.name} -> ${id} (contract id, but the GSM secret does not exist)`,
-                                ok: false,
-                            });
-
-                            return;
-                        }
-
-                        report({
-                            message: `STALE   function ${fn.name} -> ${id}${
-                                refEnv ? '' : ' (unknown env)'
-                            } (not in contract${
-                                existingIds.has(id)
-                                    ? ''
-                                    : ', and the GSM secret no longer exists'
-                            })`,
-                            ok: false,
+                            report(finding);
                         });
                     });
-                });
 
                 return {
                     ok: problems.length === 0,
@@ -543,6 +641,8 @@ const verifyEnv = ({ config, contract, env }) => {
 /**
  * Find everything referencing a GSM secret id: contract consumers, the
  * environment's SecretProviderClasses and deployed Cloud Functions.
+ * Function consumers carry the env parsed from their name, or null when
+ * the name has none.
  * @param {Object} options
  * @param {Object} options.config The full c.js configuration.
  * @param {Object} options.contract The normalised contract.
@@ -627,7 +727,14 @@ const findConsumers = ({ config, contract, secretId }) => {
 
         functions.forEach((fn) => {
             if (fn.secrets.includes(secretId)) {
-                result.functions.push({ name: fn.name });
+                result.functions.push({
+                    env: parseNameEnv({
+                        envs,
+                        name: fn.name,
+                        prefix,
+                    }),
+                    name: fn.name,
+                });
             }
         });
 
@@ -637,8 +744,10 @@ const findConsumers = ({ config, contract, secretId }) => {
 
 module.exports = {
     findConsumers,
+    functionReferenceFindings,
     kubernetesEnv,
     kubernetesNamespace,
+    parseNameEnv,
     syncServiceNames,
     verifyEnv,
 };
