@@ -256,9 +256,12 @@ it('maps session-expiry failures to the friendly message', () => {
 it('reports a missing op cli instead of failing with undefined', () => {
     // ENOENT leaves e.stderr undefined; that must not become the literal
     // string 'undefined' (a truthy detail that would keep the
-    // missing-cli hint from ever firing).
+    // missing-cli hint from ever firing). PATH points somewhere empty
+    // rather than being cleared: an empty PATH makes execvp fall back to
+    // the working directory, which on CI contains an unzipped op/ dir
+    // (EACCES, not ENOENT).
     const pathWas = process.env.PATH;
-    process.env.PATH = '';
+    process.env.PATH = '/nonexistent-bin-for-op-cli-tests';
 
     try {
         expectThrowsWith(
