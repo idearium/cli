@@ -1,7 +1,21 @@
 'use strict';
 
 const program = require('commander');
-const { missingCommand } = require('./lib/c');
+const { missingCommand, spawnWithExitCode } = require('./lib/c');
+
+// The cmd passthrough needs the verbatim argv (bin/c.js forwards this
+// subtree raw): commander's git-style dispatch would re-parse the args
+// first, dropping -- and unknown options like kubectl flags.
+if (process.argv[2] === 'cmd') {
+    const { join } = require('path');
+
+    spawnWithExitCode({
+        args: [join(__dirname, 'c-kc-cmd.js')].concat(process.argv.slice(3)),
+        command: 'node',
+    });
+
+    return;
+}
 
 program
     .command('apply <location>', 'Deploy a particular Kubernetes locations.')

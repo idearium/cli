@@ -1,4 +1,3 @@
-#!/usr/bin/env -S node
 'use strict';
 
 const program = require('commander');
@@ -18,6 +17,7 @@ const {
     renderServicesTemplates,
     setLocalsForServices,
 } = require('./lib/c-kc');
+const { generateSecretManifests } = require('./lib/c-secrets-manifests');
 
 program
     .description('This command will start all of your Kubernetes locations.')
@@ -44,10 +44,10 @@ return Promise.all([loadState(), loadConfig()])
                 `kubernetes.environments.${state.env}.namespace`
             ) || formatProjectPrefix(organisation, name, state.env, true, true);
 
-        return [locations, prefix, namespace, path, state];
+        return [config, locations, prefix, namespace, path, state];
     })
     .then(
-        ([kubernetesLocations, prefix, namespace, path, state]) =>
+        ([config, kubernetesLocations, prefix, namespace, path, state]) =>
             new Promise((resolve, reject) => {
                 const services =
                     kubernetesLocationsToObjects(kubernetesLocations);
@@ -58,32 +58,31 @@ return Promise.all([loadState(), loadConfig()])
                     return reject(e);
                 }
 
-                return resolve([services, path, state]);
+                return resolve([config, namespace, services, path, state]);
             })
     )
-    .then(
-        ([services, path, state]) =>
-            new Promise(async (resolve, reject) => {
-                try {
-                    await ensureServiceFilesExist(path, services);
-                } catch (e) {
-                    reject(e);
-                }
-
-                return resolve([services, path, state]);
-            })
+    .then(([config, namespace, services, path, state]) =>
+        generateSecretManifests({
+            config,
+            env: state.env,
+            namespace,
+            path,
+            services,
+        }).then(() => [services, path, state])
     )
-    .then(
-        ([services, path, state]) =>
-            new Promise(async (resolve, reject) => {
-                try {
-                    await renderServicesTemplates(path, services);
-                } catch (e) {
-                    reject(e);
-                }
-
-                return resolve([services, path, state]);
-            })
+    .then(([services, path, state]) =>
+        ensureServiceFilesExist(path, services).then(() => [
+            services,
+            path,
+            state,
+        ])
+    )
+    .then(([services, path, state]) =>
+        renderServicesTemplates(path, services).then(() => [
+            services,
+            path,
+            state,
+        ])
     )
     .then(
         ([services, path, state]) =>

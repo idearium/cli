@@ -1,10 +1,14 @@
-#!/usr/bin/env -S node
 'use strict';
 
 const program = require('commander');
 const getPropertyPath = require('get-value');
-const { spawn } = require('child_process');
-const { loadConfig, loadState, reportError } = require('./lib/c');
+
+const {
+    loadConfig,
+    loadState,
+    reportError,
+    spawnWithExitCode,
+} = require('./lib/c');
 const { formatProjectPrefix } = require('./lib/c-project');
 
 program
@@ -26,26 +30,20 @@ return Promise.all([loadState('env'), loadConfig()])
                 `kubernetes.environments.${env}.namespace`
             ) || formatProjectPrefix(organisation, name, env, true, true);
 
-        // Remove the first two entries.
-        const parts = program.rawArgs.slice(2);
-
-        // The command starts with kubectrl.
-        parts.unshift('kubectl');
-
-        // Mandatory namespace and context.
-        parts.push(
-            '--namespace',
-            namespace,
-            '--context',
-            environments[env].context
-        );
-
-        // The rest of the command.
-        const cmd = parts.join(' ');
-
-        spawn(cmd, {
-            shell: true,
-            stdio: 'inherit',
+        // The context and namespace flags precede the user's command:
+        // anything after kubectl's -- would otherwise be executed inside
+        // the pod, letting kubectl fall back to the ambient context and
+        // namespace. The argv is an array (never a shell string), so
+        // nothing is re-parsed or interpolated, and the child's exit code
+        // propagates.
+        return spawnWithExitCode({
+            args: [
+                '--context',
+                environments[env].context,
+                '--namespace',
+                namespace,
+            ].concat(program.rawArgs.slice(2)),
+            command: 'kubectl',
         });
     })
     .catch((err) => reportError(err, false, true));

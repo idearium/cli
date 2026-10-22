@@ -8,6 +8,8 @@ const Mustache = require('mustache');
 const { promisify } = require('util');
 const { execFile } = require('child_process');
 
+const { opSession } = require('./c-secrets-io');
+
 const { constants } = fs;
 
 const access = promisify(fs.access);
@@ -51,11 +53,19 @@ const ensureServiceFilesExist = async (path = '', services = []) => {
                 await ensureDir(destinationFolder);
                 await copy(`${sourcePath}.yaml`, `${destinationPath}.yaml`);
             } catch (err) {
-                throw new Error(
-                    new Error(
-                        `Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`
-                    )
-                );
+                try {
+                    // Contract-generated manifests have no committed source
+                    // file - their compiled output already exists.
+                    await access(`${destinationPath}.yaml`, constants.R_OK);
+
+                    return;
+                } catch (generatedErr) {
+                    throw new Error(
+                        new Error(
+                            `Neither ${path}/${service.path}.yaml.tmpl or ${path}/${service.path}.yaml could be found`
+                        )
+                    );
+                }
             }
         }
     });
@@ -160,9 +170,27 @@ const formatBuildArgs = (args) => {
  */
 let opAuthenticated = null;
 
+/**
+ * The leading op arguments: --session with the c-managed token (from
+ * `c op session` or an exported OP_SESSION_idearium), or none at all
+ * when no session exists (the cli may still be authenticated some
+ * other way).
+ * @returns {Array} The arguments to prepend to every op invocation.
+ */
+const opSessionArgs = () => {
+    try {
+        return ['--session', opSession()];
+    } catch (e) {
+        return [];
+    }
+};
+
 const ensureOpAuthenticated = () => {
     if (!opAuthenticated) {
-        opAuthenticated = execFileAsync('op', ['whoami']).catch((e) => {
+        opAuthenticated = execFileAsync(
+            'op',
+            opSessionArgs().concat(['whoami'])
+        ).catch((e) => {
             if (e.code === 'ENOENT') {
                 throw new Error(
                     'The 1Password cli (op) is not installed. Install it to resolve secret references within templates.'
@@ -170,7 +198,7 @@ const ensureOpAuthenticated = () => {
             }
 
             throw new Error(
-                'Not signed in to the 1Password cli. Run `eval $(op signin)` in this shell and try again.'
+                'Not signed in to the 1Password cli. Run `c op session` and try again.'
             );
         });
     }
@@ -195,13 +223,16 @@ const injectSecretReferences = async (content) => {
     try {
         await writeFile(inPath, content, { mode: 0o600 });
 
-        await execFileAsync('op', [
-            'inject',
-            '--in-file',
-            inPath,
-            '--out-file',
-            outPath,
-        ]);
+        await execFileAsync(
+            'op',
+            opSessionArgs().concat([
+                'inject',
+                '--in-file',
+                inPath,
+                '--out-file',
+                outPath,
+            ])
+        );
 
         return await readFile(outPath, 'utf-8');
     } finally {
@@ -361,9 +392,11 @@ const validateBuildArgs = (args = []) =>
     args.filter((arg) => arg.split('=').length == 2);
 
 module.exports = {
+    encodeSecretStringData,
     ensureServiceFilesExist,
     flagBuildArgs,
     formatBuildArgs,
+    injectSecretReferences,
     renderServicesTemplates,
     removeCompiledSecrets,
     setLocalsForServices,
