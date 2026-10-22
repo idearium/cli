@@ -252,3 +252,20 @@ it('maps session-expiry failures to the friendly message', () => {
         'session has expired'
     );
 });
+
+it('reports a missing op cli instead of failing with undefined', () => {
+    // ENOENT leaves e.stderr undefined; that must not become the literal
+    // string 'undefined' (a truthy detail that would keep the
+    // missing-cli hint from ever firing).
+    const pathWas = process.env.PATH;
+    process.env.PATH = '';
+
+    try {
+        expectThrowsWith(
+            () => io.runOp({ args: ['whoami'] }),
+            'the op cli is not installed'
+        );
+    } finally {
+        process.env.PATH = pathWas;
+    }
+});

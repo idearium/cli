@@ -83,7 +83,7 @@ const runOp = ({ args, input }) => {
             stdio: ['pipe', 'pipe', 'pipe'],
         });
     } catch (e) {
-        const stderr = String(e.stderr);
+        const stderr = String(e.stderr || '');
 
         if (
             stderr.includes('not currently signed in') ||
