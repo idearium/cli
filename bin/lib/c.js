@@ -1,6 +1,7 @@
 'use strict';
 
 const chalk = require('chalk');
+const { spawn } = require('child_process');
 const { readFile, writeFile } = require('fs');
 const { homedir } = require('os');
 const { resolve: pathResolve, join, dirname } = require('path');
@@ -177,7 +178,9 @@ const missingCommand = (program) => {
 
     const [missing] = program.args;
 
+    /* eslint-disable no-console */
     console.error(chalk.red(`\nThere is no '${missing}' command`));
+    /* eslint-enable no-console */
 
     program.help();
 };
@@ -322,6 +325,33 @@ const reportError = (err, program, exit = false) => {
 };
 
 /**
+ * Spawn a child process that inherits stdio, propagating its exit code:
+ * a signal death becomes a non-zero exit instead of reporting success,
+ * and a failure to spawn is reported (and fails) rather than crashing.
+ * @param {Object} options
+ * @param {Array} options.args The child arguments.
+ * @param {String} options.command The command to run.
+ * @returns {Object} The child process.
+ */
+const spawnWithExitCode = ({ args, command }) => {
+    const child = spawn(command, args, { stdio: 'inherit' });
+
+    child.on('error', (e) => {
+        reportError(
+            new Error(`Could not run '${command}': ${e.message}`),
+            false,
+            true
+        );
+    });
+
+    child.on('close', (code) => {
+        process.exitCode = code === null ? 1 : code;
+    });
+
+    return child;
+};
+
+/**
  * The path to the state file.
  * @param {String} path The parent devops path.
  * @returns {String} An absolute path to the state file.
@@ -392,6 +422,7 @@ module.exports = {
     proxyCommand,
     proxyCommands,
     reportError,
+    spawnWithExitCode,
     stateFilePath,
     storeState,
     throwErr,

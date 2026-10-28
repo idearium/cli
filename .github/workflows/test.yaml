@@ -1,0 +1,32 @@
+name: Test
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  cache: npm
+                  node-version: 22
+
+            # The real 1Password CLI for the op stdin-detection tests - no
+            # session or account is needed (op validates stdin before
+            # authenticating). Pinned so the detection-error expectations
+            # stay stable; bump deliberately alongside a local check.
+            - name: Install 1Password CLI
+              run: |
+                  curl -sSfL "https://cache.agilebits.com/dist/1P/op2/pkg/v2.39.0/op_linux_amd64_v2.39.0.zip" -o op.zip
+                  unzip -o -d op op.zip
+                  install -m 755 op/op /usr/local/bin/op
+                  op --version
+
+            - run: npm ci
+
+            - run: npm test
