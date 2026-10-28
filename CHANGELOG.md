@@ -2,7 +2,7 @@
 
 This file is a history of the changes made to @idearium/cli.
 
-## v6.2.0 - 2026-09-30
+## v6.2.0 - 2026-10-27
 
 ### Added
 
