@@ -3,6 +3,7 @@
 const program = require('commander');
 const { resolve: pathResolve } = require('path');
 const { loadConfig, reportError } = require('./lib/c');
+const { getBumpType, getPrereleaseIdentifier } = require('./lib/c-project');
 const semver = require('semver');
 const chalk = require('chalk');
 const fs = require('fs');
@@ -41,6 +42,18 @@ program.on('--help', () => {
         '    betapatch: bump the version up to the next patch version and down to a beta release of that patch version.'
     );
     console.log(
+        '    staging: increment the patch version, then makes a staging release. If the input version is already a staging release it simply increments it.'
+    );
+    console.log(
+        '    stagingmajor: bump the version up to the next major version and down to a staging release of that major version.'
+    );
+    console.log(
+        '    stagingminor: bump the version up to the next minor version and down to a staging release of that minor version.'
+    );
+    console.log(
+        '    stagingpatch: bump the version up to the next patch version and down to a staging release of that patch version.'
+    );
+    console.log(
         '    prerelease: increment the patch version, then makes an alpha release. If the input version is already a prerelease it simply increments it.'
     );
 });
@@ -53,30 +66,12 @@ const { version: currentVersion } = require(`${pathResolve(
 )}`);
 let { type } = program;
 
-let prereleaseIdentifier = currentVersion.includes('beta') ? 'beta' : 'alpha';
+const prereleaseIdentifier = getPrereleaseIdentifier({
+    currentVersion,
+    type,
+});
 
-if (
-    type &&
-    ['alpha', 'beta'].some((prereleaseType) => type.includes(prereleaseType))
-) {
-    prereleaseIdentifier = type.includes('beta') ? 'beta' : 'alpha';
-}
-
-if (['alphamajor', 'betamajor'].includes(type)) {
-    type = 'premajor';
-}
-
-if (['alphaminor', 'betaminor'].includes(type)) {
-    type = 'preminor';
-}
-
-if (['alphapatch', 'betapatch'].includes(type)) {
-    type = 'prepatch';
-}
-
-if (['alpha', 'beta'].includes(type)) {
-    type = 'prerelease';
-}
+type = getBumpType({ type });
 
 // Always ensure we get beta.1, never beta.0.
 let newVersion = semver.inc(currentVersion, type, prereleaseIdentifier);

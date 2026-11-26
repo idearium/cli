@@ -2,6 +2,12 @@
 
 This file is a history of the changes made to @idearium/cli.
 
+## v6.3.0 - 2026-11-26
+
+### Added
+
+-   Added a `staging` release type to `c project bump`.
+
 ## v6.2.0 - 2026-10-27
 
 ### Added
